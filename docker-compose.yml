@@ -1,4 +1,12 @@
+version: '3.8'
 
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
 
 services:
   # --- BACKEND (Laravel 12) ---
@@ -9,7 +17,6 @@ services:
     container_name: jobpulse-backend-1
     volumes:
       - ./backend:/var/www
-    # FIX: Link your actual env file so the container inherently knows all credentials
     env_file:
       - ./backend/.env
     environment:
@@ -30,7 +37,6 @@ services:
     command: php artisan queue:work --verbose --tries=3 --timeout=90
     volumes:
       - ./backend:/var/www
-    # FIX: Workers need the database credentials too!
     env_file:
       - ./backend/.env
     environment:
@@ -50,12 +56,11 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    # FIX: Vite defaults to 5173. Your previous log confirmed Vite is running on 5173!
     ports:
       - "5173:5173"
     environment:
       - VITE_API_URL=http://localhost:8080
-      - CHOKIDAR_USECHIKIDAR=true # Forces hot-reloading to work perfectly inside Docker
+      - CHOKIDAR_USECHIKIDAR=true 
     networks:
       - app-network
 
@@ -67,7 +72,7 @@ services:
     volumes:
       - ./scrapers:/app
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/dbname
+      - DATABASE_URL=postgresql://postgres:Scooponset1@postgres:5432/jobpulse
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - postgres
@@ -94,9 +99,9 @@ services:
     image: postgres:16-alpine
     container_name: jobpulse-postgres-1
     environment:
-      POSTGRES_DB: dbname
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: jobpulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Scooponset1
     ports:
       - "5432:5432"
     volumes:
@@ -114,11 +119,3 @@ services:
       - redisdata:/data
     networks:
       - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  pgdata:
-  redisdata:
