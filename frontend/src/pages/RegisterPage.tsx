@@ -1,6 +1,6 @@
 import { useState } from "react";
-// Import the custom configured api instance you built in src/api/axios.ts
-import api from "../api/axios"; 
+
+import axios from "../services/axios"; 
 import { useAuthStore } from "../store/authStore";
 
 const Register = () => {
@@ -8,17 +8,16 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  
-  // Get the login action from your Zustand store to save the token on success
+
   const login = useAuthStore((state) => state.login);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
-    // 1. Prevent the browser from refreshing the page
+ 
     e.preventDefault();
 
     try {
-        // 2. Send the registration request to your backend api route group
-        const response = await api.post('/auth/register', {
+
+        const response = await axios.post('/auth/register', {
             name,
             email,
             password,
@@ -27,10 +26,10 @@ const Register = () => {
         
         console.log('Registration Successful', response.data);
 
-        // 3. Destructure the user and token from your backend response
+     
         const { user, token } = response.data;
 
-        // 4. Save them to your Zustand global state
+     
         login(user, token);
 
     } catch (error) {

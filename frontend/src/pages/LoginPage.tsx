@@ -1,6 +1,6 @@
 import { useState } from "react";
-import api from '../api/axios';
-// 1. Import your Zustand store hook
+import axios from "../services/axios" ;
+
 import { useAuthStore } from '../store/authStore'; 
 
 const Login = () => {
@@ -13,7 +13,7 @@ const Login = () => {
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const response = await api.post("/auth/login", {
+      const response = await axios.post("/auth/login", {
         email,
         password
       });

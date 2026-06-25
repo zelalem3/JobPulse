@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-const jobDetailsPage = () =>
+const JobDetails = () =>
 {
     return (
         <>
@@ -11,4 +11,4 @@ const jobDetailsPage = () =>
 
 }
 
-export default jobDetailsPage;
+export default JobDetails;
