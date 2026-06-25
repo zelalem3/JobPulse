@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import HomePage from './pages/HomePage';
-import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import NavBar from './components/Navbar';
 
 import Dashboard from './pages/DashboardPage';
@@ -12,44 +12,32 @@ import Profile from './pages/ProfilePage';
 import JobDetails from './pages/JobsDetailsPage';
 import Alerts from "./pages/AlertsPage";
 
-
 import PageNotFound from './pages/404';
-
-
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <BrowserRouter>
-    <NavBar />
+      <NavBar />
 
-    <Routes>
+      <Routes>
+        {/* Notice the <Component /> syntax below */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/Dashboard" element={<Dashboard />} />
+        <Route path="/jobss" element={<Jobs />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/savedjobs" element={<SavedJobs />} />
+        <Route path="/jobdetails" element={<JobDetails />} />
+        <Route path="/alerts" element={<Alerts />} />
 
-    <Route path="/" element={HomePage} />
-    <Route path="/Dashboard" element={Dashboard} />
-    <Route path="/jobss" element={Jobs} />
-    <Route path="/login" element={Login} />
-    <Route path="/register" element={Register} />
-    <Route path="/profile" element={Profile} />
-    <Route path="/savedjobs" element={SavedJobs} />
-    <Route path="/jobdetails" element={JobDetails} />
-    <Route path="/alerts" element={Alerts} />
-
-
-
-    <Route path="*" element={PageNotFound} />
-
-    </Routes>
-    
-    
-    
-    
-    
-    
+        {/* Catch-all for 404 */}
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
     </BrowserRouter>
-
   )
 }
 
-export default App
+export default App;
