@@ -41,4 +41,8 @@ class Job extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class)->withTimestamps();
+    }
 }
