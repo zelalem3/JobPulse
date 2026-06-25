@@ -1,6 +1,5 @@
 import { useState } from "react";
-
-import axios from "../services/axios"; 
+import api from '../services/axios';
 import { useAuthStore } from "../store/authStore";
 
 const Register = () => {
@@ -12,30 +11,32 @@ const Register = () => {
   const login = useAuthStore((state) => state.login);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
- 
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
+  try {
+    console.log("🔄 Fetching CSRF cookie...");
+    await api.get('/sanctum/csrf-cookie');
 
-        const response = await axios.post('/auth/register', {
-            name,
-            email,
-            password,
-            password_confirmation: passwordConfirmation 
-        });
-        
-        console.log('Registration Successful', response.data);
+    console.log("🔄 Sending registration request...");
+    const response = await api.post('/api/auth/register', {
+      name,
+      email,
+      password,
+      password_confirmation: passwordConfirmation,
+    });
 
-     
-        const { user, token } = response.data;
+    console.log('✅ Registration Successful', response.data);
+    const { user, token } = response.data;
+    login(user, token);
 
-     
-        login(user, token);
-
-    } catch (error) {
-        console.error('Registration Failed', error);
-    }
-  };
+  } catch (error: any) {
+    console.error('❌ Registration Failed', {
+      status: error.response?.status,
+      data: error.response?.data,
+      headers: error.response?.headers
+    });
+  }
+};
 
   return (
     <form onSubmit={handleFormSubmit}>
