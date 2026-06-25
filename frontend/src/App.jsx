@@ -1,8 +1,6 @@
-import { useState } from 'react'
-import HomePage from './pages/HomePage';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import NavBar from './components/Navbar';
-
+import HomePage from './pages/HomePage';
 import Dashboard from './pages/DashboardPage';
 import Jobs from './pages/JobsPage';
 import Login from './pages/LoginPage';
@@ -11,33 +9,65 @@ import SavedJobs from './pages/SavedJobsPage';
 import Profile from './pages/ProfilePage';
 import JobDetails from './pages/JobsDetailsPage';
 import Alerts from "./pages/AlertsPage";
-
+import ProtectedRoute from './components/ProtectedRoute';
 import PageNotFound from './pages/404';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <BrowserRouter>
       <NavBar />
 
       <Routes>
-        {/* Notice the <Component /> syntax below */}
+      
         <Route path="/" element={<HomePage />} />
-        <Route path="/Dashboard" element={<Dashboard />} />
-        <Route path="/jobss" element={<Jobs />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/savedjobs" element={<SavedJobs />} />
-        <Route path="/jobdetails" element={<JobDetails />} />
-        <Route path="/alerts" element={<Alerts />} />
+        
+      
+        <Route path="/jobs" element={<Jobs />} />
+        
+      
+        <Route path="/jobs/:id" element={<JobDetails />} />
 
-        {/* Catch-all for 404 */}
+  
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/saved" 
+          element={
+            <ProtectedRoute>
+              <SavedJobs />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/alerts" 
+          element={
+            <ProtectedRoute>
+              <Alerts />
+            </ProtectedRoute>
+          } 
+        />
+
+       
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
 export default App;
