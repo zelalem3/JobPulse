@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import HomePage from './pages/HomePage'
+import HomePage from './pages/HomePage';
 import {BrowserRouter, Routes, Route} from 'react-router-dom';
 import NavBar from './components/Navbar';
-import HomePage from './pages/HomePage';
+
 import Dashboard from './pages/DashboardPage';
 import Jobs from './pages/JobsPage';
 import Login from './pages/LoginPage';
