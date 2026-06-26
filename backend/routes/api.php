@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Api\JobListingController;
 use App\Http\Controllers\Api\JobSearchController;
 use App\Http\Controllers\Api\SaveJobController; 
+use App\Http\Controllers\Api\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,7 @@ Route::get('jobs/{id}', [JobSearchController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     
+    Route::get('dashboard/stats',[DashboardController::class,'stats']);
    
     Route::post('savejob/{id}', [SaveJobController::class, 'index']);
     

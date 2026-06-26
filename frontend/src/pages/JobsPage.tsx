@@ -70,16 +70,33 @@ export default function JobsPage() {
     }
   };
 
-  // Processing pipeline filters against the state vectors
-  const filteredListings = listings.filter(job => {
-    const matchesKeyword = job.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
-                           job.company.toLowerCase().includes(searchKeyword.toLowerCase());
-    const matchesLocation = job.location.toLowerCase().includes(searchLocation.toLowerCase());
-    const matchesSource = selectedSources.length === 0 || selectedSources.includes(job.source);
-    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.type);
-    
-    return matchesKeyword && matchesLocation && matchesSource && matchesType;
-  });
+const filteredListings = listings.filter(job => {
+  const title = job.title ?? "";
+  const company = job.company ?? "";
+  const location = job.location ?? "";
+  const source = job.source ?? "";
+  const type = job.type ?? "";
+
+  const matchesKeyword =
+    title.toLowerCase().includes((searchKeyword ?? "").toLowerCase()) ||
+    company.toLowerCase().includes((searchKeyword ?? "").toLowerCase());
+
+  const matchesLocation =
+    location.toLowerCase().includes((searchLocation ?? "").toLowerCase());
+
+  const matchesSource =
+    selectedSources.length === 0 || selectedSources.includes(source);
+
+  const matchesType =
+    selectedTypes.length === 0 || selectedTypes.includes(type);
+
+  return (
+    matchesKeyword &&
+    matchesLocation &&
+    matchesSource &&
+    matchesType
+  );
+});
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
