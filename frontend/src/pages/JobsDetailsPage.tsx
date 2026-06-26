@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom'; // 1. Added routing hooks
 import { 
   ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Calendar, 
-  MapPin, Briefcase, DollarSign, Share2, ShieldAlert, Database, HelpCircle 
+  MapPin, Briefcase, DollarSign, Share2, ShieldAlert, Database, Loader2 
 } from 'lucide-react';
+import api from '../services/axios';
 
 interface JobDetails {
   id: string;
@@ -20,45 +22,81 @@ interface JobDetails {
 }
 
 export default function JobDetails() {
-  // Mock detailed model representation pulled from Postgres tables via Laravel API
-  const [job, setJob] = useState<JobDetails>({
-    id: '101',
-    title: 'Senior Full Stack Engineer (Laravel 12 & React)',
-    company: 'Apex Digital Solutions',
-    location: 'Remote (US/Europe Options Available)',
-    type: 'Full-time / Remote',
-    salary: '$110,000 - $135,000 / year',
-    source: 'RemoteOK',
-    url: 'https://remoteok.com',
-    scrapedAt: '14 minutes ago',
-    isSaved: false,
-    companyWebsite: 'https://example.com',
-    description: `### About the Position
-We are looking for a Senior Full Stack Engineer to join our core product team. You will be instrumental in bridging the gap between our high-throughput backend services and slick, interactive frontend features.
+  const { id } = useParams<{ id: string }>(); // 2. Grab the dynamic ID from the URL path
+  const navigate = useNavigate();
 
-### Primary Operational Responsibilities
-* **Architecture:** Design and optimize elegant database structures inside PostgreSQL containers.
-* **Backend Systems:** Build robust RESTful APIs using Laravel 12 features, leveraging Redis queues for asynchronous operations.
-* **Frontend Dashboards:** Interface clean application data fields down into highly componentized React architectures styled with Tailwind CSS.
-* **Data Integration:** Help maintain our asynchronous micro-services cluster executing data aggregation tasks seamlessly.
+  const [job, setJob] = useState<JobDetails | null>(null); // Start as null while loading
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-### Requirements & Tech Stack
-* Extensive production experience utilizing PHP (Laravel framework patterns preferred).
-* Deep structural knowledge of modern JavaScript/TypeScript (React.js framework mechanics).
-* Fluent grasp of Docker container isolation contexts, background worker queues, and relational data modeling.
-* Excellent communication loop habits across decoupled distributed engineering hubs.`
-  });
+  useEffect(() => {
+    const fetchJob = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // 3. Requesting singular route mapping to JobListingController@show
+        const response = await api.get(`/api/jobs/${id}`);
+        
+        // Depending on your API structure, assign response data or fallback mapping
+        setJob(response.data); 
+      } catch (e) {
+        console.error("Error pulling database listing:", e);
+        setError("Could not locate the requested job listing registry.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJob();
+  }, [id]); // Refetches if the user navigates directly to another job ID
 
   const toggleSave = () => {
-    setJob(prev => ({ ...prev, isSaved: !prev.isSaved }));
+    if (job) {
+      setJob(prev => prev ? { ...prev, isSaved: !prev.isSaved } : null);
+    }
   };
 
+  // --- STATE TEMPLATE INTERRUPTS ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-2 flex flex-col items-center">
+          <Loader2 className="animate-spin text-blue-600" size={32} />
+          <p className="text-sm font-semibold text-slate-500">Retrieving position registry indices...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-sm text-center shadow-sm space-y-4">
+          <ShieldAlert className="mx-auto text-rose-500" size={40} />
+          <p className="text-sm font-bold text-slate-700">{error || "Record missing."}</p>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- CORE RENDER SECTION ---
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* --- BACK NAVIGATION LINK --- */}
-        <button className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition group">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition group"
+        >
           <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition" /> Back to Directories
         </button>
 
@@ -77,11 +115,10 @@ We are looking for a Senior Full Stack Engineer to join our core product team. Y
               {job.title}
             </h1>
             <p className="text-base font-semibold text-slate-500">
-              {job.company} — <a href={job.companyWebsite} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-normal text-sm inline-flex items-center gap-0.5">Visit Site <ExternalLink size={12} /></a>
+              {job.company} — <a href={job.companyWebsite || "#"} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-normal text-sm inline-flex items-center gap-0.5">Visit Site <ExternalLink size={12} /></a>
             </p>
           </div>
 
-          {/* Persistent Floating Controls Bar */}
           <div className="flex items-center gap-2 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 justify-end shrink-0">
             <button 
               onClick={toggleSave}
@@ -113,11 +150,9 @@ We are looking for a Senior Full Stack Engineer to join our core product team. Y
         {/* --- GRID SPLIT INTERFACE PANEL --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* Left Block: Markdown-ready Body Content */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm">
             <article className="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed space-y-4">
-              {/* Splitting the string content using custom line breaks to act as simple componentized blocks */}
-              {job.description.split('\n\n').map((paragraph, index) => {
+              {job.description?.split('\n\n').map((paragraph, index) => {
                 if (paragraph.startsWith('###')) {
                   return <h3 key={index} className="text-lg font-black text-slate-900 pt-4 first:pt-0 pb-1 border-b border-slate-100">{paragraph.replace('###', '').trim()}</h3>;
                 }
@@ -133,14 +168,11 @@ We are looking for a Senior Full Stack Engineer to join our core product team. Y
                   );
                 }
                 return <p key={index}>{paragraph}</p>;
-              })}
+              }) || <p className="text-slate-400 italic">No description provided for this listing.</p>}
             </article>
           </div>
 
-          {/* Right Block: Summary Context Sidebar Widgets */}
           <div className="space-y-6">
-            
-            {/* Widget 1: Position Specifications Checklist */}
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
               <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Position Specs</h4>
               
@@ -169,7 +201,6 @@ We are looking for a Senior Full Stack Engineer to join our core product team. Y
               </div>
             </div>
 
-            {/* Widget 2: Scraper System Diagnostics */}
             <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md text-slate-300 space-y-4">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <Database size={14} /> Pipeline Telemetry
@@ -193,14 +224,12 @@ We are looking for a Senior Full Stack Engineer to join our core product team. Y
               </div>
             </div>
 
-            {/* Disclaimer Security Panel */}
             <div className="p-4 bg-slate-100 border border-slate-200/60 rounded-xl flex gap-2 items-start text-slate-400">
               <ShieldAlert size={16} className="shrink-0 mt-0.5 text-slate-400" />
               <p className="text-[11px] leading-relaxed font-medium">
                 This listing was automatically scraped by the JobPulse system cluster. Always cross-verify external source application loops before submitting sensitive account keys or CV credentials.
               </p>
             </div>
-
           </div>
 
         </div>

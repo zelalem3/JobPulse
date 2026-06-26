@@ -13,9 +13,10 @@ Route::prefix('auth')->group(function () {
 
 Route::apiResource('jobs', JobListingController::class)
     ->only(['index', 'show']);
-    
-Route::apiResources('listjobs', JobSearchController::class);
 
+
+
+Route::get('jobs/:id', [JobSearchController::class, 'index']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

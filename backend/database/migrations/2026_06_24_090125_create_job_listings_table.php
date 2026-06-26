@@ -34,6 +34,7 @@ return new class extends Migration
 
             $table->string('source')->nullable();
             $table->string('url')->unique();
+            $table->longText('responsibilities')->nullable();
 
             $table->boolean('is_active')->default(true);
 

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, MapPin, Filter, Briefcase, ExternalLink, Bookmark, BookmarkCheck, Calendar, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import api from '../services/axios';
+
+
 
 interface JobListing {
   id: string;
@@ -21,11 +24,32 @@ export default function JobsPage() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
+ 
+
   // Mock data representing indexed listings pulled from PostgreSQL tables via Laravel
   const [listings, setListings] = useState<JobListing[]>([]);
 
   // Seed sample listings to populate grid view right out of the box
   React.useEffect(() => {
+
+    const fetchJobs = async () =>
+    {
+    try{
+      const response =  await api.get("/api/jobs")
+      console.log(response.data.data[0]);
+      setListings(response.data.data);
+
+
+    }
+    catch(e)
+    {
+      console.log(e);
+    }
+
+  }
+  fetchJobs();
+
+
     setListings([
       { id: '1', title: 'Full Stack Engineer (Laravel + React)', company: 'Apex Digital Solutions', location: 'Remote (US/Europe)', type: 'Remote', source: 'RemoteOK', salary: '$90k - $120k', scrapedAt: '14 mins ago', isSaved: false },
       { id: '2', title: 'Python & Web Scraping Developer', company: 'DataMetrics Global', location: 'Addis Ababa, Ethiopia', type: 'Full-time', source: 'LinkedIn', salary: 'Competitive', scrapedAt: '45 mins ago', isSaved: true },

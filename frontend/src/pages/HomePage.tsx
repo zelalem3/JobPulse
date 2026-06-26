@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Briefcase, RefreshCw, ExternalLink, Calendar, Filter, Database } from 'lucide-react';
+import SearchBar from '../components/SearchBar';
+
 
 interface Job {
   id: number;
@@ -15,6 +17,11 @@ interface Job {
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSource, setSelectedSource] = useState('All');
+
+  const handleSearchLog = (searchTerm) => {
+    console.log("Searching for:", searchTerm);
+    // Filter your data or make an API call here
+  };
 
   // Mock data representing what Laravel fetches from PostgreSQL
   const [jobs] = useState<Job[]>([
@@ -52,6 +59,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
+      <div>
+     <SearchBar onSearch={handleSearchLog} placeholder="Search documentation, components..." />
+    </div>
       
       {/* --- HERO / SEARCH BANNER --- */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white py-16 px-4 sm:px-6 lg:px-8 shadow-md">

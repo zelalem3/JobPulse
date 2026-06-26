@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Job;
+use App\Models\JobListing;
 
 class JobListingController extends Controller
 {
@@ -16,7 +16,7 @@ class JobListingController extends Controller
     {
         $perPage = $request->per_page ?? 10;
 
-        $jobs = Job::latest()->paginate($perPage);
+        $jobs = JobListing::latest()->paginate($perPage);
 
         return response()->json($jobs);
     }
@@ -39,7 +39,7 @@ class JobListingController extends Controller
 
         $validated['user_id'] = Auth::id();
 
-        $job = Job::create($validated);
+        $job = JobListing::create($validated);
 
         return response()->json([
             'message' => 'Job created successfully.',
@@ -52,7 +52,7 @@ class JobListingController extends Controller
      */
     public function show(string $id)
     {
-        $job = Job::find($id);
+        $job = JobListing::find($id);
 
         if (!$job) {
             return response()->json([
@@ -68,7 +68,7 @@ class JobListingController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $job = Job::find($id);
+        $job = JobListing::find($id);
 
         if (!$job) {
             return response()->json([
@@ -100,7 +100,7 @@ class JobListingController extends Controller
      */
     public function destroy(string $id)
     {
-        $job = Job::find($id);
+        $job = JobListing::find($id);
 
         if (!$job) {
             return response()->json([
