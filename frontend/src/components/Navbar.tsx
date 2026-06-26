@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom'; 
 import { Briefcase, User, LogOut, LogIn, Menu, X, Bell, LayoutDashboard } from 'lucide-react';
-import { Link } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 export default function Navbar() {
-  // Mock state to replicate your authentication status (Change to true/false to test states)
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+  const navigate = useNavigate();
+  
+  // ✅ Correctly subscribe to the token from your Zustand store
+  // The component will now auto-re-render whenever the token changes.
+  const token = useAuthStore((state) => state.token);
+  const isLoggedIn = !!token;
+  const logoutAction = useAuthStore((state) => state.logout);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState<boolean>(false);
 
-  // Temporary function to toggle login state for previewing
-  const toggleAuth = () => {
-    setIsLoggedIn(!isLoggedIn);
+  const handleSignOut = () => {
+    logoutAction();
     setIsProfileDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    navigate('/');
   };
 
   return (
@@ -20,26 +28,25 @@ export default function Navbar() {
         <div className="flex justify-between h-16 items-center">
           
           {/* --- LEFT: LOGO BLOCK --- */}
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="p-2 bg-blue-600 text-white rounded-xl shadow-sm">
               <Briefcase size={20} className="stroke-[2.5]" />
             </div>
             <span className="text-xl font-black text-slate-900 tracking-tight">
               Job<span className="text-blue-600">Pulse</span>
             </span>
-          </div>
+          </Link>
 
           {/* --- CENTER / RIGHT: DESKTOP NAVIGATION --- */}
           <div className="hidden md:flex items-center gap-6">
-            <a href="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">
+            <Link to="/jobs" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition">
               Explore Jobs
-            </a>
+            </Link>
             
-            {/* Conditional Nav Items based on Auth State */}
             {isLoggedIn && (
-              <a href="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition flex items-center gap-1.5">
+              <Link to="/dashboard" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition flex items-center gap-1.5">
                 <LayoutDashboard size={16} /> Dashboard
-              </a>
+              </Link>
             )}
 
             <div className="h-4 w-px bg-slate-200" />
@@ -59,17 +66,17 @@ export default function Navbar() {
                     className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
                   >
                     <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">
-                      Z
+                      U
                     </div>
                   </button>
 
                   {isProfileDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1 text-slate-700 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <a href="/profile" className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 transition">
+                      <Link to="/profile" onClick={() => setIsProfileDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 transition">
                         <User size={16} className="text-slate-400" /> View Profile
-                      </a>
+                      </Link>
                       <button 
-                        onClick={toggleAuth}
+                        onClick={handleSignOut}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50/50 transition border-t border-slate-100 mt-1"
                       >
                         <LogOut size={16} /> Sign Out
@@ -81,18 +88,18 @@ export default function Navbar() {
             ) : (
               /* --- STATE: GUEST / NOT LOGGED IN --- */
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={toggleAuth}
+                <Link 
+                  to="/login"
                   className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
                 >
                   Sign In
-                </button>
-                <button 
-                  onClick={toggleAuth}
+                </Link>
+                <Link 
+                  to="/register"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm transition flex items-center gap-1.5"
                 >
                   <LogIn size={15} /> Get Started
-                </button>
+                </Link>
               </div>
             )}
           </div>
@@ -113,20 +120,20 @@ export default function Navbar() {
       {/* --- MOBILE RESPONSIVE DRAWER --- */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white px-4 pt-2 pb-4 space-y-3 shadow-inner">
-          <a href="#" className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-700 hover:bg-slate-50">
+          <Link to="/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-700 hover:bg-slate-50">
             Explore Jobs
-          </a>
+          </Link>
           
           {isLoggedIn ? (
             <>
-              <a href="/dashboard" className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-700 hover:bg-slate-50">
+              <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-700 hover:bg-slate-50">
                 Dashboard
-              </a>
-              <a href="/profile" className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-700 hover:bg-slate-50">
+              </Link>
+              <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-700 hover:bg-slate-50">
                 My Profile
-              </a>
+              </Link>
               <button 
-                onClick={toggleAuth}
+                onClick={handleSignOut}
                 className="w-full text-left px-3 py-2 rounded-xl text-base font-semibold text-rose-600 hover:bg-rose-50/50 transition"
               >
                 Sign Out
@@ -134,27 +141,24 @@ export default function Navbar() {
             </>
           ) : (
             <div className="pt-2 border-t border-slate-100 space-y-2">
-              <button 
-                onClick={toggleAuth}
-                className="w-full px-4 py-2.5 text-center text-slate-700 font-semibold border border-slate-200 rounded-xl text-sm"
+              <Link 
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full px-4 py-2.5 text-center text-slate-700 font-semibold border border-slate-200 rounded-xl text-sm"
               >
                 Sign In
-              </button>
-              <button 
-                onClick={toggleAuth}
-                className="w-full px-4 py-2.5 text-center bg-blue-600 text-white font-bold rounded-xl text-sm shadow-sm"
+              </Link>
+              <Link 
+                to="/register"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full px-4 py-2.5 text-center bg-blue-600 text-white font-bold rounded-xl text-sm shadow-sm"
               >
                 Get Started
-              </button>
+              </Link>
             </div>
           )}
         </div>
       )}
-      
-      {/* Dev Helper Switch (Bottom right corner badge) */}
-      <div className="fixed bottom-4 right-4 bg-slate-900 text-white px-3 py-1.5 text-xs font-mono rounded-full z-50 opacity-40 hover:opacity-100 transition shadow cursor-pointer" onClick={toggleAuth}>
-        🛠️ Auth Status: {isLoggedIn ? 'LOGGED_IN' : 'GUEST'}
-      </div>
     </nav>
   );
 }

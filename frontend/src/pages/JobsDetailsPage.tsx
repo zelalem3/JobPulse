@@ -28,6 +28,18 @@ export default function JobDetails() {
   const [job, setJob] = useState<JobDetails | null>(null); // Start as null while loading
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [save, setsave] = useState(false);
+
+ const savejob = async () => {
+  try {
+    
+    const response = await api.post(`api/savejob/${id}`); 
+    console.log("saved successfully", response.data);
+    setsave(true); 
+  } catch (e) {
+    console.error("Error saving job:", e);
+  }
+};
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -230,6 +242,9 @@ export default function JobDetails() {
                 This listing was automatically scraped by the JobPulse system cluster. Always cross-verify external source application loops before submitting sensitive account keys or CV credentials.
               </p>
             </div>
+          </div>
+          <div>
+            <button onClick={savejob}>{save ? "saved" : "save job"}</button>
           </div>
 
         </div>
