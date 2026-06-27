@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\JobSearchController;
 use App\Http\Controllers\Api\SaveJobController; 
 use App\Http\Controllers\Api\DashboardController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -32,6 +33,11 @@ Route::get('jobs/{id}', [JobSearchController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('dashboard/stats',[DashboardController::class,'stats']);
+    Route::get('dashboard/topcompanies',[DashboardController::class,'topcompanies']);
+    Route::get('dashboard/skills',[DashboardController::class,'skills']);
+    Route::get('dashboard/graph',[DashboardController::class,'graph']);
+    Route::get('savedjobs',[SaveJobController::class,'getsaved']);
+   
    
     Route::post('savejob/{id}', [SaveJobController::class, 'index']);
     

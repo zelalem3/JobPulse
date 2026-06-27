@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Bookmark, MapPin, Calendar, ExternalLink, Trash2, CheckCircle2, Hourglass, XCircle, Search } from 'lucide-react';
+import api from '../services/axios';
+
+
 
 interface SavedJob {
   id: string;
@@ -15,6 +18,21 @@ interface SavedJob {
 export default function SavedJobs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+
+
+  const fetchSaved = async () =>
+  {
+    const response = await api.get("api/savedjobs");
+    console.log(response.data);
+
+    
+
+
+
+  }
+  fetchSaved();
+  
+
 
   // Mock data representing saved relations pulled from your Laravel backend
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([

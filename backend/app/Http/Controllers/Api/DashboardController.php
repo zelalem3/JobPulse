@@ -40,7 +40,17 @@ class DashboardController extends Controller
 
     }
 
-    public function topcompanies(){
-        $topcompanies = JobListing::where('', true)->count();
-    }
+    public function topcompanies()
+{
+   
+    $topcompanies = Company::withCount('jobs')
+        ->orderBy('jobs_count', 'desc')
+        ->take(10) 
+        ->get();
+
+    return response()->json([
+        'companies' => $topcompanies
+    ]);
+}
+
 }

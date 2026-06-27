@@ -32,4 +32,19 @@ class SaveJobController extends Controller
             'job' => $new_save,
         ], 201);
     }
+
+
+    public function getSaved()
+    {
+        $user = Auth::user();
+        if (!Auth::check()) {
+            return response()->json(['message'=> ''], 0);   
+        }
+        $saved_job = SavedJob::where('user_id', $user->id);
+
+        return response()->json([
+            "message"=>"successfully fetched",
+            'savedjobs'=>$saved_job
+        ],201);
+    }
 }
