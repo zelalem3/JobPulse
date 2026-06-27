@@ -1,69 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell, BellOff, Plus, Trash2, Mail, Clock, Search, 
-  MapPin, Sliders, Database, Check, AlertCircle 
+  MapPin, Database, Check
 } from 'lucide-react';
+import api from '../services/axios'; // Swapped completely to Axios custom instance
 
 interface JobAlert {
   id: string;
   keyword: string;
   location: string;
-  sources: string[];
-  frequency: 'Instant' | 'Daily' | 'Weekly';
-  isActive: boolean;
-  matchCount: number;
-  createdAt: string;
+  sources?: string[]; 
+  frequency?: string; 
+  isActive: boolean | number; 
+  matchCount?: number;
+  created_at: string; 
 }
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<JobAlert[]>([
-    { id: '1', keyword: 'Laravel React', location: 'Remote', sources: ['RemoteOK', 'LinkedIn'], frequency: 'Instant', isActive: true, matchCount: 14, createdAt: '2 days ago' },
-    { id: '2', keyword: 'Python Web Scraper', location: 'Addis Ababa', sources: ['LinkedIn', 'Indeed'], frequency: 'Daily', isActive: true, matchCount: 3, createdAt: '1 week ago' },
-    { id: '3', keyword: 'DevOps Engineer', location: 'Global', sources: ['RemoteOK'], frequency: 'Weekly', isActive: false, matchCount: 0, createdAt: '3 weeks ago' }
-  ]);
+  const [alerts, setAlerts] = useState<JobAlert[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Form states for creating a new custom alert
   const [newKeyword, setNewKeyword] = useState('');
   const [newLocation, setNewLocation] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>(['LinkedIn']);
-  const [frequency, setFrequency] = useState<'Instant' | 'Daily' | 'Weekly'>('Daily');
+  const [frequency, setFrequency] = useState<string>('Daily');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  const handleCreateAlert = (e: React.FormEvent) => {
+  // 1. Fetch live entries from Laravel Backend
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  const fetchAlerts = async () => {
+    try {
+      setIsLoading(true);
+   
+      const response = await api.get('api/alerts');
+      
+     
+      setAlerts(response.data.data || response.data); 
+      console.log(response.data);
+    } catch (error) {
+      console.error("Failed fetching stream monitors:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKeyword.trim()) return;
 
-    const newAlert: JobAlert = {
-      id: Date.now().toString(),
-      keyword: newKeyword,
-      location: newLocation || 'Anywhere',
-      sources: selectedSources,
-      frequency: frequency,
-      isActive: true,
-      matchCount: 0,
-      createdAt: 'Just now'
-    };
+    try {
+      const response = await api.post('api/alerts', {
+        keyword: newKeyword,
+        location: newLocation || 'Remote'
+      });
 
-    setAlerts([newAlert, ...alerts]);
-    setNewKeyword('');
-    setNewLocation('');
+     
+      setAlerts([response.data.alert, ...alerts]);
+      setNewKeyword('');
+      setNewLocation('');
+      
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Could not write active daemon:", error);
+    }
+  };
+
+ 
+  const toggleAlertStatus = async (id: string, currentStatus: boolean | number) => {
+    const updatedStatus = !currentStatus;
     
-    // Trigger visual notification toast loop
-    setShowSuccessToast(true);
-    setTimeout(() => setShowSuccessToast(false), 3000);
+    try {
+     
+      setAlerts(prev => prev.map(a => a.id === id ? { ...a, isActive: updatedStatus } : a));
+
+      await api.put(`/alerts/${id}`, {
+        isActive: updatedStatus
+      });
+    } catch (error) {
+      console.error("Failed structural system toggle switch update:", error);
+      fetchAlerts(); 
+    }
   };
 
-  const toggleAlertStatus = (id: string) => {
-    setAlerts(prev => prev.map(alert => alert.id === id ? { ...alert, isActive: !alert.isActive } : alert));
-  };
 
-  const deleteAlert = (id: string) => {
-    setAlerts(prev => prev.filter(alert => alert.id !== id));
+  const deleteAlert = async (id: string) => {
+    try {
+      await api.delete(`/alerts/${id}`);
+      setAlerts(prev => prev.filter(alert => alert.id !== id));
+    } catch (error) {
+      console.error("Purge operations malfunctioned:", error);
+    }
   };
 
   const toggleSourceSelection = (source: string) => {
     if (selectedSources.includes(source)) {
-      if (selectedSources.length > 1) { // Retain at least one data pool index source
+      if (selectedSources.length > 1) {
         setSelectedSources(selectedSources.filter(s => s !== source));
       }
     } else {
@@ -75,16 +113,14 @@ export default function AlertsPage() {
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* Toast Alert Feedback */}
         {showSuccessToast && (
-          <div className="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 text-sm font-semibold animate-fade-in-up z-50">
+          <div className="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 text-sm font-semibold z-50">
             <Check size={16} className="text-emerald-400" /> Webhook Indexer Trigger Hook Created!
           </div>
         )}
 
-        {/* --- HEADER TITLE BANNER --- */}
         <div className="space-y-1">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight sm:text-3xl flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-990 tracking-tight sm:text-3xl flex items-center gap-2">
             <Bell size={24} className="text-blue-600" /> Job Scraper Alerts
           </h1>
           <p className="text-sm text-slate-400 max-w-xl">
@@ -92,10 +128,9 @@ export default function AlertsPage() {
           </p>
         </div>
 
-        {/* --- MAIN CORE MATRIX COLS SPLIT --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* Create Alert Builder Block */}
+          {/* Create Alert Box Form */}
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-3">
               <Plus size={16} className="text-blue-600" /> Configure Daemon Alert
@@ -108,7 +143,7 @@ export default function AlertsPage() {
                   <Search size={16} className="text-slate-400 shrink-0" />
                   <input 
                     type="text" 
-                    placeholder="e.g., React, Laravel, Remote Tech..." 
+                    placeholder="e.g., React, Laravel..." 
                     value={newKeyword}
                     onChange={(e) => setNewKeyword(e.target.value)}
                     className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
@@ -123,7 +158,7 @@ export default function AlertsPage() {
                   <MapPin size={16} className="text-slate-400 shrink-0" />
                   <input 
                     type="text" 
-                    placeholder="e.g., Remote, Berlin, Addis Ababa" 
+                    placeholder="e.g., Remote, Addis Ababa" 
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
                     className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
@@ -131,7 +166,6 @@ export default function AlertsPage() {
                 </div>
               </div>
 
-              {/* Ingestion Stream Context Controls */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Ingestion Data Channels</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -155,14 +189,13 @@ export default function AlertsPage() {
                 </div>
               </div>
 
-              {/* Frequency Ingestion Cadence */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Notification Interval</label>
                 <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl">
                   <Clock size={16} className="text-slate-400 shrink-0" />
                   <select 
                     value={frequency} 
-                    onChange={(e) => setFrequency(e.target.value as any)}
+                    onChange={(e) => setFrequency(e.target.value)}
                     className="w-full bg-transparent outline-none text-sm text-slate-700 cursor-pointer"
                   >
                     <option value="Instant">Instant Broadcast Webhooks</option>
@@ -181,7 +214,7 @@ export default function AlertsPage() {
             </form>
           </div>
 
-          {/* Active Alerts Management Matrix */}
+          {/* Active Alerts List Render Area */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex justify-between items-center px-1">
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
@@ -190,7 +223,11 @@ export default function AlertsPage() {
             </div>
 
             <div className="space-y-4">
-              {alerts.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12 text-sm text-slate-400 font-medium">
+                  Syncing ingestion pipelines...
+                </div>
+              ) : alerts.length > 0 ? (
                 alerts.map((alert) => (
                   <div 
                     key={alert.id} 
@@ -209,36 +246,35 @@ export default function AlertsPage() {
                         </span>
                       </div>
 
-                      {/* Pill badging rendering pipeline properties */}
                       <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400">
                         <div className="flex items-center gap-1">
                           <Database size={13} className="text-slate-400" />
                           <span className="text-slate-500">
-                            [{alert.sources.join(', ')}]
+                            [{alert.sources ? alert.sources.join(', ') : 'All channels'}]
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Mail size={13} className="text-slate-400" />
-                          <span className="text-slate-500 font-semibold">{alert.frequency}</span>
+                          <span className="text-slate-500 font-semibold">{alert.frequency || 'Daily'}</span>
                         </div>
                         <span className="text-slate-300">•</span>
-                        <span className="text-[11px] text-slate-400">Created {alert.createdAt}</span>
+                        <span className="text-[11px] text-slate-400">
+                          Synced: {new Date(alert.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Operational Trigger Actions Row */}
                     <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-0 pt-3 sm:pt-0 border-slate-100">
-                      {alert.isActive && alert.matchCount > 0 && (
+                      {alert.isActive && (alert.matchCount ?? 0) > 0 && (
                         <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg">
                           +{alert.matchCount} New Matches
                         </span>
                       )}
                       
                       <div className="flex items-center gap-2 ml-auto sm:ml-0">
-                        {/* Inline Status Toggle Switch */}
                         <button
-                          onClick={() => toggleAlertStatus(alert.id)}
-                          className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none ${
+                          onClick={() => toggleAlertStatus(alert.id, alert.isActive)}
+                          className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
                             alert.isActive ? 'bg-blue-600' : 'bg-slate-200'
                           }`}
                         >
@@ -259,7 +295,6 @@ export default function AlertsPage() {
                   </div>
                 ))
               ) : (
-                /* Clear Clean State Template Boundary Box */
                 <div className="bg-white border border-dashed border-slate-200 rounded-2xl py-16 text-center space-y-3">
                   <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto border border-slate-100">
                     <BellOff size={20} />

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\JobListingController;
 use App\Http\Controllers\Api\JobSearchController;
 use App\Http\Controllers\Api\SaveJobController; 
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\AlertController;
 
 
 /*
@@ -27,23 +28,31 @@ Route::apiResource('jobs', JobListingController::class)->only(['index', 'show'])
 
 Route::get('jobs/{id}', [JobSearchController::class, 'index']);
 
-
-
-
 Route::middleware('auth:sanctum')->group(function () {
     
-    Route::get('dashboard/stats',[DashboardController::class,'stats']);
-    Route::get('dashboard/topcompanies',[DashboardController::class,'topcompanies']);
-    Route::get('dashboard/skills',[DashboardController::class,'skills']);
-    Route::get('dashboard/graph',[DashboardController::class,'graph']);
-    Route::get('savedjobs',[SaveJobController::class,'getsaved']);
-   
-   
+    // --- Dashboard Routes ---
+    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('dashboard/topcompanies', [DashboardController::class, 'topcompanies']);
+    Route::get('dashboard/skills', [DashboardController::class, 'skills']);
+    Route::get('dashboard/graph', [DashboardController::class, 'graph']);
+    
+    // --- Saved Jobs ---
+    Route::get('savedjobs', [SaveJobController::class, 'getsaved']);
     Route::post('savejob/{id}', [SaveJobController::class, 'index']);
     
-   
+    // --- Job Scraper Alerts  ---
+    Route::get('alerts', [AlertController::class, 'index']);      
+    Route::post('alerts', [AlertController::class, 'create']);    
+    Route::get('alerts/{id}', [AlertController::class, 'show']);  
+    Route::put('alerts/{id}', [AlertController::class, 'update']);
+    Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
+
+    // --- User Profile ---
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
     
 });
+
+
+

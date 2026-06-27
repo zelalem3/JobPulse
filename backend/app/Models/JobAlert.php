@@ -13,6 +13,16 @@ class JobAlert extends Model
         'user_id',
         'keyword',
         'location',
+        'category',
+        'email_enabled',
+        'telegram_enabled',
+        'last_checked_at',
+    ];
+
+    protected $casts = [
+        'email_enabled' => 'boolean',
+        'telegram_enabled' => 'boolean',
+        'last_checked_at' => 'datetime',
     ];
 
     public function user()
