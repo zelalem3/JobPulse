@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\JobSearchController;
 use App\Http\Controllers\Api\SaveJobController; 
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AlertController;
+use Illuminate\Support\Facades\Mail;
+
 
 
 /*
@@ -46,6 +48,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('alerts/{id}', [AlertController::class, 'show']);  
     Route::put('alerts/{id}', [AlertController::class, 'update']);
     Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
+
+    
+    
+    Route::get('job-alerts', [AlertController::class, 'index']);
+    Route::post('job-alerts', [AlertController::class, 'create']);
+    Route::put('job-alerts/{id}', [AlertController::class, 'update']);
+    Route::delete('job-alerts/{id}', [AlertController::class, 'destroy']);
+
+
+   
+Route::get('/test-mail', function () {
+    Mail::raw('Hello from JobPulse!', function ($message) {
+        $message->to('test@example.com')
+                ->subject('Test Email');
+    });
+
+    return 'Email sent!';
+});
 
     // --- User Profile ---
     Route::get('/user', function (Request $request) {
