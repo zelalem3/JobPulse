@@ -56,7 +56,8 @@ export default function AlertsPage() {
     try {
       const response = await api.post('api/alerts', {
         keyword: newKeyword,
-        location: newLocation || 'Remote'
+        location: newLocation || 'Remote',
+        email_enabled: true
       });
 
      
