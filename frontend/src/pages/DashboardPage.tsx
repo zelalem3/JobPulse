@@ -1,13 +1,10 @@
-
 import React, { useEffect, useState } from "react";
-import api from "../services/axios";
 import {
   Briefcase,
+  TrendingUp,
   Bookmark,
-  Bell,
-  Building2,
-  ArrowUpRight,
   MapPin,
+  ArrowUpRight,
 } from "lucide-react";
 
 import {
@@ -19,38 +16,19 @@ import {
   Tooltip,
 } from "recharts";
 
-interface DashboardStats {
-  total_jobs: number;
-  saved_jobs: number;
-  alerts: number;
-  companies: number;
-}
+import api from "../services/axios";
 
-interface TopSkill {
-  name: string;
-  count: number;
-}
-
-interface TopCompany {
-  id: number;
-  name: string;
-  jobs_count: number;
-}
-
-interface GraphPoint {
-  date: string;
-  jobs: number;
-}
+/* -------------------- TYPES -------------------- */
 
 interface JobListing {
   id: number;
   title: string;
   location: string;
+  company_id: number;
   salary: string | null;
+  employment_type: string;
+  deadline: string | null;
   url: string | null;
-  company?: {
-    name: string;
-  };
 }
 
 interface Recommendation {
@@ -60,335 +38,218 @@ interface Recommendation {
   location_match: boolean;
 }
 
-export default function Dashboard() {
-  const [stats, setStats] =
-    useState<DashboardStats | null>(null);
+interface Stats {
+  totalJobs: number;
+  totalCompanies: number;
+  newToday: number;
+  activeJobs: number;
+}
 
-  const [skills, setSkills] =
-    useState<TopSkill[]>([]);
+/* -------------------- COMPONENT -------------------- */
 
-  const [companies, setCompanies] =
-    useState<TopCompany[]>([]);
+export default function DashboardPage() {
+  const [savedJobs, setSavedJobs] = useState<JobListing[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
 
-  const [graph, setGraph] =
-    useState<GraphPoint[]>([]);
-
-  const [recommendations, setRecommendations] =
-    useState<Recommendation[]>([]);
-
-  const [savedJobs, setSavedJobs] =
-    useState<JobListing[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
+  const [recLoading, setRecLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetchStats(),
-      fetchSkills(),
-      fetchCompanies(),
-      fetchGraph(),
-      fetchRecommendations(),
-      fetchSavedJobs(),
-    ]).finally(() => {
-      setLoading(false);
-    });
+    fetchAll();
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const response = await api.get(
-        "/api/dashboard/stats"
-      );
+  /* -------------------- FETCH ALL -------------------- */
 
-      setStats(response.data);
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+
+      const [savedRes, statsRes] = await Promise.all([
+        api.get("api/savedjobs"),
+        api.get("api/dashboard/stats"),
+      ]);
+
+      // -------- saved jobs safe parsing --------
+      const savedData =
+        savedRes.data?.savedjobs ||
+        savedRes.data?.data ||
+        savedRes.data ||
+        [];
+
+      setSavedJobs(Array.isArray(savedData) ? savedData : []);
+
+      // -------- stats --------
+      setStats(statsRes.data);
+
+      console.log("STATS RESPONSE:", statsRes.data);
+      console.log("SAVED RESPONSE:", savedData);
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard error:", err);
+    } finally {
+      setLoading(false);
     }
+
+    fetchRecommendations();
   };
 
-  const fetchSkills = async () => {
-    try {
-      const response = await api.get(
-        "/api/dashboard/skills"
-      );
-
-      setSkills(response.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchCompanies = async () => {
-    try {
-      const response = await api.get(
-        "/api/dashboard/topcompanies"
-      );
-
-      setCompanies(response.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchGraph = async () => {
-    try {
-      const response = await api.get(
-        "/api/dashboard/graph"
-      );
-
-      setGraph(response.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  /* -------------------- RECOMMENDATIONS -------------------- */
 
   const fetchRecommendations = async () => {
     try {
-      const response = await api.get(
-        "/api/recommendations"
-      );
+      setRecLoading(true);
 
-      setRecommendations(response.data);
+      const res = await api.get("api/recommendations");
+
+      setRecommendations(Array.isArray(res.data) ? res.data : []);
+
+      console.log("RECOMMENDATIONS RESPONSE:", res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Recommendation error:", err);
+    } finally {
+      setRecLoading(false);
     }
   };
 
-  const fetchSavedJobs = async () => {
-    try {
-      const response = await api.get(
-        "/api/dashboard/saved-jobs"
-      );
-
-      setSavedJobs(
-        response.data.savedjobs || []
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  /* -------------------- LOADING -------------------- */
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        Loading Dashboard...
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full" />
       </div>
     );
   }
 
+  /* -------------------- UI -------------------- */
+
   return (
-    <div className="bg-slate-50 min-h-screen p-8">
-      <h1 className="text-3xl font-bold mb-8">
-        Dashboard
-      </h1>
+    <div className="min-h-screen bg-slate-50 p-6 space-y-8">
 
-      {/* Stats */}
-      <div className="grid md:grid-cols-4 gap-6 mb-10">
-        <div className="bg-white rounded-xl p-6 shadow">
-          <Briefcase
-            className="mb-3 text-indigo-600"
-          />
-          <p className="text-slate-500">
-            Total Jobs
-          </p>
-          <h2 className="text-3xl font-bold">
-            {stats?.total_jobs ?? 0}
-          </h2>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow">
-          <Bookmark
-            className="mb-3 text-indigo-600"
-          />
-          <p className="text-slate-500">
-            Saved Jobs
-          </p>
-          <h2 className="text-3xl font-bold">
-            {stats?.saved_jobs ?? 0}
-          </h2>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow">
-          <Bell
-            className="mb-3 text-indigo-600"
-          />
-          <p className="text-slate-500">
-            Alerts
-          </p>
-          <h2 className="text-3xl font-bold">
-            {stats?.alerts ?? 0}
-          </h2>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow">
-          <Building2
-            className="mb-3 text-indigo-600"
-          />
-          <p className="text-slate-500">
-            Companies
-          </p>
-          <h2 className="text-3xl font-bold">
-            {stats?.companies ?? 0}
-          </h2>
-        </div>
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-slate-500">Your job activity overview</p>
       </div>
 
-      {/* Graph */}
-      <div className="bg-white rounded-xl p-6 shadow mb-10">
-        <h2 className="text-xl font-bold mb-5">
-          Job Posting Trend
-        </h2>
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-        <ResponsiveContainer
-          width="100%"
-          height={300}
-        >
-          <LineChart data={graph}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Line
-              dataKey="jobs"
-              stroke="#4f46e5"
-              type="monotone"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Skills & Companies */}
-      <div className="grid md:grid-cols-2 gap-6 mb-10">
-        <div className="bg-white rounded-xl p-6 shadow">
-          <h2 className="text-xl font-bold mb-5">
-            Trending Skills
-          </h2>
-
-          <div className="flex flex-wrap gap-3">
-            {skills.map((skill) => (
-              <span
-                key={skill.name}
-                className="bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg"
-              >
-                {skill.name} ({skill.count})
-              </span>
-            ))}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <div className="flex justify-between">
+            <h3>Total Jobs</h3>
+            <Briefcase />
           </div>
+          <p className="text-2xl font-bold mt-2">
+            {stats?.totalJobs ?? 0}
+          </p>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow">
-          <h2 className="text-xl font-bold mb-5">
-            Top Hiring Companies
-          </h2>
-
-          <div className="space-y-4">
-            {companies.map((company) => (
-              <div
-                key={company.id}
-                className="flex justify-between"
-              >
-                <span>{company.name}</span>
-
-                <span className="font-bold">
-                  {company.jobs_count}
-                </span>
-              </div>
-            ))}
+        <div className="bg-white p-5 rounded-xl shadow">
+          <div className="flex justify-between">
+            <h3>Total Companies</h3>
+            <Bookmark />
           </div>
+          <p className="text-2xl font-bold mt-2">
+            {stats?.totalCompanies ?? 0}
+          </p>
         </div>
+
+        <div className="bg-white p-5 rounded-xl shadow">
+          <div className="flex justify-between">
+            <h3>New Today</h3>
+            <TrendingUp />
+          </div>
+          <p className="text-2xl font-bold mt-2">
+            {stats?.newToday ?? 0}
+          </p>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl shadow">
+          <div className="flex justify-between">
+            <h3>Active Jobs</h3>
+            <Briefcase />
+          </div>
+          <p className="text-2xl font-bold mt-2">
+            {stats?.activeJobs ?? 0}
+          </p>
+        </div>
+
       </div>
 
-      {/* Recommendations */}
-      <div className="mb-10">
-        <h2 className="text-2xl font-bold mb-6">
-          Recommended For You
-        </h2>
+      {/* SAVED JOBS */}
+      <div>
+        <h2 className="text-xl font-bold mb-4">Saved Jobs</h2>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {recommendations.map((rec) => (
-            <div
-              key={rec.job.id}
-              className="bg-white rounded-xl p-6 shadow"
-            >
-              <h3 className="font-bold text-lg">
-                {rec.job.title}
-              </h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          {savedJobs.length === 0 ? (
+            <p className="text-slate-500">No saved jobs found</p>
+          ) : (
+            savedJobs.map((job) => (
+              <div key={job.id} className="bg-white p-4 rounded-xl shadow">
+                <h3 className="font-bold">{job.title}</h3>
 
-              <div className="flex items-center gap-2 mt-2 text-slate-500">
-                <MapPin size={15} />
-                {rec.job.location}
-              </div>
+                <p className="text-sm text-slate-500 flex items-center gap-1">
+                  <MapPin size={14} /> {job.location}
+                </p>
 
-              <div className="mt-4">
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                  {rec.match_score}% Match
-                </span>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {rec.matched_skills.map(
-                  (skill) => (
-                    <span
-                      key={skill}
-                      className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs"
-                    >
-                      {skill}
-                    </span>
-                  )
+                {job.url && (
+                  <a
+                    href={job.url}
+                    target="_blank"
+                    className="text-indigo-600 flex items-center gap-1 mt-3"
+                  >
+                    Apply <ArrowUpRight size={14} />
+                  </a>
                 )}
               </div>
-
-              {rec.job.url && (
-                <a
-                  href={rec.job.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 mt-5 text-indigo-600"
-                >
-                  Apply
-                  <ArrowUpRight size={15} />
-                </a>
-              )}
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
-      {/* Saved Jobs */}
+      {/* RECOMMENDATIONS */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">
-          Recently Saved Jobs
-        </h2>
+        <h2 className="text-xl font-bold mb-4">Recommended Jobs</h2>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {savedJobs.slice(0, 6).map((job) => (
-            <div
-              key={job.id}
-              className="bg-white rounded-xl p-6 shadow"
-            >
-              <h3 className="font-bold">
-                {job.title}
-              </h3>
+        {recLoading ? (
+          <p>Loading recommendations...</p>
+        ) : recommendations.length === 0 ? (
+          <p className="text-slate-500">No recommendations found</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-4">
+            {recommendations.map((rec) => (
+              <div key={rec.job.id} className="bg-white p-4 rounded-xl shadow">
 
-              <p className="text-slate-500 mt-2">
-                {job.location}
-              </p>
+                <h3 className="font-bold">{rec.job.title}</h3>
 
-              {job.url && (
-                <a
-                  href={job.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 mt-5 text-indigo-600"
-                >
-                  View Job
-                  <ArrowUpRight size={15} />
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
+                <p className="text-sm text-slate-500">
+                  Match: {rec.match_score}%
+                </p>
+
+                {rec.location_match && (
+                  <p className="text-xs text-blue-600">
+                    📍 Location match
+                  </p>
+                )}
+
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {rec.matched_skills?.map((s) => (
+                    <span
+                      key={s}
+                      className="text-xs bg-indigo-100 px-2 py-1 rounded"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
     </div>
   );
 }

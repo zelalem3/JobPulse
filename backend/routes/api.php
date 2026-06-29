@@ -41,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // --- Saved Jobs ---
     Route::get('savedjobs', [SaveJobController::class, 'getsaved']);
-    Route::post('savejob/{id}', [SaveJobController::class, 'index']);
+    Route::post('savejob/{id}', [SaveJobController::class, 'store']);
     
     // --- Job Scraper Alerts  ---
     Route::get('alerts', [AlertController::class, 'index']);      
@@ -51,7 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
 
     //--- Job Recommendations ---
+    
     Route::get('/recommendations', [RecommendationController::class, 'index']);
+
 
     
     
