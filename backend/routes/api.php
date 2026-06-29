@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\SaveJobController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AlertController;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\Api\RecommendationController;
 
 
 
@@ -48,6 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('alerts/{id}', [AlertController::class, 'show']);  
     Route::put('alerts/{id}', [AlertController::class, 'update']);
     Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
+
+    //--- Job Recommendations ---
+    Route::get('/recommendations', [RecommendationController::class, 'index']);
 
     
     

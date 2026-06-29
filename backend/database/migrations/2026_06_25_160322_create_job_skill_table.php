@@ -8,18 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('job_skill', function (Blueprint $table) {
-            $table->id();
-            
-            // Constrained links to parent indices. Cascades ensure clean purges.
-            $table->foreignId('job_id')->constrained()->onDelete('cascade');
-            $table->foreignId('skill_id')->constrained()->onDelete('cascade');
-            
-            $table->timestamps();
+      Schema::create('job_skill', function (Blueprint $table) {
+    $table->id();
 
-            // Prevents a skill from being added to the same job twice
-            $table->unique(['job_id', 'skill_id']);
-        });
+    $table->foreignId('job_listing_id')
+        ->constrained('job_listings')
+        ->cascadeOnDelete();
+
+    $table->foreignId('skill_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
+    $table->timestamps();
+
+    $table->unique([
+        'job_listing_id',
+        'skill_id'
+    ]);
+});
     }
 
     public function down(): void
