@@ -6,32 +6,42 @@ use App\Models\JobListing;
 use App\Models\JobAlert;
 use App\Mail\JobAlertNotification;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\JobAlertMail;
 
 class JobListingObserver
 {
     /**
      * Handle the JobListing "created" event.
      */
-  public function created(JobListing $jobListing): void
+  
+public function created(JobListing $job)
 {
-    $jobTitle = strtolower($jobListing->title ?? '');
-    $jobLocation = strtolower($jobListing->location ?? '');
+    try {
+        \Log::info('Observer fired: '.$job->title);
 
-    $matchingAlerts = JobAlert::where('email_enabled', true)
-        ->whereRaw('? LIKE \'%\' || LOWER(keyword) || \'%\'', [$jobTitle])
-        ->where(function ($query) use ($jobLocation) {
-            $query->whereNull('location')
-                  ->orWhere('location', 'Remote')
-                  ->orWhereRaw('? LIKE \'%\' || LOWER(location) || \'%\'', [$jobLocation]);
-        })
-        ->with('user')
-        ->get();
+        $jobTitle = strtolower($job->title);
 
-    foreach ($matchingAlerts as $alert) {
-        if ($alert->user) {
+        $alerts = JobAlert::with('user')
+            ->where('email_enabled', true)
+            ->get()
+            ->filter(function ($alert) use ($jobTitle) {
+                return str_contains(
+                    $jobTitle,
+                    strtolower($alert->keyword)
+                );
+            });
+
+        \Log::info('Matching alerts count: '.$alerts->count());
+
+        foreach ($alerts as $alert) {
+            \Log::info('Sending to: '.$alert->user->email);
+
             Mail::to($alert->user->email)
-                ->queue(new JobAlertNotification($jobListing, $alert));
+                ->send(new JobAlertMail($job));
         }
+    } catch (\Throwable $e) {
+        \Log::error($e->getMessage());
+        \Log::error($e->getFile().':'.$e->getLine());
     }
-}
+} 
 }

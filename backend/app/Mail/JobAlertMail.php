@@ -16,9 +16,9 @@ class JobAlertMail extends Mailable
     ) {}
 
     public function build()
-    {
-        return $this
-            ->subject('New Job Match Found!')
-            ->view('emails.job-alert');
-    }
+{
+    return $this
+        ->subject('New Job Match Found')
+        ->view('emails.job-alert');
+}
 }

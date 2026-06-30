@@ -1,12 +1,22 @@
-<x-mail::message>
-# Introduction
+<h2>New Job Match Found 🎯</h2>
 
-The body of your message.
+<p>A new job matching your alert has been posted.</p>
 
-<x-mail::button :url="''">
-Button Text
-</x-mail::button>
+<p>
+    <strong>{{ $job->title }}</strong>
+</p>
 
-Thanks,<br>
-{{ config('app.name') }}
-</x-mail::message>
+<p>
+    Location: {{ $job->location }}
+</p>
+
+<p>
+    <a href="{{ $job->url }}">
+        View Job
+    </a>
+</p>
+
+<p>
+    Thanks,<br>
+    JobPulse
+</p>
