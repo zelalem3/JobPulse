@@ -11,18 +11,39 @@ use Illuminate\Support\Facades\Auth;
 class SaveJobController extends Controller
 {
     /**
+     * Get all saved job listings for the authenticated user.
+     */
+    public function index()
+    {
+        // Check if user is authenticated
+        if (!Auth::check()) {
+            return response()->json([
+                'message' => 'Unauthorized access'
+            ], 401); 
+        }
+        
+        // Fetch saved jobs relative to the logged-in user
+        $saved_jobs = Auth::user()->savedJobs; 
+
+        return response()->json([
+            "message" => "successfully fetched",
+            'savedjobs' => $saved_jobs,
+        ], 200);
+    }
+
+    /**
      * Save a job listing for the authenticated user.
      */
     public function store(Request $request, $id)
     {
-        // 1. Check if user is authenticated first
+        // Check if user is authenticated
         if (!Auth::check()) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
         $user = $request->user();
 
-        // 2. Prevent duplicate saves (Optional but highly recommended)
+        // Check if already saved
         $alreadySaved = SavedJob::where('user_id', $user->id)
             ->where('job_listing_id', $id)
             ->exists();
@@ -31,7 +52,7 @@ class SaveJobController extends Controller
             return response()->json(['message' => 'You have already saved this job.'], 400);
         }
 
-        // 3. Create the record
+        // Create the record
         $new_save = SavedJob::create([
             'user_id' => $user->id,
             'job_listing_id' => $id,
@@ -41,27 +62,5 @@ class SaveJobController extends Controller
             'message' => 'Job saved successfully.',
             'job' => $new_save,
         ], 201);
-    }
-
-    /**
-     * Get all saved job listings for the authenticated user.
-     */
-    public function getSaved()
-    {
- 
-        if (!Auth::check()) {
-            return response()->json([
-                'message' => 'Unauthorized access'
-            ], 401); 
-        }
-        
-        
-        $saved_jobs = Auth::user()->savedJobs; 
-
-     
-        return response()->json([
-            "message" => "successfully fetched",
-            'savedjobs' => $saved_jobs,
-        ], 200);
     }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // 1. Added routing hooks
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Calendar, 
   MapPin, Briefcase, DollarSign, Share2, ShieldAlert, Database, Loader2 
@@ -22,24 +22,13 @@ interface JobDetails {
 }
 
 export default function JobDetails() {
-  const { id } = useParams<{ id: string }>(); // 2. Grab the dynamic ID from the URL path
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [job, setJob] = useState<JobDetails | null>(null); // Start as null while loading
+  const [job, setJob] = useState<JobDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [save, setsave] = useState(false);
-
- const savejob = async () => {
-  try {
-    
-    const response = await api.post(`api/savejob/${id}`); 
-    console.log("saved successfully", response.data);
-    setsave(true); 
-  } catch (e) {
-    console.error("Error saving job:", e);
-  }
-};
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -47,12 +36,8 @@ export default function JobDetails() {
       try {
         setLoading(true);
         setError(null);
-        
-        // 3. Requesting singular route mapping to JobListingController@show
         const response = await api.get(`/api/jobs/${id}`);
-        
-        // Depending on your API structure, assign response data or fallback mapping
-        setJob(response.data); 
+        setJob(response.data);
       } catch (e) {
         console.error("Error pulling database listing:", e);
         setError("Could not locate the requested job listing registry.");
@@ -62,15 +47,30 @@ export default function JobDetails() {
     };
 
     fetchJob();
-  }, [id]); // Refetches if the user navigates directly to another job ID
+  }, [id]);
 
-  const toggleSave = () => {
-    if (job) {
-      setJob(prev => prev ? { ...prev, isSaved: !prev.isSaved } : null);
+
+  const toggleSave = async () => {
+    if (!job || isSaving) return;
+    
+   
+    const previousSavedState = job.isSaved;
+    setJob(prev => prev ? { ...prev, isSaved: !prev.isSaved } : null);
+    setIsSaving(true);
+
+    try {
+   
+      const response = await api.post(`api/savejob/${id}`);
+      console.log("Save status updated successfully", response.data);
+    } catch (e) {
+      console.error("Error updating save status:", e);
+      // Revert if API fails
+      setJob(prev => prev ? { ...prev, isSaved: previousSavedState } : null);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  // --- STATE TEMPLATE INTERRUPTS ---
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -99,7 +99,6 @@ export default function JobDetails() {
     );
   }
 
-  // --- CORE RENDER SECTION ---
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -123,7 +122,8 @@ export default function JobDetails() {
                 {job.type}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+            {/* Title fixed to pure black text */}
+            <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-tight">
               {job.title}
             </h1>
             <p className="text-base font-semibold text-slate-500">
@@ -132,13 +132,15 @@ export default function JobDetails() {
           </div>
 
           <div className="flex items-center gap-2 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 justify-end shrink-0">
+            {/* Operational Bookmark Action Button */}
             <button 
               onClick={toggleSave}
-              className={`p-3 rounded-xl border transition ${
+              disabled={isSaving}
+              className={`p-3 rounded-xl border transition flex items-center justify-center ${
                 job.isSaved 
-                  ? 'bg-amber-50 border-amber-200 text-amber-500' 
-                  : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
-              }`}
+                  ? 'bg-amber-50 border-amber-200 text-amber-500 hover:bg-amber-100' 
+                  : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              } ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
               title={job.isSaved ? "Unsave Position" : "Save Position"}
             >
               {job.isSaved ? <BookmarkCheck size={20} fill="currentColor" /> : <Bookmark size={20} />}
@@ -162,28 +164,48 @@ export default function JobDetails() {
         {/* --- GRID SPLIT INTERFACE PANEL --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
+          {/* --- BEAUTIFIED DESCRIPTION PANEL --- */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm">
-            <article className="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed space-y-4">
+            <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Job Description</h2>
+            <article className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed space-y-5">
               {job.description?.split('\n\n').map((paragraph, index) => {
-                if (paragraph.startsWith('###')) {
-                  return <h3 key={index} className="text-lg font-black text-slate-900 pt-4 first:pt-0 pb-1 border-b border-slate-100">{paragraph.replace('###', '').trim()}</h3>;
-                }
-                if (paragraph.startsWith('*')) {
+                const trimmed = paragraph.trim();
+                if (!trimmed) return null;
+
+                // Headers
+                if (trimmed.startsWith('###')) {
                   return (
-                    <ul key={index} className="list-disc pl-5 space-y-2 my-2">
-                      {paragraph.split('\n').map((li, i) => (
-                        <li key={i} className="text-slate-600">
-                          {li.replace('*', '').trim().split('**').map((chunk, cIdx) => cIdx % 2 === 1 ? <strong key={cIdx} className="text-slate-900 font-bold">{chunk}</strong> : chunk)}
-                        </li>
-                      ))}
+                    <h3 key={index} className="text-base font-bold text-slate-900 pt-3 pb-1 border-b border-slate-100 mt-6 first:mt-0">
+                      {trimmed.replace('###', '').trim()}
+                    </h3>
+                  );
+                }
+                
+                // Bullet point groups
+                if (trimmed.startsWith('*')) {
+                  return (
+                    <ul key={index} className="list-disc pl-5 space-y-2.5 my-3">
+                      {trimmed.split('\n').map((li, i) => {
+                        const cleanLi = li.replace('*', '').trim();
+                        return (
+                          <li key={i} className="text-slate-600 leading-normal">
+                            {cleanLi.split('**').map((chunk, cIdx) => 
+                              cIdx % 2 === 1 ? <strong key={cIdx} className="text-slate-900 font-semibold">{chunk}</strong> : chunk
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   );
                 }
-                return <p key={index}>{paragraph}</p>;
+
+                // Standard paragraph blocks
+                return <p key={index} className="text-slate-600 text-[14px] leading-relaxed">{trimmed}</p>;
               }) || <p className="text-slate-400 italic">No description provided for this listing.</p>}
             </article>
           </div>
 
+          {/* --- SIDEBAR TECH INFO PANELS --- */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
               <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Position Specs</h4>
@@ -242,9 +264,6 @@ export default function JobDetails() {
                 This listing was automatically scraped by the JobPulse system cluster. Always cross-verify external source application loops before submitting sensitive account keys or CV credentials.
               </p>
             </div>
-          </div>
-          <div>
-            <button onClick={savejob}>{save ? "saved" : "save job"}</button>
           </div>
 
         </div>

@@ -12,8 +12,6 @@ use App\Http\Controllers\Api\AlertController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\RecommendationController;
 
-
-
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -26,11 +24,14 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [LoginController::class, 'login']); 
 });
 
-
 Route::apiResource('jobs', JobListingController::class)->only(['index', 'show']);
-
 Route::get('jobs/{id}', [JobSearchController::class, 'index']);
 
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Sanctum Authenticated)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
     
     // --- Dashboard Routes ---
@@ -40,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/graph', [DashboardController::class, 'graph']);
     
     // --- Saved Jobs ---
-    Route::get('savedjobs', [SaveJobController::class, 'getsaved']);
+    Route::get('savedjobs', [SaveJobController::class, 'index']); // Fixed: Pointed to 'index'
     Route::post('savejob/{id}', [SaveJobController::class, 'store']);
     
     // --- Job Scraper Alerts  ---
@@ -51,27 +52,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
 
     //--- Job Recommendations ---
-    
     Route::get('/recommendations', [RecommendationController::class, 'index']);
-
-
     
-    
+    // --- Job Alerts ---
     Route::get('job-alerts', [AlertController::class, 'index']);
     Route::post('job-alerts', [AlertController::class, 'create']);
     Route::put('job-alerts/{id}', [AlertController::class, 'update']);
     Route::delete('job-alerts/{id}', [AlertController::class, 'destroy']);
 
-
-   
-Route::get('/test-mail', function () {
-    Mail::raw('Hello from JobPulse!', function ($message) {
-        $message->to('test@example.com')
-                ->subject('Test Email');
+    // --- Testing Routes ---
+    Route::get('/test-mail', function () {
+        Mail::raw('Hello from JobPulse!', function ($message) {
+            $message->to('test@example.com')
+                    ->subject('Test Email');
+        });
+        return 'Email sent!';
     });
-
-    return 'Email sent!';
-});
 
     // --- User Profile ---
     Route::get('/user', function (Request $request) {
@@ -79,6 +75,3 @@ Route::get('/test-mail', function () {
     });
     
 });
-
-
-

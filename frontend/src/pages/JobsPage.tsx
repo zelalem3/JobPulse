@@ -33,7 +33,7 @@ export default function JobsPage() {
   const [listings, setListings] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Pagination state
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
