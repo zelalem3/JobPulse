@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+// 1. Import Link from react-router-dom for client-side routing
+import { Link } from "react-router-dom"; 
 import {
   Search,
   MapPin,
@@ -8,7 +10,8 @@ import {
   BookmarkCheck,
   Calendar,
   SlidersHorizontal,
-  Link,
+  // 2. Renamed the lucide icon to avoid naming conflicts with the router Link
+  Link as LinkIcon, 
 } from "lucide-react";
 import api from "../services/axios";
 
@@ -34,7 +37,6 @@ export default function JobsPage() {
   const [listings, setListings] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(false);
 
-  
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -122,28 +124,22 @@ export default function JobsPage() {
         <div className="bg-white rounded-2xl p-3 border shadow-sm flex flex-col md:flex-row gap-2 items-center">
           <div className="flex items-center gap-2 px-3 w-full border-b md:border-b-0 md:border-r py-2.5">
             <Search size={18} className="text-slate-400" />
-
             <input
               type="text"
               placeholder="Job title or company..."
               value={searchKeyword}
-              onChange={(e) =>
-                setSearchKeyword(e.target.value)
-              }
+              onChange={(e) => setSearchKeyword(e.target.value)}
               className="w-full bg-transparent outline-none"
             />
           </div>
 
           <div className="flex items-center gap-2 px-3 w-full md:w-80 py-2.5">
             <MapPin size={18} className="text-slate-400" />
-
             <input
               type="text"
               placeholder="Location..."
               value={searchLocation}
-              onChange={(e) =>
-                setSearchLocation(e.target.value)
-              }
+              onChange={(e) => setSearchLocation(e.target.value)}
               className="w-full bg-transparent outline-none"
             />
           </div>
@@ -153,62 +149,37 @@ export default function JobsPage() {
           {/* Sidebar */}
           <div
             className={`w-full md:w-60 bg-white rounded-2xl p-5 shadow-sm ${
-              isMobileFiltersOpen
-                ? "block"
-                : "hidden md:block"
+              isMobileFiltersOpen ? "block" : "hidden md:block"
             }`}
           >
             <div className="space-y-6">
               <div>
-                <h4 className="font-bold mb-3">
-                  Sources
-                </h4>
-
-                {["RemoteOK", "LinkedIn", "Indeed"].map(
-                  (src) => (
-                    <label
-                      key={src}
-                      className="flex items-center gap-2 mb-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSources.includes(
-                          src
-                        )}
-                        onChange={() =>
-                          handleCheckboxToggle(
-                            src,
-                            selectedSources,
-                            setSelectedSources
-                          )
-                        }
-                      />
-                      {src}
-                    </label>
-                  )
-                )}
+                <h4 className="font-bold mb-3">Sources</h4>
+                {["RemoteOK", "LinkedIn", "Indeed"].map((src) => (
+                  <label key={src} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedSources.includes(src)}
+                      onChange={() =>
+                        handleCheckboxToggle(
+                          src,
+                          selectedSources,
+                          setSelectedSources
+                        )
+                      }
+                    />
+                    {src}
+                  </label>
+                ))}
               </div>
 
               <div>
-                <h4 className="font-bold mb-3">
-                  Type
-                </h4>
-
-                {[
-                  "Remote",
-                  "Full-time",
-                  "Part-time",
-                  "Contract",
-                ].map((type) => (
-                  <label
-                    key={type}
-                    className="flex items-center gap-2 mb-2"
-                  >
+                <h4 className="font-bold mb-3">Type</h4>
+                {["Remote", "Full-time", "Part-time", "Contract"].map((type) => (
+                  <label key={type} className="flex items-center gap-2 mb-2">
                     <input
                       type="checkbox"
-                      checked={selectedTypes.includes(
-                        type
-                      )}
+                      checked={selectedTypes.includes(type)}
                       onChange={() =>
                         handleCheckboxToggle(
                           type,
@@ -224,7 +195,7 @@ export default function JobsPage() {
             </div>
           </div>
 
-          {/* Jobs */}
+          {/* Jobs Listing Column */}
           <div className="flex-1">
             <div className="flex justify-between mb-6">
               <h3 className="font-bold text-slate-600">
@@ -232,11 +203,7 @@ export default function JobsPage() {
               </h3>
 
               <button
-                onClick={() =>
-                  setIsMobileFiltersOpen(
-                    !isMobileFiltersOpen
-                  )
-                }
+                onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
                 className="md:hidden"
               >
                 <SlidersHorizontal />
@@ -244,7 +211,7 @@ export default function JobsPage() {
             </div>
 
             {loading ? (
-              <div className="text-center py-20">
+              <div className="text-center py-20 text-slate-500 font-medium">
                 Loading jobs...
               </div>
             ) : filteredListings.length > 0 ? (
@@ -253,61 +220,60 @@ export default function JobsPage() {
                   {filteredListings.map((job) => (
                     <div
                       key={job.id}
-                      className="bg-white rounded-2xl p-6 shadow-sm border"
+                      className="bg-white rounded-2xl p-6 shadow-sm border hover:border-slate-300 transition"
                     >
                       <div className="flex justify-between flex-col md:flex-row gap-4">
                         <div>
                           <div className="flex gap-2 mb-2">
-                            <span className="text-xs bg-slate-100 px-2 py-1 rounded">
+                            <span className="text-xs bg-slate-100 px-2 py-1 rounded font-medium text-slate-600">
                               {job.source}
                             </span>
-
-                            <span className="text-xs bg-blue-100 px-2 py-1 rounded">
+                            <span className="text-xs bg-blue-100 px-2 py-1 rounded font-medium text-blue-700">
                               {job.type}
                             </span>
-
                             <span className="text-xs text-slate-500 flex items-center gap-1">
                               <Calendar size={12} />
                               {job.scrapedAt}
                             </span>
                           </div>
 
-                          <h2 className="text-xl font-bold">
-                            {job.title}
+                          {/* 3. Wrap Title in a router Link for direct details click access */}
+                          <h2 className="text-xl font-bold text-slate-900 hover:text-blue-600 transition">
+                            <Link to={`/jobs/${job.id}`}>
+                              {job.title}
+                            </Link>
                           </h2>
 
-                          <p className="text-slate-500">
-                            {job.company} —{" "}
-                            {job.location}
+                          <p className="text-slate-500 mt-1">
+                            {job.company} — {job.location}
                           </p>
 
                           {job.salary && (
-                            <p className="mt-2 text-sm">
+                            <p className="mt-2 text-sm text-slate-600 font-medium">
                               Salary: {job.salary}
                             </p>
                           )}
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex items-start gap-2 self-end md:self-start">
                           <button
-                            onClick={() =>
-                              toggleSaveJob(job.id)
-                            }
-                            className="p-2 border rounded-lg"
+                            onClick={() => toggleSaveJob(job.id)}
+                            className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition text-slate-500"
                           >
                             {job.isSaved ? (
-                              <BookmarkCheck />
+                              <BookmarkCheck className="text-amber-500" fill="currentColor" />
                             ) : (
                               <Bookmark />
                             )}
                           </button>
 
+                          {/* 4. Corrected internal view path navigation link configuration */}
                           <Link
-                            href="ap"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+                            to={`/jobs/${job.id}`}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-bold transition shadow-sm"
                           >
-                            Apply
-                            <ExternalLink size={16} />
+                            View Details
+                            <ExternalLink size={14} />
                           </Link>
                         </div>
                       </div>
@@ -319,45 +285,30 @@ export default function JobsPage() {
                 <div className="flex justify-center items-center gap-4 mt-10">
                   <button
                     disabled={currentPage === 1}
-                    onClick={() =>
-                      fetchJobs(currentPage - 1)
-                    }
-                    className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                    onClick={() => fetchJobs(currentPage - 1)}
+                    className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium text-sm transition hover:bg-slate-50"
                   >
                     Previous
                   </button>
 
-                  <span>
+                  <span className="text-sm text-slate-600 font-medium">
                     Page {currentPage} of {lastPage}
                   </span>
 
                   <button
-                    disabled={
-                      currentPage === lastPage
-                    }
-                    onClick={() =>
-                      fetchJobs(currentPage + 1)
-                    }
-                    className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                    disabled={currentPage === lastPage}
+                    onClick={() => fetchJobs(currentPage + 1)}
+                    className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium text-sm transition hover:bg-slate-50"
                   >
                     Next
                   </button>
                 </div>
               </>
             ) : (
-              <div className="bg-white rounded-2xl py-16 text-center">
-                <Briefcase
-                  className="mx-auto mb-4 text-slate-400"
-                  size={40}
-                />
-
-                <h3 className="font-bold">
-                  No jobs found
-                </h3>
-
-                <p className="text-slate-500">
-                  Try changing your filters.
-                </p>
+              <div className="bg-white rounded-2xl py-16 text-center border">
+                <Briefcase className="mx-auto mb-4 text-slate-400" size={40} />
+                <h3 className="font-bold text-slate-800">No jobs found</h3>
+                <p className="text-slate-500 text-sm mt-1">Try changing your filters.</p>
               </div>
             )}
           </div>

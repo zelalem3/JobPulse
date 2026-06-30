@@ -121,9 +121,9 @@ export default function JobDetails() {
               </span>
             </div>
             {/* High-visibility Title styling */}
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight">
-              {job.title}
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-black antialiased tracking-tight leading-tight">
+  {job.title}
+</h1>
             <p className="text-base font-semibold text-slate-500">
               {job.company} — <a href={job.companyWebsite || "#"} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-normal text-sm inline-flex items-center gap-0.5">Visit Site <ExternalLink size={12} /></a>
             </p>

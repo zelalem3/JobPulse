@@ -53,11 +53,13 @@ export default function Navbar() {
             {isLoggedIn ? (
               /* --- STATE: LOGGED IN --- */
               <div className="flex items-center gap-4">
-                <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition relative">
-                  <Bell size={18} />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
-                </button>
-
+                <Link
+  to="/alerts"
+  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition relative"
+>
+  <Bell size={18} />
+  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
+</Link>
                 {/* Profile Dropdown Container */}
                 <div className="relative">
                   <button 
