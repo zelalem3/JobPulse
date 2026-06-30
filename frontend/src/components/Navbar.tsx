@@ -6,8 +6,7 @@ import { useAuthStore } from '../store/authStore';
 export default function Navbar() {
   const navigate = useNavigate();
   
-  // ✅ Correctly subscribe to the token from your Zustand store
-  // The component will now auto-re-render whenever the token changes.
+
   const token = useAuthStore((state) => state.token);
   const isLoggedIn = !!token;
   const logoutAction = useAuthStore((state) => state.logout);
