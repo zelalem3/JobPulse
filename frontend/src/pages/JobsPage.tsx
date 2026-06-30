@@ -8,6 +8,7 @@ import {
   BookmarkCheck,
   Calendar,
   SlidersHorizontal,
+  Link,
 } from "lucide-react";
 import api from "../services/axios";
 
@@ -301,13 +302,13 @@ export default function JobsPage() {
                             )}
                           </button>
 
-                          <a
-                            href="#"
+                          <Link
+                            href="ap"
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"
                           >
                             Apply
                             <ExternalLink size={16} />
-                          </a>
+                          </Link>
                         </div>
                       </div>
                     </div>

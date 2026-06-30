@@ -49,17 +49,15 @@ export default function JobDetails() {
     fetchJob();
   }, [id]);
 
-
+  // Handle bookmark saving action safely with optimistic updates
   const toggleSave = async () => {
     if (!job || isSaving) return;
     
-   
     const previousSavedState = job.isSaved;
     setJob(prev => prev ? { ...prev, isSaved: !prev.isSaved } : null);
     setIsSaving(true);
 
     try {
-   
       const response = await api.post(`api/savejob/${id}`);
       console.log("Save status updated successfully", response.data);
     } catch (e) {
@@ -122,8 +120,8 @@ export default function JobDetails() {
                 {job.type}
               </span>
             </div>
-            {/* Title fixed to pure black text */}
-            <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-tight">
+            {/* High-visibility Title styling */}
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight">
               {job.title}
             </h1>
             <p className="text-base font-semibold text-slate-500">
@@ -132,7 +130,7 @@ export default function JobDetails() {
           </div>
 
           <div className="flex items-center gap-2 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 justify-end shrink-0">
-            {/* Operational Bookmark Action Button */}
+            {/* Integrated Toolbar Save Button */}
             <button 
               onClick={toggleSave}
               disabled={isSaving}
@@ -164,44 +162,66 @@ export default function JobDetails() {
         {/* --- GRID SPLIT INTERFACE PANEL --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* --- BEAUTIFIED DESCRIPTION PANEL --- */}
+          {/* --- HYBRID SAFE DESCRIPTION PANEL --- */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm">
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Job Description</h2>
-            <article className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed space-y-5">
-              {job.description?.split('\n\n').map((paragraph, index) => {
-                const trimmed = paragraph.trim();
-                if (!trimmed) return null;
-
-                // Headers
-                if (trimmed.startsWith('###')) {
-                  return (
-                    <h3 key={index} className="text-base font-bold text-slate-900 pt-3 pb-1 border-b border-slate-100 mt-6 first:mt-0">
-                      {trimmed.replace('###', '').trim()}
-                    </h3>
-                  );
-                }
+            
+            <article className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed">
+              {(() => {
+                const descriptionText = job.description || "";
                 
-                // Bullet point groups
-                if (trimmed.startsWith('*')) {
+                // 1. Detect if payload is scraped raw HTML node string
+                const hasHtml = /<\/?[a-z][\s\S]*>/i.test(descriptionText);
+
+                if (hasHtml) {
                   return (
-                    <ul key={index} className="list-disc pl-5 space-y-2.5 my-3">
-                      {trimmed.split('\n').map((li, i) => {
-                        const cleanLi = li.replace('*', '').trim();
-                        return (
-                          <li key={i} className="text-slate-600 leading-normal">
-                            {cleanLi.split('**').map((chunk, cIdx) => 
-                              cIdx % 2 === 1 ? <strong key={cIdx} className="text-slate-900 font-semibold">{chunk}</strong> : chunk
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <div 
+                      className="space-y-4 prose-p:text-slate-600 prose-p:text-[14px] prose-p:leading-relaxed prose-headings:text-slate-900 prose-headings:font-bold prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:text-slate-600"
+                      dangerouslySetInnerHTML={{ __html: descriptionText }} 
+                    />
                   );
                 }
 
-                // Standard paragraph blocks
-                return <p key={index} className="text-slate-600 text-[14px] leading-relaxed">{trimmed}</p>;
-              }) || <p className="text-slate-400 italic">No description provided for this listing.</p>}
+                // 2. Fallback execution: Structured string processor if raw text
+                return (
+                  <div className="space-y-4">
+                    {descriptionText.split(/\n+/).map((paragraph, index) => {
+                      const trimmed = paragraph.trim();
+                      if (!trimmed) return null;
+
+                      // Headers parser
+                      if (trimmed.startsWith('###')) {
+                        return (
+                          <h3 key={index} className="text-base font-bold text-slate-900 pt-3 pb-1 border-b border-slate-100 mt-6 first:mt-0">
+                            {trimmed.replace('###', '').trim()}
+                          </h3>
+                        );
+                      }
+
+                      // Bullet point normalization parser
+                      if (trimmed.startsWith('*') || trimmed.startsWith('-')) {
+                        const cleanLi = trimmed.replace(/^[*-\s]+/, '').trim();
+                        return (
+                          <ul key={index} className="list-disc pl-5 my-1">
+                            <li className="text-slate-600 text-[14px]">
+                              {cleanLi.split('**').map((chunk, cIdx) => 
+                                cIdx % 2 === 1 ? <strong key={cIdx} className="text-slate-900 font-semibold">{chunk}</strong> : chunk
+                              )}
+                            </li>
+                          </ul>
+                        );
+                      }
+
+                      // Default continuous copy segment block
+                      return (
+                        <p key={index} className="text-slate-600 text-[14px] leading-relaxed">
+                          {trimmed}
+                        </p>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </article>
           </div>
 
@@ -222,7 +242,7 @@ export default function JobDetails() {
                   <DollarSign size={18} className="text-slate-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Compensation</p>
-                    <p className="text-sm font-semibold text-slate-700">{job.salary}</p>
+                    <p className="text-sm font-semibold text-slate-700">{job.salary || "Not Specified"}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
