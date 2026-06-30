@@ -1,5 +1,5 @@
-from scraper import get_job_links
-from parser import parse_job
+from scrapers.Ethiojob.scraper import get_job_links
+from scrapers.Ethiojob.parser import parse_job
 import os
 import sys
 

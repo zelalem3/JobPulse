@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
-import { Search, MapPin, Briefcase, RefreshCw, ExternalLink, Calendar, Filter, Database } from 'lucide-react';
-import SearchBar from '../components/SearchBar';
-
+import React, { useEffect, useState } from "react";
+import {
+  Search,
+  MapPin,
+  Briefcase,
+  RefreshCw,
+  ExternalLink,
+  Calendar,
+  Filter,
+  Database,
+  Bookmark,
+  BookmarkCheck,
+} from "lucide-react";
+import SearchBar from "../components/SearchBar";
+import api from "../services/axios";
 
 interface Job {
   id: number;
@@ -11,206 +22,295 @@ interface Job {
   source: string;
   url: string;
   scraped_at: string;
-  tags: string[];
+  tags?: string[];
+  type?: string;
+  salary?: string;
+  isSaved?: boolean;
 }
 
 export default function HomePage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSource, setSelectedSource] = useState('All');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSource, setSelectedSource] = useState("All");
 
-  const handleSearchLog = (searchTerm) => {
-    console.log("Searching for:", searchTerm);
-    // Filter your data or make an API call here
+  const [listings, setListings] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [searchKeyword] = useState("");
+  const [searchLocation] = useState("");
+
+  const [selectedSources] = useState<string[]>([]);
+  const [selectedTypes] = useState<string[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const handleSearchLog = (term: string) => {
+    console.log("Searching:", term);
   };
 
-  // Mock data representing what Laravel fetches from PostgreSQL
-  const [jobs] = useState<Job[]>([
-    {
-      id: 1,
-      title: 'Full Stack Engineer (Laravel & React)',
-      company: 'Apex Digital',
-      location: 'Remote (US/Europe)',
-      source: 'RemoteOK',
-      url: '#',
-      scraped_at: '12 mins ago',
-      tags: ['Laravel', 'React', 'TypeScript']
-    },
-    {
-      id: 2,
-      title: 'Python Scraper Developer',
-      company: 'DataMetrics Global',
-      location: 'Hybrid / Addis Ababa',
-      source: 'LinkedIn',
-      url: '#',
-      scraped_at: '45 mins ago',
-      tags: ['Python', 'Playwright', 'PostgreSQL']
-    },
-    {
-      id: 3,
-      title: 'Senior Backend Architect',
-      company: 'SaaSify Inc',
-      location: 'Remote',
-      source: 'Indeed',
-      url: '#',
-      scraped_at: '2 hours ago',
-      tags: ['Laravel', 'Redis', 'Docker']
+  const fetchJobs = async (page = 1) => {
+    try {
+      setLoading(true);
+
+      const response = await api.get(
+        `/api/jobs?page=${page}&per_page=10`
+      );
+
+      setListings(response.data.data);
+      setCurrentPage(response.data.current_page);
+      setLastPage(response.data.last_page);
+      setTotal(response.data.total);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchJobs(1);
+  }, []);
+
+  const toggleSaveJob = (id: number) => {
+    setListings((prev) =>
+      prev.map((job) =>
+        job.id === id
+          ? {
+              ...job,
+              isSaved: !job.isSaved,
+            }
+          : job
+      )
+    );
+  };
+
+  const filteredListings = listings.filter((job) => {
+    const title = job.title ?? "";
+    const company = job.company ?? "";
+    const location = job.location ?? "";
+    const source = job.source ?? "";
+    const type = job.type ?? "";
+
+    const matchesKeyword =
+      title
+        .toLowerCase()
+        .includes(searchKeyword.toLowerCase()) ||
+      company
+        .toLowerCase()
+        .includes(searchKeyword.toLowerCase());
+
+    const matchesLocation = location
+      .toLowerCase()
+      .includes(searchLocation.toLowerCase());
+
+    const matchesSource =
+      selectedSources.length === 0 ||
+      selectedSources.includes(source);
+
+    const matchesType =
+      selectedTypes.length === 0 ||
+      selectedTypes.includes(type);
+
+    const matchesSelectedSource =
+      selectedSource === "All" ||
+      source === selectedSource;
+
+    return (
+      matchesKeyword &&
+      matchesLocation &&
+      matchesSource &&
+      matchesType &&
+      matchesSelectedSource
+    );
+  });
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <div>
-     <SearchBar onSearch={handleSearchLog} placeholder="Search documentation, components..." />
-    </div>
-      
-      {/* --- HERO / SEARCH BANNER --- */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white py-16 px-4 sm:px-6 lg:px-8 shadow-md">
-        <div className="max-w-6xl mx-auto space-y-6 text-center">
-          <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 text-xs font-bold rounded-full uppercase tracking-wider border border-indigo-500/30">
-            Automated Job Aggregator
-          </span>
-          <h1 className="text-4xl font-extrabold sm:text-5xl tracking-tight">
-            Monitor Your Pulse on the Job Market
-          </h1>
-          <p className="max-w-2xl mx-auto text-lg text-slate-300">
-            Live metrics streaming from your Python container scrapers straight into your Postgres database pipeline.
-          </p>
+    <div className="min-h-screen bg-slate-50">
+      <SearchBar
+        onSearch={handleSearchLog}
+        placeholder="Search jobs..."
+      />
 
-          {/* Search Bar Wrapper */}
-          <div className="max-w-3xl mx-auto bg-white rounded-2xl p-2 shadow-xl flex flex-col md:flex-row gap-2 items-center text-slate-800">
-            <div className="flex items-center gap-2 px-3 w-full border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <Search className="text-slate-400 shrink-0" size={20} />
-              <input 
-                type="text" 
-                placeholder="Search jobs, tech stack, keywords..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-transparent outline-none text-sm py-1"
-              />
-            </div>
-            <div className="flex items-center gap-2 px-3 w-full py-2 md:w-64 shrink-0">
-              <MapPin className="text-slate-400 shrink-0" size={20} />
-              <span className="text-sm text-slate-500">Remote / Global</span>
-            </div>
-            <button className="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shrink-0 shadow-sm">
-              Find Jobs
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        
-        {/* --- LIVE INFRASTRUCTURE METRICS --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><Database size={20} /></div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Jobs Scraped</p>
-              <h3 className="text-xl font-bold text-slate-800">1,248</h3>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><RefreshCw size={20} className="animate-spin-slow" /></div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Scraper Engine</p>
-              <h3 className="text-xl font-bold text-slate-800">Active (1h interval)</h3>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-lg"><Briefcase size={20} /></div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Watchers</p>
-              <h3 className="text-xl font-bold text-slate-800">4 Filters</h3>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg"><Filter size={20} /></div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sources Connected</p>
-              <h3 className="text-xl font-bold text-slate-800">3 Job Boards</h3>
-            </div>
-          </div>
-        </div>
-
-        {/* --- MAIN CONTENT PANELS --- */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
-          {/* Side Control Block */}
-          <div className="w-full lg:w-64 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-6 shrink-0">
-            <div>
-              <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-3">
-                Filter by Source
-              </h4>
-              <div className="space-y-2">
-                {['All', 'RemoteOK', 'LinkedIn', 'Indeed'].map((source) => (
-                  <button
-                    key={source}
-                    onClick={() => setSelectedSource(source)}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg font-medium transition ${
-                      selectedSource === source 
-                        ? 'bg-blue-50 text-blue-600 font-semibold' 
-                        : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {source}
-                  </button>
-                ))}
+      <div className="max-w-6xl mx-auto py-10 px-4">
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-5 rounded-xl shadow">
+            <div className="flex items-center gap-3">
+              <Database />
+              <div>
+                <p className="text-sm text-slate-500">
+                  Total Jobs
+                </p>
+                <h3 className="font-bold text-xl">
+                  {total}
+                </h3>
               </div>
             </div>
           </div>
 
-          {/* Job Listings Data Grid */}
-          <div className="flex-1 w-full space-y-4">
-            <div className="flex justify-between items-center px-1">
-              <h3 className="text-lg font-bold text-slate-800">Latest Discovered Positions</h3>
-              <span className="text-xs text-slate-400 font-medium">Auto-refreshing via Redis queues</span>
-            </div>
-
-            <div className="space-y-4">
-              {jobs.map((job) => (
-                <div 
-                  key={job.id} 
-                  className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition duration-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
-                >
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 font-bold text-[10px] rounded uppercase tracking-wide border border-slate-200/60">
-                        {job.source}
-                      </span>
-                      <span className="text-slate-400 text-xs flex items-center gap-1">
-                        <Calendar size={13} /> {job.scraped_at}
-                      </span>
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition">
-                      {job.title}
-                    </h2>
-                    <p className="text-sm font-medium text-slate-500">
-                      {job.company} — <span className="text-slate-400 font-normal">{job.location}</span>
-                    </p>
-                    
-                    {/* Tags container */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {job.tags.map((tag, idx) => (
-                        <span key={idx} className="px-2.5 py-0.5 bg-blue-50/50 text-blue-600/90 font-medium text-xs rounded-md">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <a 
-                    href={job.url}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-slate-50 hover:bg-blue-600 text-slate-700 hover:text-white border border-slate-200 hover:border-blue-600 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-200"
-                  >
-                    Apply <ExternalLink size={14} />
-                  </a>
-                </div>
-              ))}
+          <div className="bg-white p-5 rounded-xl shadow">
+            <div className="flex items-center gap-3">
+              <RefreshCw />
+              <div>
+                <p className="text-sm text-slate-500">
+                  Scraper
+                </p>
+                <h3 className="font-bold">
+                  Active
+                </h3>
+              </div>
             </div>
           </div>
 
+          <div className="bg-white p-5 rounded-xl shadow">
+            <div className="flex items-center gap-3">
+              <Briefcase />
+              <div>
+                <p className="text-sm text-slate-500">
+                  Results
+                </p>
+                <h3 className="font-bold">
+                  {filteredListings.length}
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl shadow">
+            <div className="flex items-center gap-3">
+              <Filter />
+              <div>
+                <p className="text-sm text-slate-500">
+                  Sources
+                </p>
+                <h3 className="font-bold">
+                  3
+                </h3>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {loading ? (
+          <div className="text-center py-20">
+            Loading jobs...
+          </div>
+        ) : filteredListings.length > 0 ? (
+          <>
+            <div className="space-y-4">
+              {filteredListings.map((job) => (
+                <div
+                  key={job.id}
+                  className="bg-white rounded-2xl p-6 shadow-sm border"
+                >
+                  <div className="flex justify-between flex-col md:flex-row gap-4">
+                    <div>
+                      <div className="flex gap-2 mb-2">
+                        <span className="text-xs bg-slate-100 px-2 py-1 rounded">
+                          {job.source}
+                        </span>
+
+                        {job.type && (
+                          <span className="text-xs bg-blue-100 px-2 py-1 rounded">
+                            {job.type}
+                          </span>
+                        )}
+
+                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                          <Calendar size={12} />
+                          {job.scraped_at}
+                        </span>
+                      </div>
+
+                      <h2 className="text-xl font-bold">
+                        {job.title}
+                      </h2>
+
+                      <p className="text-slate-500">
+                        {job.company} —{" "}
+                        {job.location}
+                      </p>
+
+                      {job.salary && (
+                        <p className="mt-2 text-sm">
+                          Salary: {job.salary}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          toggleSaveJob(job.id)
+                        }
+                        className="p-2 border rounded-lg"
+                      >
+                        {job.isSaved ? (
+                          <BookmarkCheck />
+                        ) : (
+                          <Bookmark />
+                        )}
+                      </button>
+
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+                      >
+                        Apply
+                        <ExternalLink size={16} />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center items-center gap-4 mt-10">
+              <button
+                disabled={currentPage === 1}
+                onClick={() =>
+                  fetchJobs(currentPage - 1)
+                }
+                className="px-4 py-2 border rounded-lg disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {currentPage} of {lastPage}
+              </span>
+
+              <button
+                disabled={
+                  currentPage === lastPage
+                }
+                onClick={() =>
+                  fetchJobs(currentPage + 1)
+                }
+                className="px-4 py-2 border rounded-lg disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="bg-white rounded-2xl py-16 text-center">
+            <Briefcase
+              className="mx-auto mb-4 text-slate-400"
+              size={40}
+            />
+
+            <h3 className="font-bold">
+              No jobs found
+            </h3>
+
+            <p className="text-slate-500">
+              Try changing your filters.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,271 +1,365 @@
-import React, { useEffect, useState } from 'react';
-import { Search, MapPin, Filter, Briefcase, ExternalLink, Bookmark, BookmarkCheck, Calendar, SlidersHorizontal, ChevronDown } from 'lucide-react';
-import api from '../services/axios';
-
-
+import React, { useEffect, useState } from "react";
+import {
+  Search,
+  MapPin,
+  Briefcase,
+  ExternalLink,
+  Bookmark,
+  BookmarkCheck,
+  Calendar,
+  SlidersHorizontal,
+} from "lucide-react";
+import api from "../services/axios";
 
 interface JobListing {
   id: string;
   title: string;
   company: string;
   location: string;
-  type: 'Full-time' | 'Part-time' | 'Contract' | 'Remote';
-  source: 'RemoteOK' | 'LinkedIn' | 'Indeed';
+  type: string;
+  source: string;
   salary: string;
-
   scrapedAt: string;
   isSaved: boolean;
 }
 
 export default function JobsPage() {
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchLocation, setSearchLocation] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchLocation, setSearchLocation] = useState("");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
- 
-
-  // Mock data representing indexed listings pulled from PostgreSQL tables via Laravel
   const [listings, setListings] = useState<JobListing[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Seed sample listings to populate grid view right out of the box
-  React.useEffect(() => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-    const fetchJobs = async () =>
-    {
-    try{
-      const response =  await api.get("/api/jobs")
-      console.log(response.data.data[0]);
+  const fetchJobs = async (page = 1) => {
+    try {
+      setLoading(true);
+
+      const response = await api.get(
+        `/api/jobs?page=${page}&per_page=10`
+      );
+
       setListings(response.data.data);
-
-
+      setCurrentPage(response.data.current_page);
+      setLastPage(response.data.last_page);
+      setTotal(response.data.total);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
-    catch(e)
-    {
-      console.log(e);
-    }
+  };
 
-  }
-  fetchJobs();
-
-
-    setListings([
-      { id: '1', title: 'Full Stack Engineer (Laravel + React)', company: 'Apex Digital Solutions', location: 'Remote (US/Europe)', type: 'Remote', source: 'RemoteOK', salary: '$90k - $120k', scrapedAt: '14 mins ago', isSaved: false },
-      { id: '2', title: 'Python & Web Scraping Developer', company: 'DataMetrics Global', location: 'Addis Ababa, Ethiopia', type: 'Full-time', source: 'LinkedIn', salary: 'Competitive', scrapedAt: '45 mins ago', isSaved: true },
-      { id: '3', title: 'Senior Backend Architect (Laravel Core)', company: 'SaaSify Platforms', location: 'Remote (Global)', type: 'Contract', source: 'Indeed', salary: '$110k - $140k', scrapedAt: '2 hours ago', isSaved: false },
-      { id: '4', title: 'React Developer with Tailwind Experience', company: 'StripeLine Agency', location: 'Hybrid / Berlin, DE', type: 'Part-time', source: 'LinkedIn', salary: '€50k - €65k', scrapedAt: '5 hours ago', isSaved: false },
-    ]);
+  useEffect(() => {
+    fetchJobs(1);
   }, []);
 
   const toggleSaveJob = (id: string) => {
-    setListings(prev => prev.map(job => job.id === id ? { ...job, isSaved: !job.isSaved } : job));
+    setListings((prev) =>
+      prev.map((job) =>
+        job.id === id
+          ? { ...job, isSaved: !job.isSaved }
+          : job
+      )
+    );
   };
 
-  const handleCheckboxToggle = (value: string, currentList: string[], setList: React.Dispatch<React.SetStateAction<string[]>>) => {
+  const handleCheckboxToggle = (
+    value: string,
+    currentList: string[],
+    setList: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
     if (currentList.includes(value)) {
-      setList(currentList.filter(item => item !== value));
+      setList(currentList.filter((item) => item !== value));
     } else {
       setList([...currentList, value]);
     }
   };
 
-const filteredListings = listings.filter(job => {
-  const title = job.title ?? "";
-  const company = job.company ?? "";
-  const location = job.location ?? "";
-  const source = job.source ?? "";
-  const type = job.type ?? "";
+  const filteredListings = listings.filter((job) => {
+    const title = job.title ?? "";
+    const company = job.company ?? "";
+    const location = job.location ?? "";
+    const source = job.source ?? "";
+    const type = job.type ?? "";
 
-  const matchesKeyword =
-    title.toLowerCase().includes((searchKeyword ?? "").toLowerCase()) ||
-    company.toLowerCase().includes((searchKeyword ?? "").toLowerCase());
+    const matchesKeyword =
+      title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      company.toLowerCase().includes(searchKeyword.toLowerCase());
 
-  const matchesLocation =
-    location.toLowerCase().includes((searchLocation ?? "").toLowerCase());
+    const matchesLocation = location
+      .toLowerCase()
+      .includes(searchLocation.toLowerCase());
 
-  const matchesSource =
-    selectedSources.length === 0 || selectedSources.includes(source);
+    const matchesSource =
+      selectedSources.length === 0 ||
+      selectedSources.includes(source);
 
-  const matchesType =
-    selectedTypes.length === 0 || selectedTypes.includes(type);
+    const matchesType =
+      selectedTypes.length === 0 ||
+      selectedTypes.includes(type);
+
+    return (
+      matchesKeyword &&
+      matchesLocation &&
+      matchesSource &&
+      matchesType
+    );
+  });
 
   return (
-    matchesKeyword &&
-    matchesLocation &&
-    matchesSource &&
-    matchesType
-  );
-});
-
-  return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* --- DUAL INTERACTIVE SEARCH CONTROLS BANNER --- */}
-        <div className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-2 items-center">
-          <div className="flex items-center gap-2 px-3 w-full border-b md:border-b-0 md:border-r border-slate-100 py-2.5">
-            <Search className="text-slate-400 shrink-0" size={18} />
-            <input 
-              type="text" 
-              placeholder="Job titles, tech stack keywords, or companies..." 
+        {/* Search */}
+        <div className="bg-white rounded-2xl p-3 border shadow-sm flex flex-col md:flex-row gap-2 items-center">
+          <div className="flex items-center gap-2 px-3 w-full border-b md:border-b-0 md:border-r py-2.5">
+            <Search size={18} className="text-slate-400" />
+
+            <input
+              type="text"
+              placeholder="Job title or company..."
               value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+              onChange={(e) =>
+                setSearchKeyword(e.target.value)
+              }
+              className="w-full bg-transparent outline-none"
             />
           </div>
-          <div className="flex items-center gap-2 px-3 w-full py-2.5 md:w-80 shrink-0">
-            <MapPin className="text-slate-400 shrink-0" size={18} />
-            <input 
-              type="text" 
-              placeholder="City, region, or 'Remote'..." 
+
+          <div className="flex items-center gap-2 px-3 w-full md:w-80 py-2.5">
+            <MapPin size={18} className="text-slate-400" />
+
+            <input
+              type="text"
+              placeholder="Location..."
               value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+              onChange={(e) =>
+                setSearchLocation(e.target.value)
+              }
+              className="w-full bg-transparent outline-none"
             />
           </div>
-          <button className="w-full md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition shadow-sm whitespace-nowrap">
-            Update Index
-          </button>
         </div>
 
-        {/* Mobile Filter Toggle Ribbon */}
-        <div className="md:hidden flex justify-between items-center px-1">
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{filteredListings.length} Positions matching</p>
-          <button 
-            onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm"
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar */}
+          <div
+            className={`w-full md:w-60 bg-white rounded-2xl p-5 shadow-sm ${
+              isMobileFiltersOpen
+                ? "block"
+                : "hidden md:block"
+            }`}
           >
-            <SlidersHorizontal size={14} /> Filter Layout
-          </button>
-        </div>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-bold mb-3">
+                  Sources
+                </h4>
 
-        {/* --- MAIN PAGE CONTENT INTERFACE SPLIT --- */}
-        <div className="flex flex-col md:flex-row gap-8 items-start">
-          
-          {/* --- SIDEBAR DESKTOP FILTER CONTROLS --- */}
-          <div className={`w-full md:w-60 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-6 shrink-0 ${isMobileFiltersOpen ? 'block' : 'hidden md:block'}`}>
-            
-            {/* Filter Group: Scraper Target Origins */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Data Source Origins</h4>
-              <div className="space-y-2">
-                {['RemoteOK', 'LinkedIn', 'Indeed'].map((src) => (
-                  <label key={src} className="flex items-center gap-2 text-sm font-medium text-slate-600 cursor-pointer group select-none">
-                    <input 
-                      type="checkbox"
-                      checked={selectedSources.includes(src)}
-                      onChange={() => handleCheckboxToggle(src, selectedSources, setSelectedSources)}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
-                    />
-                    <span className="group-hover:text-slate-900 transition">{src}</span>
-                  </label>
-                ))}
+                {["RemoteOK", "LinkedIn", "Indeed"].map(
+                  (src) => (
+                    <label
+                      key={src}
+                      className="flex items-center gap-2 mb-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSources.includes(
+                          src
+                        )}
+                        onChange={() =>
+                          handleCheckboxToggle(
+                            src,
+                            selectedSources,
+                            setSelectedSources
+                          )
+                        }
+                      />
+                      {src}
+                    </label>
+                  )
+                )}
               </div>
-            </div>
 
-            <div className="h-px bg-slate-100" />
+              <div>
+                <h4 className="font-bold mb-3">
+                  Type
+                </h4>
 
-            {/* Filter Group: Employment Types */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Deployment Profiles</h4>
-              <div className="space-y-2">
-                {['Remote', 'Full-time', 'Part-time', 'Contract'].map((type) => (
-                  <label key={type} className="flex items-center gap-2 text-sm font-medium text-slate-600 cursor-pointer group select-none">
-                    <input 
-                      type="checkbox"
-                      checked={selectedTypes.includes(type)}
-                      onChange={() => handleCheckboxToggle(type, selectedTypes, setSelectedTypes)}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
-                    />
-                    <span className="group-hover:text-slate-900 transition">{type}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* --- CORE JOBS DATA LISTINGS INTERFACE --- */}
-          <div className="flex-1 w-full space-y-4">
-            <div className="hidden md:flex justify-between items-center px-1">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Showing {filteredListings.length} Discovered Vacancies
-              </h3>
-              <span className="text-xs text-slate-400 font-medium">Synced with PostgreSQL db storage</span>
-            </div>
-
-            <div className="space-y-4">
-              {filteredListings.length > 0 ? (
-                filteredListings.map((job) => (
-                  <div 
-                    key={job.id} 
-                    className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition duration-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group"
+                {[
+                  "Remote",
+                  "Full-time",
+                  "Part-time",
+                  "Contract",
+                ].map((type) => (
+                  <label
+                    key={type}
+                    className="flex items-center gap-2 mb-2"
                   >
-                    <div className="space-y-2 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-slate-500 font-bold text-[10px] rounded uppercase tracking-wide">
-                          {job.source}
-                        </span>
-                        <span className="px-2 py-0.5 bg-blue-50/60 border border-blue-100 text-blue-600 font-semibold text-[10px] rounded uppercase tracking-wide">
-                          {job.type}
-                        </span>
-                        <span className="text-slate-400 text-xs flex items-center gap-1 font-medium ml-1">
-                          <Calendar size={13} /> {job.scrapedAt}
-                        </span>
-                      </div>
-                      
-                      <h2 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition leading-snug">
-                        {job.title}
-                      </h2>
-                      <p className="text-sm font-semibold text-slate-500">
-                        {job.company} — <span className="text-slate-400 font-normal">{job.location}</span>
-                      </p>
-
-                      <p className="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2 py-1 rounded w-fit">
-                        Est. Budget: <span className="text-slate-700 font-extrabold">{job.salary}</span>
-                      </p>
-                    </div>
-
-                    {/* Action Hub */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-4 sm:pt-0 border-slate-100">
-                      <button
-                        onClick={() => toggleSaveJob(job.id)}
-                        className={`p-2.5 rounded-xl border transition ${
-                          job.isSaved 
-                            ? 'bg-amber-50 border-amber-200 text-amber-500' 
-                            : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
-                        }`}
-                        title={job.isSaved ? "Unsave Listing" : "Save Listing"}
-                      >
-                        {job.isSaved ? <BookmarkCheck size={18} fill="currentColor" /> : <Bookmark size={18} />}
-                      </button>
-
-                      <a 
-                        href=""
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-50 hover:bg-blue-600 text-slate-700 hover:text-white border border-slate-200 hover:border-blue-600 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-200"
-                      >
-                        Apply <ExternalLink size={14} />
-                      </a>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                /* --- EMPTY SEARCH STATE DISPLAY --- */
-                <div className="bg-white border border-dashed border-slate-200 rounded-2xl py-16 text-center space-y-3">
-                  <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto border border-slate-100">
-                    <Briefcase size={20} />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-slate-700">No vacancies matched filters</h3>
-                    <p className="text-slate-400 text-sm max-w-xs mx-auto">Try stripping out specific criteria parameters or broadening keyword parameters.</p>
-                  </div>
-                </div>
-              )}
+                    <input
+                      type="checkbox"
+                      checked={selectedTypes.includes(
+                        type
+                      )}
+                      onChange={() =>
+                        handleCheckboxToggle(
+                          type,
+                          selectedTypes,
+                          setSelectedTypes
+                        )
+                      }
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 
+          {/* Jobs */}
+          <div className="flex-1">
+            <div className="flex justify-between mb-6">
+              <h3 className="font-bold text-slate-600">
+                Showing {filteredListings.length} of {total} Jobs
+              </h3>
+
+              <button
+                onClick={() =>
+                  setIsMobileFiltersOpen(
+                    !isMobileFiltersOpen
+                  )
+                }
+                className="md:hidden"
+              >
+                <SlidersHorizontal />
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-20">
+                Loading jobs...
+              </div>
+            ) : filteredListings.length > 0 ? (
+              <>
+                <div className="space-y-4">
+                  {filteredListings.map((job) => (
+                    <div
+                      key={job.id}
+                      className="bg-white rounded-2xl p-6 shadow-sm border"
+                    >
+                      <div className="flex justify-between flex-col md:flex-row gap-4">
+                        <div>
+                          <div className="flex gap-2 mb-2">
+                            <span className="text-xs bg-slate-100 px-2 py-1 rounded">
+                              {job.source}
+                            </span>
+
+                            <span className="text-xs bg-blue-100 px-2 py-1 rounded">
+                              {job.type}
+                            </span>
+
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                              <Calendar size={12} />
+                              {job.scrapedAt}
+                            </span>
+                          </div>
+
+                          <h2 className="text-xl font-bold">
+                            {job.title}
+                          </h2>
+
+                          <p className="text-slate-500">
+                            {job.company} —{" "}
+                            {job.location}
+                          </p>
+
+                          {job.salary && (
+                            <p className="mt-2 text-sm">
+                              Salary: {job.salary}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              toggleSaveJob(job.id)
+                            }
+                            className="p-2 border rounded-lg"
+                          >
+                            {job.isSaved ? (
+                              <BookmarkCheck />
+                            ) : (
+                              <Bookmark />
+                            )}
+                          </button>
+
+                          <a
+                            href="#"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2"
+                          >
+                            Apply
+                            <ExternalLink size={16} />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-center items-center gap-4 mt-10">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() =>
+                      fetchJobs(currentPage - 1)
+                    }
+                    className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+
+                  <span>
+                    Page {currentPage} of {lastPage}
+                  </span>
+
+                  <button
+                    disabled={
+                      currentPage === lastPage
+                    }
+                    onClick={() =>
+                      fetchJobs(currentPage + 1)
+                    }
+                    className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="bg-white rounded-2xl py-16 text-center">
+                <Briefcase
+                  className="mx-auto mb-4 text-slate-400"
+                  size={40}
+                />
+
+                <h3 className="font-bold">
+                  No jobs found
+                </h3>
+
+                <p className="text-slate-500">
+                  Try changing your filters.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
