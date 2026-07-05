@@ -3,7 +3,12 @@ import sys
 import asyncio
 
 
-SCRAPERS_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRAPERS_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))
+    )
+)
+
 if SCRAPERS_ROOT not in sys.path:
     sys.path.insert(0, SCRAPERS_ROOT)
 
@@ -11,6 +16,7 @@ if SCRAPERS_ROOT not in sys.path:
 from scraper import job_scraper
 from parser import parse_job
 from common.database import save_job
+
 
 async def main():
     print("Starting scraper...")
