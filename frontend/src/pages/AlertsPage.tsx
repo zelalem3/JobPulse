@@ -35,10 +35,7 @@ export default function AlertsPage() {
   const fetchAlerts = async () => {
     try {
       setIsLoading(true);
-   
       const response = await api.get('api/alerts');
-      
-     
       setAlerts(response.data.data || response.data); 
       console.log(response.data);
     } catch (error) {
@@ -47,7 +44,6 @@ export default function AlertsPage() {
       setIsLoading(false);
     }
   };
-
 
   const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +56,6 @@ export default function AlertsPage() {
         email_enabled: true
       });
 
-     
       setAlerts([response.data.alert, ...alerts]);
       setNewKeyword('');
       setNewLocation('');
@@ -73,27 +68,27 @@ export default function AlertsPage() {
     }
   };
 
- 
+  // 2. FIXED: Path targeted to match backend api prefix mapping configuration
   const toggleAlertStatus = async (id: string, currentStatus: boolean | number) => {
     const updatedStatus = !currentStatus;
     
     try {
-     
+      // Optimistic UI updates
       setAlerts(prev => prev.map(a => a.id === id ? { ...a, isActive: updatedStatus } : a));
 
-      await api.put(`/alerts/${id}`, {
+      await api.put(`api/alerts/${id}`, {
         isActive: updatedStatus
       });
     } catch (error) {
       console.error("Failed structural system toggle switch update:", error);
-      fetchAlerts(); 
+      fetchAlerts(); // Fallback revert tracking state metrics seamlessly
     }
   };
 
-
+  // 3. FIXED: Adjusted relative routing path matching back up to /api structural prefix context
   const deleteAlert = async (id: string) => {
     try {
-      await api.delete(`/alerts/${id}`);
+      await api.delete(`api/alerts/${id}`);
       setAlerts(prev => prev.filter(alert => alert.id !== id));
     } catch (error) {
       console.error("Purge operations malfunctioned:", error);
@@ -121,7 +116,7 @@ export default function AlertsPage() {
         )}
 
         <div className="space-y-1">
-          <h1 className="text-2xl font-black text-slate-990 tracking-tight sm:text-3xl flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight sm:text-3xl flex items-center gap-2">
             <Bell size={24} className="text-blue-600" /> Job Scraper Alerts
           </h1>
           <p className="text-sm text-slate-400 max-w-xl">

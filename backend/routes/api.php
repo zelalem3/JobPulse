@@ -41,15 +41,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard/graph', [DashboardController::class, 'graph']);
     
     // --- Saved Jobs ---
-    Route::get('savedjobs', [SaveJobController::class, 'index']); // Fixed: Pointed to 'index'
+    Route::get('savedjobs', [SaveJobController::class, 'index']);
     Route::post('savejob/{id}', [SaveJobController::class, 'store']);
     
     // --- Job Scraper Alerts  ---
-    Route::get('alerts', [AlertController::class, 'index']);      
-    Route::post('alerts', [AlertController::class, 'create']);    
-    Route::get('alerts/{id}', [AlertController::class, 'show']);  
+    Route::get('alerts', [AlertController::class, 'index']);
+    Route::post('alerts', [AlertController::class, 'create']);
+    Route::get('alerts/{id}', [AlertController::class, 'show']);
     Route::put('alerts/{id}', [AlertController::class, 'update']);
-    Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
+    Route::delete('alerts/{id}', [AlertController::class, 'destroy']);
 
     //--- Job Recommendations ---
     Route::get('/recommendations', [RecommendationController::class, 'index']);
