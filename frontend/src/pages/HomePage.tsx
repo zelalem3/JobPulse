@@ -242,11 +242,15 @@ export default function HomePage() {
                       </div>
 
                       {/* 3. Pure bold black link targeting dynamic details route mapping */}
-                      <h2 className="text-xl font-black text-slate-900 hover:text-blue-600 tracking-tight transition antialiased">
-                        <Link to={`/jobs/${job.id}`}>
-                          {job.title}
-                        </Link>
-                      </h2>
+                      {/* 3. Pure bold black link targeting dynamic details route mapping */}
+<h2 className="text-xl font-black tracking-tight transition antialiased">
+  <Link 
+    to={`/jobs/${job.id}`} 
+    className="text-slate-900 hover:text-blue-600 transition-colors duration-200"
+  >
+    {job.title}
+  </Link>
+</h2>
 
                       <p className="text-slate-500 mt-1 font-medium text-sm">
                         {job.company} — {job.location}
