@@ -1,33 +1,49 @@
-import requests
+import re
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from curl_cffi import requests
 
-BASE_URL = "https://www.ethiopianreporterjobs.com"
-URL = "https://www.ethiopianreporterjobs.com/job-category/it-jobs-in-ethiopia/"
-
-headers = {
-    "User-Agent": (
-        "Mozilla/5.0 (X11; Linux x86_64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/138.0 Safari/537.36"
-    )
-}
-
-
-def get_job_links(link: str) -> bool:
+def get_job_links():
     URL = "https://www.ethiopianreporterjobs.com/job-category/it-jobs-in-ethiopia/"
+    
     headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Alt-Used": "www.ethiopianreporterjobs.com",
+        "Connection": "keep-alive",
     }
 
     try:
-        response = requests.get(URL, headers=headers, timeout=15)
+        # Use curl_cffi to match real-browser fingerprints
+        response = requests.get(URL, headers=headers, impersonate="chrome", timeout=30)
+        
         print(f"Status Code: {response.status_code}")
         print(f"Content Length: {len(response.text)} characters")
         
+        if response.status_code != 200:
+            print("Failed to access page.")
+            return []
+
         soup = BeautifulSoup(response.text, "lxml")
         all_links = soup.find_all("a", href=True)
+        
+        # Regex to match URLs like: .../jobs-in-ethiopia/12345/
+        job_url_pattern = re.compile(r"https://www\.ethiopianreporterjobs\.com/jobs-in-ethiopia/\d+/")
+        
+        # Extract unique, clean job links
+        job_links = []
+        for link in all_links:
+            href = link.get("href")
+            if job_url_pattern.match(href):
+                job_links.append(href)
+                
+        # Remove duplicates while preserving order
+        unique_job_links = list(dict.fromkeys(job_links))
+        
         print(f"Total raw links found on page: {len(all_links)}")
+        print(f"Filtered down to {len(unique_job_links)} real job detail URLs")
+        return unique_job_links
         
     except Exception as e:
         print(f"Error occurred: {e}")
+        return []
+
