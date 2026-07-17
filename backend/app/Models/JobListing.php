@@ -21,7 +21,7 @@ class JobListing extends Model
         'experience_level',
         'salary',
         'category',
-        'skills',
+        // 'skills' removed from here
         'deadline',
         'posted_at',
         'source',
@@ -33,7 +33,7 @@ class JobListing extends Model
     protected function casts(): array
     {
         return [
-            'skills' => 'array',
+            // 'skills' => 'array' removed from here
             'deadline' => 'date',
             'posted_at' => 'datetime',
             'is_active' => 'boolean',

@@ -12,18 +12,14 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'location', 'github_url', 'linkedin_url', 'resume', 'skills'
+        'name', 'email', 'password', 'location', 'github_url', 'linkedin_url', 'resume'
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'skills' => 'array', 
     ];
 
-    /**
-     * Get jobs matching this user's profile.
-     */
     /**
      * Get jobs matching this user's profile.
      */
@@ -36,14 +32,24 @@ class User extends Authenticatable
             $query->where('location', 'ILIKE', '%' . $this->location . '%');
         }
 
-        // 2. Filter by Skills matching the pivot table records
-        if (is_array($this->skills) && count($this->skills) > 0) {
-            $query->whereHas('skills', function ($q) {
-                // Match job listings that have any skill name matching the user's skills array
-                $q->whereIn('name', $this->skills);
+        // 2. Safe retrieval using the query builder method to bypass the column conflict
+        $userSkills = $this->skills()->get();
+        
+        if ($userSkills->isNotEmpty()) {
+            $userSkillIds = $userSkills->pluck('id')->toArray();
+            
+            $query->whereHas('skills', function ($q) use ($userSkillIds) {
+                $q->whereIn('skills.id', $userSkillIds);
             });
+        } else {
+            return collect();
         }
 
         return $query->get();
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'skill_user');
     }
 }

@@ -16,7 +16,8 @@ def save_job(job):
     session = SessionLocal()
 
     try:
-        query = text("""
+        # 1. Insert/Update the job listing and return its database ID
+        job_query = text("""
             INSERT INTO job_listings (
                 title,
                 location,
@@ -26,7 +27,6 @@ def save_job(job):
                 experience_level,
                 salary,
                 category,
-                skills,
                 deadline,
                 posted_at,
                 source,
@@ -44,7 +44,6 @@ def save_job(job):
                 :experience_level,
                 :salary,
                 :category,
-                CAST(:skills AS json),
                 :deadline,
                 :posted_at,
                 :source,
@@ -63,13 +62,13 @@ def save_job(job):
                 experience_level = EXCLUDED.experience_level,
                 salary = EXCLUDED.salary,
                 category = EXCLUDED.category,
-                skills = EXCLUDED.skills,
                 deadline = EXCLUDED.deadline,
                 posted_at = EXCLUDED.posted_at,
-                updated_at = NOW();
+                updated_at = NOW()
+            RETURNING id;
         """)
 
-        data = {
+        job_data = {
             "title": job.get("title"),
             "location": job.get("location"),
             "requirements": job.get("requirements"),
@@ -78,14 +77,60 @@ def save_job(job):
             "experience_level": job.get("experience_level"),
             "salary": job.get("salary"),
             "category": job.get("category"),
-            "skills": json.dumps(job.get("skills", [])),
             "deadline": job.get("deadline"),
             "posted_at": job.get("posted_at"),
             "source": job.get("source"),
             "url": job.get("url"),
         }
 
-        session.execute(query, data)
+        # Run the insert and grab the primary key of the job
+        result = session.execute(job_query, job_data)
+        job_id = result.fetchone()[0]
+
+        # 2. Process and map the skills
+        skills = job.get("skills", [])
+        skill_ids = []
+
+        if skills:
+            for skill_name in skills:
+                clean_name = str(skill_name).strip()
+                if not clean_name:
+                    continue
+
+                # Insert skill if missing, and grab its ID.
+                # (Postgres returning ID on conflict trick)
+                skill_query = text("""
+                    INSERT INTO skills (name, created_at, updated_at)
+                    VALUES (:name, NOW(), NOW())
+                    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+                    RETURNING id;
+                """)
+                
+                skill_result = session.execute(skill_query, {"name": clean_name})
+                skill_id = skill_result.fetchone()[0]
+                skill_ids.append(skill_id)
+
+        # 3. Clean up and update the pivot table (job_skill)
+        # Clear existing relations for this job first to prevent leftovers
+        session.execute(
+            text("DELETE FROM job_skill WHERE job_listing_id = :job_listing_id;"),
+            {"job_listing_id": job_id}
+        )
+
+        # Bulk insert the new active relationships
+        if skill_ids:
+            pivot_query = text("""
+                INSERT INTO job_skill (job_listing_id, skill_id)
+                VALUES (:job_listing_id, :skill_id)
+                ON CONFLICT DO NOTHING;
+            """)
+            
+            for skill_id in skill_ids:
+                session.execute(pivot_query, {
+                    "job_listing_id": job_id,
+                    "skill_id": skill_id
+                })
+
         session.commit()
 
     except Exception as e:
