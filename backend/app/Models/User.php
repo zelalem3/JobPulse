@@ -12,37 +12,38 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'location',
-        'github_url',
-        'linkedin_url',
-        'resume',
-        'skills',
+        'name', 'email', 'password', 'location', 'github_url', 'linkedin_url', 'resume', 'skills'
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'skills' => 'array', 
     ];
 
-    protected function casts(): array
+    /**
+     * Get jobs matching this user's profile.
+     */
+    /**
+     * Get jobs matching this user's profile.
+     */
+    public function getRecommendedJobs()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'skills' => 'array',
-        ];
-    }
+        $query = JobListing::query();
 
-    public function savedJobs()
-    {
-        return $this->hasMany(SavedJob::class);
-    }
+        // 1. Filter by Location
+        if (!empty($this->location)) {
+            $query->where('location', 'ILIKE', '%' . $this->location . '%');
+        }
 
-    public function jobAlerts()
-    {
-        return $this->hasMany(JobAlert::class);
+        // 2. Filter by Skills matching the pivot table records
+        if (is_array($this->skills) && count($this->skills) > 0) {
+            $query->whereHas('skills', function ($q) {
+                // Match job listings that have any skill name matching the user's skills array
+                $q->whereIn('name', $this->skills);
+            });
+        }
+
+        return $query->get();
     }
 }
