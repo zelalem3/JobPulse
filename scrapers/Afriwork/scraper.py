@@ -1,108 +1,63 @@
 import requests
-import json
+from datetime import datetime
+from common.base_scraper import BaseScraper
+from common.models import JobListing
 
-def get_all_jobs(offset=0):
-    url = "https://api.afriworket.com/v1/graphql"
-    
-    
-    headers = {
-        "accept": "application/json",
-        "accept-language": "en-US,en;q=0.9",
-        "content-type": "application/json",
-        "origin": "https://afriworket.com",
-        "referer": "https://afriworket.com/",
-        "x-hasura-role": "anonymous"
-    }
 
-    
-    payload = {
-        "operationName": "GetAllJobs",
-        "query": """
-        query GetAllJobs($offset: Int!, $whereCondition: jobs_bool_exp!, $orderCondition: [jobs_order_by!]) {
-          jobs(
-            order_by: $orderCondition
-            offset: $offset
-            limit: 30
-            where: $whereCondition
-          ) {
-            id
-            title
-            created_at
-            updated_at
-            published_at
-            refreshed_at
-            approval_status
-            description
-            job_type
-            job_site
-            skill_requirements {
-              skill {
-                name
-                id
-              }
-            }
-            city {
-              name
-              country {
-                name
-              }
-            }
-            sectors {
-              sector {
-                name
-                id
-              }
-            }
-            deadline
-            compensation_amount_cents
-            compensation_type
-            compensation_currency
-            experience_level
-            entity {
-              type
-              name
-            }
-          }
+class AfriworkScraper(BaseScraper):
+    def __init__(self):
+        super().__init__("Afriwork")
+        self.url = "https://api.afriworket.com/v1/graphql"
+        self.headers = {
+            "Content-Type": "application/json",
+            "x-hasura-role": "anonymous"
         }
-        """,
-        "variables": {
-            "offset": offset,
-            "orderCondition": {"latest_activity_at": "desc"},
-            "whereCondition": {
-                "_and": [
-                    {"approval_status": {"_in": ["PUBLISHED", "REFRESHED"]}}
-                ]
-            }
-        }
-    }
 
-    try:
-        # GraphQL requests over HTTP must always use POST method
-        response = requests.post(url, headers=headers, json=payload)
+    def fetch(self) -> list:
+        payload = {
+            "operationName": "GetAllJobs",
+            "query": """query GetAllJobs($offset: Int!) {
+                jobs(limit: 30, offset: $offset, where: {approval_status: {_in: ["PUBLISHED", "REFRESHED"]}}) {
+                    id, title, created_at, published_at, description, job_type, job_site, 
+                    skill_requirements { skill { name } }, city { name }, 
+                    sectors { sector { name } }, deadline, compensation_amount_cents, 
+                    compensation_currency, experience_level, entity { name }
+                }
+            }""",
+            "variables": {"offset": 0}
+        }
+   
+        response = requests.post(self.url, headers=self.headers, json=payload)
+        print(f"[DEBUG] Status Code: {response.status_code}")
+       
+        return response.json().get("data", {}).get("jobs", [])
+
+    def parse(self, item: dict) -> JobListing:
+        # 1. Complex extraction logic (ported from your old parser)
+        skills = [s.get("skill", {}).get("name") for s in item.get("skill_requirements", []) if s.get("skill")]
         
-        if response.status_code == 200:
-            data = response.json()
-            # Extract the actual list of jobs from the Hasura GraphQL nesting
-            jobs = data.get("data", {}).get("jobs", [])
-            return jobs
-        else:
-            print(f"Failed to fetch data. Status Code: {response.status_code}")
-            print(response.text)
-            return []
-            
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return []
+        # Salary Logic
+        salary = "Negotiable"
+        if item.get("compensation_amount_cents"):
+            salary = f"{float(item['compensation_amount_cents'])/100:,.2f} {item.get('compensation_currency', 'ETB')}"
 
-# Test the script execution
-if __name__ == "__main__":
-    print("Fetching jobs from Afriwork API...")
-    job_list = get_all_jobs(offset=0)
-    
-    print(f"Successfully retrieved {len(job_list)} jobs.\n")
-    
-    for job in job_list:
-        title = job.get("title")
-        company = job.get("entity", {}).get("name", "N/A")
-        id = job.get("id")
-     
+        # Date Parsing
+        posted_at = item.get("published_at") or item.get("created_at")
+        if posted_at:
+            posted_at = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+
+        # 2. Return the validated Pydantic model
+        return JobListing(
+            title=item.get("title") or "Untitled Job",
+            company=item.get("entity", {}).get("name") or "Unknown",
+            location=item.get("city", {}).get("name") or "Addis Ababa",
+            specific_address=item.get("city", {}).get("name") or "Addis Ababa",
+            description=item.get("description") or "",
+            requirements=item.get("experience_level"),
+            employment_type=item.get("job_type", {}).get("name") if isinstance(item.get("job_type"), dict) else "N/A",
+            salary=salary,
+            skills=skills,
+            posted_at=posted_at,
+            source="Afriwork",
+            url=f"https://afriworket.com/jobs/{item.get('id')}"
+        )

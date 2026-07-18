@@ -13,6 +13,8 @@ SessionLocal = sessionmaker(bind=engine)
 
 
 def save_job(job):
+    if hasattr(job, "model_dump"):
+        job = job.model_dump()
     session = SessionLocal()
 
     try:
