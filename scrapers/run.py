@@ -1,8 +1,11 @@
 from Afriwork.scraper import AfriworkScraper
+from EthioReporter.scraper import EthioReport
 from common.database import save_job
 
 SCRAPERS = [
-    AfriworkScraper(),
+    # AfriworkScraper(),
+    EthioReport(),
+
 ]
 
 def main():
