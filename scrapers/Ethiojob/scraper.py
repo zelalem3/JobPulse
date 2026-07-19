@@ -94,7 +94,7 @@ class EthioJob(BaseScraper):
                 requirements=requirements,
                 employment_type=employment_type or "Full Time",
                 experience_level=experience_level or "Not Specified",
-                salary="Negotiable",
+                
                 skills=skills,
                 deadline=deadline,
                 posted_at=datetime.utcnow(),
