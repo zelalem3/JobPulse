@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class JobListing(BaseModel):
-    company_id: Optional[int] = None
+    company_id: Optional[str] = "Unknown"
 
     title: str
     company: str

@@ -3,11 +3,14 @@ import os
 from telethon import TelegramClient
 from common.base_scraper import BaseScraper
 from common.models import JobListing
-from common.database import save_job
-from dotenv import load_dotenv
-from datetime import timedelta
+from datetime import timedelta, datetime
 
-load_dotenv()
+# Helper function to sanitize strings for the database
+def safe_truncate(text: any, length: int = 250) -> str:
+    """Safely converts to string, cleans whitespace, and truncates to avoid DB errors."""
+    if not text:
+        return ""
+    return str(text).strip()[:length]
 
 class JobsEthioTelegramScraper(BaseScraper):
     def __init__(self, channel_username):
@@ -15,6 +18,7 @@ class JobsEthioTelegramScraper(BaseScraper):
         self.channel = channel_username
         self.api_id = os.getenv("API_ID")
         self.api_hash = os.getenv("API_HASH")
+        # Ensure session is created in a persistent location if needed
         self.client = TelegramClient("jobpulse_session", self.api_id, self.api_hash)
 
     async def fetch(self) -> list:
@@ -43,65 +47,63 @@ class JobsEthioTelegramScraper(BaseScraper):
         if self._is_spam(text):
             return []
 
-        # Initialize base job dictionary
+        # 1. Initialize data with safe defaults
+        # We use safe_truncate here for fields that hit the DB
         job_data = {
             "title": "General Vacancy",
-            "company": None,
+            "company": "Unknown",  # Default string to satisfy Pydantic
             "location": "Addis Ababa",
-            "requirements": None,
-            "description": text,
+            "requirements": "",
+            "description": safe_truncate(text, 2500), # Truncated to avoid DB crash
             "employment_type": "Full Time",
-            "experience_level": None,
+            "experience_level": "Not specified",
             "salary": "Negotiable",
-            "category": None,
-            "skills": [],
-            "deadline": message.date + timedelta(days=7), # 1 week from post date
+            "category": "General",
             "posted_at": message.date,
             "source": "Telegram - Embassy & NGO Jobs",
-            "url": f"https://t.me/{self.channel}" # Default fallback URL
+            "url": f"https://t.me/{self.channel}"
         }
 
-        # -----------------------------
-        # Extract fields
-        # -----------------------------
-        url = re.search(r"https?://\S+", text)
-        if url:
-            job_data["url"] = url.group()
+        # 2. Extract fields (using safe_truncate for logic)
+        url_match = re.search(r"https?://\S+", text)
+        if url_match:
+            job_data["url"] = url_match.group()
 
-        location = re.search(r"Location\s*:?\s*(.+)", text, re.IGNORECASE)
-        if location:
-            job_data["location"] = location.group(1).strip()
+        loc_match = re.search(r"Location\s*:?\s*(.+)", text, re.IGNORECASE)
+        if loc_match:
+            job_data["location"] = safe_truncate(loc_match.group(1), 250)
 
-        qualification = re.search(
+        qual_match = re.search(
             r"Qualification\s*:?\s*(.+?)(?:Experience|Salary|Location|How to Apply|🌀|🌐|🔻)",
             text, re.IGNORECASE | re.DOTALL
         )
-        if qualification:
-            job_data["requirements"] = " ".join(qualification.group(1).split())
+        if qual_match:
+            job_data["requirements"] = safe_truncate(qual_match.group(1), 250)
 
-        experience = re.search(
+        exp_match = re.search(
             r"Experience\s*:?\s*(.+?)(?:Location|Salary|How to Apply|🌀|🌐)",
             text, re.IGNORECASE | re.DOTALL
         )
-        if experience:
-            job_data["experience_level"] = " ".join(experience.group(1).split())
+        if exp_match:
+            job_data["experience_level"] = safe_truncate(exp_match.group(1), 250)
 
         title_match = re.search(r"Position\s*\d*\s*:?\s*(.+)", text, re.IGNORECASE)
         if title_match:
-            job_data["title"] = title_match.group(1).strip()
+            job_data["title"] = safe_truncate(title_match.group(1), 250)
 
         # Company Extraction
         for line in text.splitlines():
             line = line.strip()
             if "አዲስ የስራ ማስታወቂያ" in line:
                 company = line.replace("★", "").replace("⭐️", "").replace("🔽", "").replace("✔️", "").replace("✔", "").replace("አዲስ የስራ ማስታወቂያ", "").strip()
-                job_data["company"] = company
+                if company:
+                    job_data["company"] = safe_truncate(company, 250)
                 break
 
-        # Convert to JobListing Object
+        # 3. Create Object
         try:
             listing = JobListing(**job_data)
-            return [listing] # Return as list for .extend() compatibility
+            return [listing]
         except Exception as e:
             print(f"Validation Error: {e}")
             return []
@@ -114,7 +116,6 @@ class JobsEthioTelegramScraper(BaseScraper):
         
         for msg in messages:
             try:
-                # parsed_jobs is now a list of JobListing objects
                 parsed_jobs = self.parse(msg)
                 all_jobs.extend(parsed_jobs)
             except Exception as e:

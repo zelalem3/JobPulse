@@ -29,6 +29,11 @@ class JosadTelegramScraper(BaseScraper):
                 if message.text:
                     jobs_list.append(message)
         return jobs_list
+    def truncate_str(text: str, length: int = 250) -> str:
+        """Helper to ensure text doesn't overflow DB columns."""
+        if not text:
+            return ""
+        return str(text)[:length]
     
 
 
