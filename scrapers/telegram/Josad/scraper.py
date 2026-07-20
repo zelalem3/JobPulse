@@ -17,10 +17,6 @@ class JosadTelegramScraper(BaseScraper):
         self.api_hash = os.getenv("API_HASH")
         self.client = TelegramClient("jobpulse_session", self.api_id, self.api_hash)
 
-
-
-        
-
     def _clean_text(self, text):
         return re.sub(r"^[★📌✨♦✅\s•\-\s]+", "", text).strip()
     
@@ -49,7 +45,7 @@ class JosadTelegramScraper(BaseScraper):
             specific_urls = [u for u in urls if "t.me" not in u]
             url = specific_urls[0].strip() if specific_urls else url_match.group(0).strip()
         
-       
+        # Fallback to prevent NullViolation
         if not url:
             url = f"https://t.me/{self.channel}"
 
@@ -68,6 +64,8 @@ class JosadTelegramScraper(BaseScraper):
             posted_at=getattr(message, 'date', None),
             source=f"Telegram: {self.channel}",
             company=self.channel
+
+            
 
         )
 

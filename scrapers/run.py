@@ -3,6 +3,7 @@ from EthioReporter.scraper import EthioReport
 from Ethiojob.scraper import EthioJob
 from telegram.EffoyJobs.scraper import TelegramChannelScraper
 from telegram.Josad.scraper import JosadTelegramScraper
+from telegram.ETcareers.scraper import EtcarrerTelegramScraper
 import asyncio
 
 
@@ -15,7 +16,9 @@ SCRAPERS = [
     # EthioReport(),
     # EthioJob(),
     # TelegramChannelScraper("effoyjobs"),
-    JosadTelegramScraper("Josad")
+    # JosadTelegramScraper("Josad"),
+    EtcarrerTelegramScraper("etcareersjobs")
+
 
 
 ]
@@ -27,8 +30,6 @@ async def main ():
         try:
             jobs = await scraper.run()
             print(f"{scraper.name}: {len(jobs)} jobs")
-            if job is None:
-                continue
             all_jobs.extend(jobs)
         except Exception as e:
             print(f"{scraper.name} failed: {e}")
