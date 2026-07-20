@@ -4,6 +4,10 @@ from Ethiojob.scraper import EthioJob
 from telegram.EffoyJobs.scraper import TelegramChannelScraper
 from telegram.Josad.scraper import JosadTelegramScraper
 from telegram.ETcareers.scraper import EtcarrerTelegramScraper
+from telegram.jobs_in_ethio.scraper import JobsEthioTelegramScraper
+
+
+
 import asyncio
 
 
@@ -17,7 +21,8 @@ SCRAPERS = [
     # EthioJob(),
     # TelegramChannelScraper("effoyjobs"),
     # JosadTelegramScraper("Josad"),
-    EtcarrerTelegramScraper("etcareersjobs")
+    # EtcarrerTelegramScraper("etcareersjobs"),
+    JobsEthioTelegramScraper("jobs_in_ethio")
 
 
 
