@@ -1,6 +1,8 @@
 from Afriwork.scraper import AfriworkScraper
 from EthioReporter.scraper import EthioReport
 from Ethiojob.scraper import EthioJob
+from telegram.EffoyJobs.scraper import TelegramChannelScraper
+import asyncio
 
 
 
@@ -10,16 +12,17 @@ from common.database import save_job
 SCRAPERS = [
     # AfriworkScraper(),
     # EthioReport(),
-    EthioJob()
+    # EthioJob(),
+    TelegramChannelScraper("effoyjobs")
 
 ]
 
-def main():
+async def main ():
     all_jobs = []
 
     for scraper in SCRAPERS:
         try:
-            jobs = scraper.run()
+            jobs = await scraper.run()
             print(f"{scraper.name}: {len(jobs)} jobs")
             all_jobs.extend(jobs)
         except Exception as e:
@@ -31,4 +34,4 @@ def main():
         save_job(job)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
