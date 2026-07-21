@@ -18,7 +18,7 @@ from common.database import save_job
 SCRAPERS = [
     # AfriworkScraper(),
     # EthioReport(),
-    # !doesnt work EthioJob(),
+    EthioJob(),
     # TelegramChannelScraper("effoyjobs"),
     # JosadTelegramScraper("Josad"),
     # EtcarrerTelegramScraper("etcareersjobs"),

@@ -5,7 +5,6 @@ from common.base_scraper import BaseScraper
 from common.models import JobListing
 from datetime import timedelta, datetime
 
-# Helper function to sanitize strings for the database
 def safe_truncate(text: any, length: int = 250) -> str:
     """Safely converts to string, cleans whitespace, and truncates to avoid DB errors."""
     if not text:
@@ -16,9 +15,12 @@ class JobsEthioTelegramScraper(BaseScraper):
     def __init__(self, channel_username):
         super().__init__(f"Telegram:{channel_username}")
         self.channel = channel_username
-        self.api_id = os.getenv("API_ID")
+        
+        # FIX 1: Convert API_ID to an integer
+        raw_api_id = os.getenv("API_ID")
+        self.api_id = int(raw_api_id) if raw_api_id else 0
+        
         self.api_hash = os.getenv("API_HASH")
-        # Ensure session is created in a persistent location if needed
         self.client = TelegramClient("jobpulse_session", self.api_id, self.api_hash)
 
     async def fetch(self) -> list:
@@ -47,27 +49,31 @@ class JobsEthioTelegramScraper(BaseScraper):
         if self._is_spam(text):
             return []
 
-        # 1. Initialize data with safe defaults
-        # We use safe_truncate here for fields that hit the DB
+        # FIX 2: Use message.id in the URL so every post has a unique URL 
+        # (preventing the database ON CONFLICT crash/overwrite)
+        message_url = f"https://t.me/{self.channel}/{message.id}"
+
         job_data = {
             "title": "General Vacancy",
-            "company": "Unknown",  # Default string to satisfy Pydantic
+            "company": "Unknown",
             "location": "Addis Ababa",
             "requirements": "",
-            "description": safe_truncate(text, 2500), # Truncated to avoid DB crash
+            "description": safe_truncate(text, 2500),
             "employment_type": "Full Time",
             "experience_level": "Not specified",
             "salary": "Negotiable",
             "category": "General",
             "posted_at": message.date,
-            "source": "Telegram - Embassy & NGO Jobs",
-            "url": f"https://t.me/{self.channel}"
+            "source": f"Telegram - {self.channel}",
+            "url": message_url
         }
 
-        # 2. Extract fields (using safe_truncate for logic)
+        # Extract fields
         url_match = re.search(r"https?://\S+", text)
         if url_match:
-            job_data["url"] = url_match.group()
+            # If the post has a direct application link, you can use it, 
+            # or keep the Telegram message URL as the primary unique identifier.
+            pass 
 
         loc_match = re.search(r"Location\s*:?\s*(.+)", text, re.IGNORECASE)
         if loc_match:
@@ -100,7 +106,6 @@ class JobsEthioTelegramScraper(BaseScraper):
                     job_data["company"] = safe_truncate(company, 250)
                 break
 
-        # 3. Create Object
         try:
             listing = JobListing(**job_data)
             return [listing]
