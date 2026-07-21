@@ -24,32 +24,33 @@ class EthioJob(BaseScraper):
     def _normalize_url(self, href: str) -> str:
         return self.base_url + href if href.startswith("/") else href
 
-    def fetch(self) -> list:
+    async def fetch(self) -> list:
         """Standardized fetch method."""
         links = set()
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(self.start_url, wait_until="networkidle", timeout=60000)
-            page.wait_for_timeout(3000)
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.goto(self.start_url, wait_until="networkidle", timeout=60000)
+            await page.wait_for_timeout(3000)
 
             anchors = page.locator("a")
-            for i in range(anchors.count()):
-                href = anchors.nth(i).get_attribute("href")
+            count = await anchors.count()
+            for i in range(count):
+                href = await anchors.nth(i).get_attribute("href")
                 if self._is_valid_job_link(href):
                     links.add(self._normalize_url(href))
-            browser.close()
+            await browser.close()
         return list(links)
 
-    def parse(self, url: str) -> JobListing | None:
+    async def parse(self, url: str) -> JobListing | None:
         """Parses individual job page and returns a JobListing object."""
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
-                page.goto(url, wait_until="networkidle", timeout=60000)
-                content = page.content()
-                browser.close()
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+                await page.goto(url, wait_until="networkidle", timeout=60000)
+                content = await page.content()
+                await browser.close()
 
             soup = BeautifulSoup(content, "lxml")
             text = soup.get_text("\n", strip=True)
