@@ -45,11 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('savejob/{id}', [SaveJobController::class, 'store']);
     
     // --- Job Scraper Alerts  ---
-    Route::get('alerts', [AlertController::class, 'index']);
-    Route::post('alerts', [AlertController::class, 'create']);
-    Route::get('alerts/{id}', [AlertController::class, 'show']);
-    Route::put('alerts/{id}', [AlertController::class, 'update']);
-    Route::delete('alerts/{id}', [AlertController::class, 'destroy']);
+    Route::middleware('auth:sanctum')->group(function () {
+    Route::get('alerts', [AlertController::class, 'index']);      // Fetches user's skills
+    Route::post('alerts', [AlertController::class, 'store']);     // Adds a skill to user
+    Route::delete('alerts/{id}', [AlertController::class, 'destroy']); // Removes a skill from user
+});
 
     //--- Job Recommendations ---
     Route::get('/recommendations', [RecommendationController::class, 'index']);

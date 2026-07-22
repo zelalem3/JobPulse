@@ -21,13 +21,12 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get jobs matching this user's profile.
+     * Get jobs matching this user's profile based on skills.
      */
     public function getRecommendedJobs()
     {
         $query = JobListing::query();
 
-       
         $userSkills = $this->skills()->get();
         
         if ($userSkills->isNotEmpty()) {
@@ -43,8 +42,35 @@ class User extends Authenticatable
         return $query->get();
     }
 
+    /**
+     * Define the many-to-many relationship with Skill.
+     */
     public function skills()
     {
         return $this->belongsToMany(Skill::class, 'skill_user');
+    }
+
+    /**
+     * Helper: Add a single skill or multiple skills without removing existing ones.
+     */
+    public function addSkill($skillIdRs)
+    {
+        return $this->skills()->syncWithoutDetaching($skillIdRs);
+    }
+
+    /**
+     * Helper: Remove a specific skill from the user.
+     */
+    public function removeSkill($skillId)
+    {
+        return $this->skills()->detach($skillId);
+    }
+
+    /**
+     * Helper: Completely synchronize user skills to match an exact list.
+     */
+    public function syncSkills(array $skillIds)
+    {
+        return $this->skills()->sync($skillIds);
     }
 }

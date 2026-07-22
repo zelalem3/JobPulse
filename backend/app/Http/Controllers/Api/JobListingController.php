@@ -16,7 +16,8 @@ class JobListingController extends Controller
     {
         $perPage = $request->per_page ?? 10;
 
-        $jobs = JobListing::latest()->paginate($perPage);
+        // Eager load skills for listing as well if needed
+        $jobs = JobListing::with('skills')->latest()->paginate($perPage);
 
         return response()->json($jobs);
     }
@@ -48,11 +49,12 @@ class JobListingController extends Controller
     }
 
     /**
-     * Display the specified job.
+     * Display the specified job with skills.
      */
     public function show(string $id)
     {
-        $job = JobListing::find($id);
+        // 👇 Eager load skills here so they return with the job details
+        $job = JobListing::with('skills')->find($id);
 
         if (!$job) {
             return response()->json([
@@ -91,7 +93,7 @@ class JobListingController extends Controller
 
         return response()->json([
             'message' => 'Job updated successfully.',
-            'job' => $job,
+            'job' => $job->load('skills'),
         ]);
     }
 
