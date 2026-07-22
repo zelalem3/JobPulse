@@ -26,32 +26,40 @@ class SendDailyRecommendations extends Command
   /**
      * Execute the console command.
      */
-    public function handle(RecommendationService $service)
+   public function handle(RecommendationService $service)
     {
         $this->info('Starting recommendation emails delivery...');
 
-        // Query all users directly since there is no 'email_enabled' column
-        User::query()
-            ->chunk(100, function ($users) use ($service) {
-                foreach ($users as $user) {
-                    try {
-                        // Get recommendations using your service
-                        $recommendations = $service->getRecommendations($user);
+        $totalSent = 0;
 
-                        // Only send an email if there are matches
-                        if (!empty($recommendations) && count($recommendations) > 0) {
-                            Mail::to($user->email)->send(
-                                new JobRecommendationsMail($user, collect($recommendations))
-                            );
-                            
-                            $this->info("Email sent to: {$user->email}");
-                        }
-                    } catch (\Throwable $e) {
-                        \Log::error("Failed sending recommendations to {$user->email}: " . $e->getMessage());
+        User::query()->chunk(100, function ($users) use ($service, &$totalSent) {
+            $this->info('Processing chunk of ' . $users->count() . ' users...');
+
+            foreach ($users as $user) {
+                try {
+                    $recommendations = $service->getRecommendations($user);
+
+                    // Debug what is coming back
+                    $count = is_countable($recommendations) ? count($recommendations) : (is_array($recommendations) ? count($recommendations) : 0);
+                    $this->line("User: {$user->email} | Found recommendations: {$count}");
+
+                    if (!empty($recommendations) && $count > 0) {
+                        Mail::to($user->email)->send(
+                            new JobRecommendationsMail($user, collect($recommendations))
+                        );
+                        
+                        $this->info("✔ Email sent to: {$user->email}");
+                        $totalSent++;
+                    } else {
+                        $this->warn("✖ Skipped {$user->email} (No recommendations found).");
                     }
+                } catch (\Throwable $e) {
+                    $this->error("Failed sending to {$user->email}: " . $e->getMessage());
+                    \Log::error("Failed sending recommendations to {$user->email}: " . $e->getMessage());
                 }
-            });
+            }
+        });
 
-        $this->info('All emails sent successfully!');
+        $this->info("Finished! Total emails actually sent: {$totalSent}");
     }
 }

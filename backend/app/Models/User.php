@@ -27,12 +27,7 @@ class User extends Authenticatable
     {
         $query = JobListing::query();
 
-        // 1. Filter by Location
-        if (!empty($this->location)) {
-            $query->where('location', 'ILIKE', '%' . $this->location . '%');
-        }
-
-        // 2. Safe retrieval using the query builder method to bypass the column conflict
+       
         $userSkills = $this->skills()->get();
         
         if ($userSkills->isNotEmpty()) {
