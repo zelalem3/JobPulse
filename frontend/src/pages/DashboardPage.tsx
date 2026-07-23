@@ -5,6 +5,7 @@ import {
   Bookmark,
   MapPin,
   ArrowUpRight,
+  Loader2,
 } from "lucide-react";
 
 import api from "../services/axios";
@@ -145,8 +146,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-2 flex flex-col items-center">
+          <Loader2 className="animate-spin text-slate-400" size={32} />
+          <p className="text-sm font-semibold text-slate-400">Loading dashboard telemetry...</p>
+        </div>
       </div>
     );
   }
@@ -154,140 +158,156 @@ export default function DashboardPage() {
   /* -------------------- UI -------------------- */
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-slate-800 selection:text-white space-y-8">
 
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-slate-500">Your job activity overview</p>
+      <div className="max-w-6xl mx-auto space-y-1">
+        <h1 className="text-3xl font-black tracking-tight text-white">Dashboard</h1>
+        <p className="text-sm font-semibold text-slate-400">Your job activity overview</p>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-slate-500">Total Jobs</h3>
-            <Briefcase className="text-indigo-600" size={20} />
-          </div>
-          <p className="text-2xl font-bold mt-2">{stats?.totalJobs ?? 0}</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-slate-500">Total Companies</h3>
-            <Bookmark className="text-indigo-600" size={20} />
-          </div>
-          <p className="text-2xl font-bold mt-2">{stats?.totalCompanies ?? 0}</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-slate-500">New Today</h3>
-            <TrendingUp className="text-indigo-600" size={20} />
-          </div>
-          <p className="text-2xl font-bold mt-2">{stats?.newToday ?? 0}</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-slate-500">Active Jobs</h3>
-            <Briefcase className="text-indigo-600" size={20} />
-          </div>
-          <p className="text-2xl font-bold mt-2">{stats?.activeJobs ?? 0}</p>
-        </div>
-      </div>
-
-      {/* SAVED JOBS */}
-      <div>
-        <h2 className="text-xl font-bold mb-4">Saved Jobs</h2>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          {savedJobs.length === 0 ? (
-            <p className="text-slate-500">No saved jobs found</p>
-          ) : (
-            savedJobs.map((job) => (
-              <div key={job.id} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-900">{job.title}</h3>
-                  <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                    <MapPin size={14} /> {job.location || 'Remote / Unspecified'}
-                  </p>
-                </div>
-
-                {job.url && (
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-indigo-600 font-semibold text-sm flex items-center gap-1 mt-4 hover:underline"
-                  >
-                    Apply <ArrowUpRight size={14} />
-                  </a>
-                )}
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* STATS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">Total Jobs</h3>
+              <div className="p-2 bg-slate-800 rounded-2xl border border-slate-700/60 text-slate-300">
+                <Briefcase size={16} />
               </div>
-            ))
+            </div>
+            <p className="text-3xl font-black text-white">{stats?.totalJobs ?? 0}</p>
+          </div>
+
+          <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">Total Companies</h3>
+              <div className="p-2 bg-slate-800 rounded-2xl border border-slate-700/60 text-slate-300">
+                <Bookmark size={16} />
+              </div>
+            </div>
+            <p className="text-3xl font-black text-white">{stats?.totalCompanies ?? 0}</p>
+          </div>
+
+          <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">New Today</h3>
+              <div className="p-2 bg-slate-800 rounded-2xl border border-slate-700/60 text-slate-300">
+                <TrendingUp size={16} />
+              </div>
+            </div>
+            <p className="text-3xl font-black text-white">{stats?.newToday ?? 0}</p>
+          </div>
+
+          <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 space-y-3">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">Active Jobs</h3>
+              <div className="p-2 bg-slate-800 rounded-2xl border border-slate-700/60 text-slate-300">
+                <Briefcase size={16} />
+              </div>
+            </div>
+            <p className="text-3xl font-black text-white">{stats?.activeJobs ?? 0}</p>
+          </div>
+        </div>
+
+        {/* SAVED JOBS */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white tracking-tight">Saved Jobs</h2>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {savedJobs.length === 0 ? (
+              <div className="col-span-full bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-12 text-center text-slate-400 shadow-xl font-medium">
+                No saved jobs found
+              </div>
+            ) : (
+              savedJobs.map((job) => (
+                <div key={job.id} className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 hover:border-slate-700/85 transition-all flex flex-col justify-between gap-4">
+                  <div className="space-y-2">
+                    <h3 className="font-black text-lg text-white leading-tight">{job.title}</h3>
+                    <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5">
+                      <MapPin size={14} className="text-slate-500 shrink-0" /> {job.location || 'Remote / Unspecified'}
+                    </p>
+                  </div>
+
+                  {job.url && (
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 border border-slate-700/60 px-4 py-2.5 rounded-2xl transition-all w-fit shadow-lg"
+                    >
+                      Apply <ArrowUpRight size={14} />
+                    </a>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RECOMMENDATIONS */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white tracking-tight">Recommended Jobs</h2>
+
+          {recLoading ? (
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-12 text-center text-slate-400 shadow-xl font-medium flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin text-slate-400" size={18} /> Loading recommendations...
+            </div>
+          ) : recommendations.length === 0 ? (
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-12 text-center text-slate-400 shadow-xl font-medium">
+              No recommendations found
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-4">
+              {recommendations.map((job) => (
+                <div key={job.id || Math.random()} className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 hover:border-slate-700/85 transition-all flex flex-col justify-between gap-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="font-black text-lg text-white leading-tight">{job.title}</h3>
+                      {job.match_score && (
+                        <span className="bg-slate-800 text-slate-200 text-xs font-bold px-3 py-1 rounded-xl border border-slate-700/60 shrink-0 shadow-sm">
+                          {job.match_score}% Match
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5">
+                      <MapPin size={14} className="text-slate-500 shrink-0" /> {job.location || 'Remote / Unspecified'}
+                    </p>
+
+                    {job.location_match && (
+                      <p className="text-xs text-slate-300 font-semibold flex items-center gap-1">
+                        📍 Location match
+                      </p>
+                    )}
+
+                    <div className="flex gap-1.5 flex-wrap pt-1">
+                      {job.matched_skills?.map((s) => (
+                        <span
+                          key={s}
+                          className="text-xs bg-slate-950 text-slate-300 border border-slate-800 px-2.5 py-1 rounded-xl font-medium shadow-inner"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {job.url && (
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 border border-slate-700/60 px-4 py-2.5 rounded-2xl transition-all w-fit shadow-lg"
+                    >
+                      Apply <ArrowUpRight size={14} />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
-      </div>
-
-      {/* RECOMMENDATIONS */}
-      <div>
-        <h2 className="text-xl font-bold mb-4">Recommended Jobs</h2>
-
-        {recLoading ? (
-          <p className="text-slate-500">Loading recommendations...</p>
-        ) : recommendations.length === 0 ? (
-          <p className="text-slate-500">No recommendations found</p>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-4">
-            {recommendations.map((job) => (
-              <div key={job.id || Math.random()} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-bold text-slate-900">{job.title}</h3>
-                    {job.match_score && (
-                      <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                        {job.match_score}% Match
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                    <MapPin size={14} /> {job.location || 'Remote / Unspecified'}
-                  </p>
-
-                  {job.location_match && (
-                    <p className="text-xs text-blue-600 font-semibold mt-1">
-                      📍 Location match
-                    </p>
-                  )}
-
-                  <div className="flex gap-1.5 flex-wrap mt-3">
-                    {job.matched_skills?.map((s) => (
-                      <span
-                        key={s}
-                        className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md font-medium"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {job.url && (
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-indigo-600 font-semibold text-sm flex items-center gap-1 mt-4 hover:underline"
-                  >
-                    Apply <ArrowUpRight size={14} />
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
     </div>
