@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { Search, X } from 'lucide-react'; // Optional: for clean icons
+import { Search, X } from 'lucide-react';
 
-const SearchBar = ({ onSearch, placeholder = "Search for anything..." }) => {
+interface SearchBarProps {
+  onSearch?: (query: string) => void;
+  placeholder?: string;
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ 
+  onSearch, 
+  placeholder = "Search for anything..." 
+}) => {
   const [query, setQuery] = useState('');
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
     if (onSearch) onSearch(value); // Triggers search on every keystroke
@@ -15,23 +23,23 @@ const SearchBar = ({ onSearch, placeholder = "Search for anything..." }) => {
     if (onSearch) onSearch('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (onSearch) onSearch(query); // Triggers search on enter/submit
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
-      <div className="relative flex items-center w-full h-12 rounded-lg focus-within:shadow-md bg-white overflow-hidden border border-gray-200 transition-all duration-200 focus-within:border-blue-500">
+      <div className="relative flex items-center w-full h-12 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 shadow-xl overflow-hidden focus-within:border-slate-700 transition-all duration-300">
         
         {/* Search Icon */}
-        <div className="grid place-items-center h-full w-12 text-gray-300">
-          <Search className="h-5 w-5 text-gray-400" />
+        <div className="grid place-items-center h-full w-12 text-slate-400 shrink-0">
+          <Search className="h-4 w-4" />
         </div>
 
         {/* Input Field */}
         <input
-          className="peer h-full w-full outline-none text-sm text-gray-700 pr-2"
+          className="peer h-full w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500 pr-2"
           type="text"
           id="search"
           placeholder={placeholder}
@@ -44,7 +52,7 @@ const SearchBar = ({ onSearch, placeholder = "Search for anything..." }) => {
           <button
             type="button"
             onClick={handleClear}
-            className="h-full px-4 text-gray-400 hover:text-gray-600 transition-colors"
+            className="h-full px-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
