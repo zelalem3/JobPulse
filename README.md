@@ -179,33 +179,39 @@ Administrative management and scraper monitoring dashboard
 
 Complete application tracking system (ATS) workflow
 
-📸 Screenshots
-Login Page
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/82e6f089-528a-45f4-aaca-13826a19b89a" />
+## 📸 Screenshots
+
+# Login Page
+
+<img width="1604" height="896" alt="image" src="https://github.com/user-attachments/assets/cb6d967c-7179-40f7-b077-0d2dac4a15e5" />
 
 
-User Dashboard
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/bbcd1ced-47ec-4efd-914c-64f315a2fa5c" />
+# User Dashboard
+
+<img width="1596" height="854" alt="image" src="https://github.com/user-attachments/assets/37836e3b-18e4-44a1-b90b-7d2ecba8b1cc" />
 
 
-Job Listings & Search Filters
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e2d4b323-c544-437a-9a51-10a9d7fff3d7" />
+# Job Listings & Search Filters
+
+<img width="1624" height="896" alt="image" src="https://github.com/user-attachments/assets/f4711b4c-34a1-4173-8f8f-1e59209258ae" />
 
 
-Saved Jobs Manager
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5ad25b80-669c-4ded-8e4b-8bc8cb78e75d" />
+# Saved Jobs Manager
+
+<img width="1565" height="864" alt="image" src="https://github.com/user-attachments/assets/d90cda36-4208-4d28-8cb0-c0aed37aae0c" />
 
 
-Custom Alerts Configuration
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/31a5a28e-158d-47d4-9cdb-a652006f027a" />
+# Custom Alerts Configuration
+
+<img width="1530" height="791" alt="image" src="https://github.com/user-attachments/assets/964ce871-429b-4fcb-97a2-724d471e66ff" />
 
 
-👨‍💻 Author
+## 👨‍💻 Author
 Zelalem Getnet
 
 Software engineer and computer science graduate specializing in full-stack web engineering, backend architecture, and automated data pipelines.
 
 GitHub: zelalem3
 
-📜 License
+## 📜 License
 This project is licensed under the MIT License.
