@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-// 1. Correctly import Link from react-router-dom for SPA routing
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -36,7 +35,7 @@ export default function HomePage() {
 
   const [listings, setListings] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState<number | null>(null); // Track specific job saving status
+  const [isSaving, setIsSaving] = useState<number | null>(null);
 
   const [searchKeyword] = useState("");
   const [searchLocation] = useState("");
@@ -49,14 +48,13 @@ export default function HomePage() {
   const [total, setTotal] = useState(0);
 
   const handleSearchLog = (term: string) => {
-    console.log("Searching:", term);
+    setSearchTerm(term);
   };
 
   const fetchJobs = async (page = 1) => {
     try {
       setLoading(true);
 
-      // Fetch jobs and user's saved IDs concurrently to sync bookmark states accurately
       const [jobsResponse, savedResponse] = await Promise.all([
         api.get(`/api/jobs?page=${page}&per_page=10`),
         api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
@@ -65,12 +63,10 @@ export default function HomePage() {
       const jobsData = jobsResponse.data.data || [];
       const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
       
-      // Extract array of saved job listing IDs belonging to this user
       const savedJobIds = new Set(
         rawSavedJobs.map((item: any) => item.job_listing_id || item.job?.id || item.id)
       );
 
-      // Map listings and attach initial isSaved status
       const processedJobs = jobsData.map((job: Job) => ({
         ...job,
         isSaved: savedJobIds.has(job.id),
@@ -91,11 +87,9 @@ export default function HomePage() {
     fetchJobs(1);
   }, []);
 
-  // 2. Fixed bookmark state loop to post async payloads to database with fallbacks
   const toggleSaveJob = async (id: number) => {
     if (isSaving !== null) return;
 
-    // Optimistic UI update
     let previousSavedState = false;
     setListings((prev) =>
       prev.map((job) => {
@@ -113,7 +107,6 @@ export default function HomePage() {
       console.log("Save status updated successfully", response.data);
     } catch (e) {
       console.error("Error updating save status:", e);
-      // Revert if API engine drops connection
       setListings((prev) =>
         prev.map((job) => (job.id === id ? { ...job, isSaved: previousSavedState } : job))
       );
@@ -128,6 +121,11 @@ export default function HomePage() {
     const location = job.location ?? "";
     const source = job.source ?? "";
     const type = job.type ?? "";
+
+    const matchesSearch =
+      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesKeyword =
       title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
@@ -150,6 +148,7 @@ export default function HomePage() {
       source === selectedSource;
 
     return (
+      matchesSearch &&
       matchesKeyword &&
       matchesLocation &&
       matchesSource &&
@@ -159,13 +158,15 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-slate-800 selection:text-white">
-      <SearchBar
-        onSearch={handleSearchLog}
-        placeholder="Search jobs..."
-      />
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-slate-800 selection:text-white py-8">
+      <div className="max-w-6xl mx-auto px-4 mb-6">
+        <SearchBar
+          onSearch={handleSearchLog}
+          placeholder="Search jobs by title, company, or location..."
+        />
+      </div>
 
-      <div className="max-w-6xl mx-auto py-10 px-4">
+      <div className="max-w-6xl mx-auto px-4">
         {/* Metric Cards Top Row Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-slate-800/80">
@@ -187,7 +188,7 @@ export default function HomePage() {
           <div className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-slate-800/80">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-slate-800 rounded-2xl border border-slate-700 text-slate-300">
-                <RefreshCw size={18} className="animate-spin-slow" />
+                <RefreshCw size={18} className="animate-spin" />
               </div>
               <div>
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
@@ -318,7 +319,7 @@ export default function HomePage() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => fetchJobs(currentPage - 1)}
-                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
+                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
               >
                 Previous
               </button>
@@ -330,7 +331,7 @@ export default function HomePage() {
               <button
                 disabled={currentPage === lastPage}
                 onClick={() => fetchJobs(currentPage + 1)}
-                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
+                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
               >
                 Next
               </button>
@@ -344,7 +345,7 @@ export default function HomePage() {
             />
             <h3 className="font-bold text-white">No jobs found</h3>
             <p className="text-slate-400 text-sm mt-1">
-              Try changing your filters.
+              Try changing your search term or filters.
             </p>
           </div>
         )}

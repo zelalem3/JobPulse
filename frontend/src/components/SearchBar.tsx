@@ -15,7 +15,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
-    if (onSearch) onSearch(value); // Triggers search on every keystroke
+    if (onSearch) onSearch(value); 
   };
 
   const handleClear = () => {
@@ -25,7 +25,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (onSearch) onSearch(query); // Triggers search on enter/submit
+    if (onSearch) onSearch(query); 
   };
 
   return (
