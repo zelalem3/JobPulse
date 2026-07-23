@@ -5,7 +5,7 @@ from common.base_scraper import BaseScraper
 from common.models import JobListing
 from addskill import extract_skills  
 
-# Reusing this helper to prevent StringDataRightTruncation errors
+
 def safe_str(text: any, length: int = 250) -> str:
     if text is None: return ""
     return str(text).strip()[:length]

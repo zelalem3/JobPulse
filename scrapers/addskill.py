@@ -2,9 +2,11 @@ import os
 from google import genai
 from google.genai import types
 import json
+from dotenv import load_dotenv
+load_dotenv()
 
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def extract_skills(job_description_text):
     prompt = f"""
