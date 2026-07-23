@@ -33,65 +33,69 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSource, setSelectedSource] = useState("All");
 
-  const [listings, setListings] = useState<Job[]>([]);
+  const [allListings, setAllListings] = useState<Job[]>([]);
+  const [allSources, setAllSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState<number | null>(null);
 
-  const [searchKeyword] = useState("");
-  const [searchLocation] = useState("");
-
-  const [selectedSources] = useState<string[]>([]);
-  const [selectedTypes] = useState<string[]>([]);
-
   const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
   const handleSearchLog = (term: string) => {
     setSearchTerm(term);
   };
 
-  const fetchJobs = async (page = 1) => {
-    try {
-      setLoading(true);
-
-      const [jobsResponse, savedResponse] = await Promise.all([
-        api.get(`/api/jobs?page=${page}&per_page=10`),
-        api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
-      ]);
-
-      const jobsData = jobsResponse.data.data || [];
-      const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
-      
-      const savedJobIds = new Set(
-        rawSavedJobs.map((item: any) => item.job_listing_id || item.job?.id || item.id)
-      );
-
-      const processedJobs = jobsData.map((job: Job) => ({
-        ...job,
-        isSaved: savedJobIds.has(job.id),
-      }));
-
-      setListings(processedJobs);
-      setCurrentPage(jobsResponse.data.current_page);
-      setLastPage(jobsResponse.data.last_page);
-      setTotal(jobsResponse.data.total);
-    } catch (error) {
-      console.log("Error loading jobs or saved states:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch all jobs on mount for smooth global filtering and pagination
   useEffect(() => {
-    fetchJobs(1);
+    const fetchAllJobs = async () => {
+      try {
+        setLoading(true);
+
+        const [jobsResponse, savedResponse] = await Promise.all([
+          api.get(`/api/jobs?per_page=1000`),
+          api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
+        ]);
+
+        const jobsData = jobsResponse.data.data || jobsResponse.data || [];
+        const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
+        
+        const savedJobIds = new Set(
+          rawSavedJobs.map((item: any) => item.job_listing_id || item.job?.id || item.id)
+        );
+
+        const processedJobs = jobsData.map((job: Job) => ({
+          ...job,
+          isSaved: savedJobIds.has(job.id),
+        }));
+
+        setAllListings(processedJobs);
+
+        // Extract unique sources dynamically
+        const uniqueSources = Array.from(
+          new Set(processedJobs.map((job: Job) => job.source).filter(Boolean))
+        ) as string[];
+        setAllSources(uniqueSources);
+
+      } catch (error) {
+        console.log("Error loading jobs or saved states:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllJobs();
   }, []);
+
+  // Reset to page 1 whenever search term or source filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedSource]);
 
   const toggleSaveJob = async (id: number) => {
     if (isSaving !== null) return;
 
     let previousSavedState = false;
-    setListings((prev) =>
+    setAllListings((prev) =>
       prev.map((job) => {
         if (job.id === id) {
           previousSavedState = !!job.isSaved;
@@ -107,7 +111,7 @@ export default function HomePage() {
       console.log("Save status updated successfully", response.data);
     } catch (e) {
       console.error("Error updating save status:", e);
-      setListings((prev) =>
+      setAllListings((prev) =>
         prev.map((job) => (job.id === id ? { ...job, isSaved: previousSavedState } : job))
       );
     } finally {
@@ -115,47 +119,30 @@ export default function HomePage() {
     }
   };
 
-  const filteredListings = listings.filter((job) => {
-    const title = job.title ?? "";
-    const company = job.company ?? "";
-    const location = job.location ?? "";
-    const source = job.source ?? "";
-    const type = job.type ?? "";
+  // Filter across the entire dataset
+  const filteredListings = allListings.filter((job) => {
+    const title = (job.title ?? "").toLowerCase();
+    const company = (job.company ?? "").toLowerCase();
+    const location = (job.location ?? "").toLowerCase();
+    const source = (job.source ?? "").trim();
 
     const matchesSearch =
-      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesKeyword =
-      title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-      company.toLowerCase().includes(searchKeyword.toLowerCase());
-
-    const matchesLocation = location
-      .toLowerCase()
-      .includes(searchLocation.toLowerCase());
-
-    const matchesSource =
-      selectedSources.length === 0 ||
-      selectedSources.includes(source);
-
-    const matchesType =
-      selectedTypes.length === 0 ||
-      selectedTypes.includes(type);
+      title.includes(searchTerm.toLowerCase().trim()) ||
+      company.includes(searchTerm.toLowerCase().trim()) ||
+      location.includes(searchTerm.toLowerCase().trim());
 
     const matchesSelectedSource =
       selectedSource === "All" ||
-      source === selectedSource;
+      source.toLowerCase() === selectedSource.toLowerCase();
 
-    return (
-      matchesSearch &&
-      matchesKeyword &&
-      matchesLocation &&
-      matchesSource &&
-      matchesType &&
-      matchesSelectedSource
-    );
+    return matchesSearch && matchesSelectedSource;
   });
+
+  // Calculate client-side pagination parameters
+  const totalItems = filteredListings.length;
+  const lastPage = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentPaginatedListings = filteredListings.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-slate-800 selection:text-white py-8">
@@ -179,7 +166,7 @@ export default function HomePage() {
                   Total Jobs
                 </p>
                 <h3 className="font-black text-xl text-white">
-                  {total}
+                  {allListings.length}
                 </h3>
               </div>
             </div>
@@ -211,7 +198,7 @@ export default function HomePage() {
                   Results
                 </p>
                 <h3 className="font-black text-xl text-white">
-                  {filteredListings.length}
+                  {totalItems}
                 </h3>
               </div>
             </div>
@@ -227,11 +214,38 @@ export default function HomePage() {
                   Sources
                 </p>
                 <h3 className="font-black text-xl text-white">
-                  3
+                  {allSources.length}
                 </h3>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Dynamic Source Filter Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6">
+          <button
+            onClick={() => setSelectedSource("All")}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+              selectedSource === "All"
+                ? "bg-slate-800 text-white border-slate-700 shadow-lg"
+                : "bg-slate-900/60 text-slate-400 border-slate-800/80 hover:text-slate-200"
+            }`}
+          >
+            All Sources
+          </button>
+          {allSources.map((src) => (
+            <button
+              key={src}
+              onClick={() => setSelectedSource(src)}
+              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border shrink-0 cursor-pointer ${
+                selectedSource === src
+                  ? "bg-slate-800 text-white border-slate-700 shadow-lg"
+                  : "bg-slate-900/60 text-slate-400 border-slate-800/80 hover:text-slate-200"
+              }`}
+            >
+              {src}
+            </button>
+          ))}
         </div>
 
         {/* Core Listings Processing Logic Block */}
@@ -239,10 +253,10 @@ export default function HomePage() {
           <div className="text-center py-20 text-sm font-semibold text-slate-400">
             Loading position indexes...
           </div>
-        ) : filteredListings.length > 0 ? (
+        ) : currentPaginatedListings.length > 0 ? (
           <>
             <div className="space-y-4">
-              {filteredListings.map((job) => (
+              {currentPaginatedListings.map((job) => (
                 <div
                   key={job.id}
                   className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-slate-800/80 hover:border-slate-700/80 transition-all duration-300"
@@ -318,7 +332,7 @@ export default function HomePage() {
             <div className="flex justify-center items-center gap-4 mt-10">
               <button
                 disabled={currentPage === 1}
-                onClick={() => fetchJobs(currentPage - 1)}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
               >
                 Previous
@@ -330,7 +344,7 @@ export default function HomePage() {
 
               <button
                 disabled={currentPage === lastPage}
-                onClick={() => fetchJobs(currentPage + 1)}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, lastPage))}
                 className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
               >
                 Next
