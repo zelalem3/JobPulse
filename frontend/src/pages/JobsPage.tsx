@@ -151,29 +151,29 @@ export default function JobsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-slate-800 selection:text-white">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Search */}
-        <div className="bg-white rounded-2xl p-3 border shadow-sm flex flex-col md:flex-row gap-2 items-center">
-          <div className="flex items-center gap-2 px-3 w-full border-b md:border-b-0 md:border-r py-2.5">
+        <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-3 border border-slate-800/80 shadow-xl flex flex-col md:flex-row gap-2 items-center">
+          <div className="flex items-center gap-2.5 px-3 w-full border-b md:border-b-0 md:border-r border-slate-800 py-2.5">
             <Search size={18} className="text-slate-400" />
             <input
               type="text"
               placeholder="Job title or company..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              className="w-full bg-transparent outline-none"
+              className="w-full bg-transparent outline-none text-slate-100 placeholder:text-slate-500 text-sm"
             />
           </div>
 
-          <div className="flex items-center gap-2 px-3 w-full md:w-80 py-2.5">
+          <div className="flex items-center gap-2.5 px-3 w-full md:w-80 py-2.5">
             <MapPin size={18} className="text-slate-400" />
             <input
               type="text"
               placeholder="Location..."
               value={searchLocation}
               onChange={(e) => setSearchLocation(e.target.value)}
-              className="w-full bg-transparent outline-none"
+              className="w-full bg-transparent outline-none text-slate-100 placeholder:text-slate-500 text-sm"
             />
           </div>
         </div>
@@ -181,15 +181,15 @@ export default function JobsPage() {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
           <div
-            className={`w-full md:w-60 bg-white rounded-2xl p-5 shadow-sm ${
+            className={`w-full md:w-60 bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-slate-800/80 ${
               isMobileFiltersOpen ? "block" : "hidden md:block"
             }`}
           >
             <div className="space-y-6">
               <div>
-                <h4 className="font-bold mb-3">Sources</h4>
+                <h4 className="font-bold text-sm text-white mb-3 tracking-wide">Sources</h4>
                 {["EthioReporter", "Afriwork", "EthioJobs","Josad software","ET carrers","Jobs in Ethio"].map((src) => (
-                  <label key={src} className="flex items-center gap-2 mb-2">
+                  <label key={src} className="flex items-center gap-2.5 mb-2.5 text-sm text-slate-300 hover:text-white cursor-pointer transition-colors">
                     <input
                       type="checkbox"
                       checked={selectedSources.includes(src)}
@@ -200,16 +200,17 @@ export default function JobsPage() {
                           setSelectedSources
                         )
                       }
+                      className="rounded bg-slate-950 border-slate-700 text-slate-700 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                     />
                     {src}
                   </label>
                 ))}
               </div>
 
-              <div>
-                <h4 className="font-bold mb-3">Type</h4>
+              <div className="pt-2 border-t border-slate-800">
+                <h4 className="font-bold text-sm text-white mb-3 tracking-wide">Type</h4>
                 {["Remote", "Full-time", "Part-time", "Contract"].map((type) => (
-                  <label key={type} className="flex items-center gap-2 mb-2">
+                  <label key={type} className="flex items-center gap-2.5 mb-2.5 text-sm text-slate-300 hover:text-white cursor-pointer transition-colors">
                     <input
                       type="checkbox"
                       checked={selectedTypes.includes(type)}
@@ -220,6 +221,7 @@ export default function JobsPage() {
                           setSelectedTypes
                         )
                       }
+                      className="rounded bg-slate-950 border-slate-700 text-slate-700 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                     />
                     {type}
                   </label>
@@ -230,21 +232,21 @@ export default function JobsPage() {
 
           {/* Jobs Listing Column */}
           <div className="flex-1">
-            <div className="flex justify-between mb-6">
-              <h3 className="font-bold text-slate-600">
+            <div className="flex justify-between items-center mb-6 px-1">
+              <h3 className="font-bold text-sm text-slate-400">
                 Showing {filteredListings.length} of {total} Jobs
               </h3>
 
               <button
                 onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-                className="md:hidden"
+                className="md:hidden p-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-slate-300 hover:bg-slate-800 transition-colors shadow-lg"
               >
-                <SlidersHorizontal />
+                <SlidersHorizontal size={16} />
               </button>
             </div>
 
             {loading ? (
-              <div className="text-center py-20 text-slate-500 font-medium">
+              <div className="text-center py-20 text-slate-400 font-medium text-sm">
                 Loading jobs...
               </div>
             ) : filteredListings.length > 0 ? (
@@ -253,58 +255,58 @@ export default function JobsPage() {
                   {filteredListings.map((job) => (
                     <div
                       key={job.id}
-                      className="bg-white rounded-2xl p-6 shadow-sm border hover:border-slate-300 transition"
+                      className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-slate-800/80 hover:border-slate-700/80 transition-all duration-300"
                     >
                       <div className="flex justify-between flex-col md:flex-row gap-4">
                         <div>
-                          <div className="flex gap-2 mb-2">
-                            <span className="text-xs bg-slate-100 px-2 py-1 rounded font-medium text-slate-600">
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            <span className="text-xs bg-slate-800 border border-slate-700/60 px-2.5 py-1 rounded-xl font-medium text-slate-300">
                               {job.source}
                             </span>
-                            <span className="text-xs bg-blue-100 px-2 py-1 rounded font-medium text-blue-700">
+                            <span className="text-xs bg-slate-800 border border-slate-700/60 px-2.5 py-1 rounded-xl font-medium text-slate-300">
                               {job.type}
                             </span>
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                              <Calendar size={12} />
+                            <span className="text-xs text-slate-400 flex items-center gap-1 font-medium px-1">
+                              <Calendar size={12} className="text-slate-500" />
                               {job.scrapedAt}
                             </span>
                           </div>
 
-                          <h2 className="text-xl font-bold text-slate-900 hover:text-blue-600 transition">
-                            <Link to={`/jobs/${job.id}`}>
+                          <h2 className="text-xl font-black tracking-tight transition antialiased">
+                            <Link to={`/jobs/${job.id}`} className="text-white hover:text-slate-300 transition-colors duration-200">
                               {job.title}
                             </Link>
                           </h2>
 
-                          <p className="text-slate-500 mt-1">
+                          <p className="text-slate-400 mt-1 font-medium text-sm">
                             {job.company} — {job.location}
                           </p>
 
                           {job.salary && (
-                            <p className="mt-2 text-sm text-slate-600 font-medium">
+                            <p className="mt-2 text-xs font-semibold text-slate-300 bg-slate-950/60 inline-block px-3 py-1.5 rounded-xl border border-slate-800">
                               Salary: {job.salary}
                             </p>
                           )}
                         </div>
 
-                        <div className="flex items-start gap-2 self-end md:self-start">
+                        <div className="flex items-start gap-2.5 self-end md:self-start">
                           <button
                             onClick={() => toggleSaveJob(job.id)}
                             disabled={isSaving === job.id}
-                            className={`p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition ${
-                              job.isSaved ? "text-amber-500" : "text-slate-400"
+                            className={`p-2.5 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all shadow-lg ${
+                              job.isSaved ? "text-slate-200 border-slate-700" : "text-slate-400"
                             } ${isSaving === job.id ? "opacity-50" : ""}`}
                           >
                             {job.isSaved ? (
-                              <BookmarkCheck className="text-amber-500" fill="currentColor" />
+                              <BookmarkCheck className="text-slate-200" fill="currentColor" size={18} />
                             ) : (
-                              <Bookmark />
+                              <Bookmark size={18} />
                             )}
                           </button>
 
                           <Link
                             to={`/jobs/${job.id}`}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-bold transition shadow-sm"
+                            className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl flex items-center gap-2 text-sm font-bold transition-all shadow-lg border border-slate-700"
                           >
                             View Details
                             <ExternalLink size={14} />
@@ -320,29 +322,29 @@ export default function JobsPage() {
                   <button
                     disabled={currentPage === 1}
                     onClick={() => fetchJobs(currentPage - 1)}
-                    className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium text-sm transition hover:bg-slate-50"
+                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
                   >
                     Previous
                   </button>
 
-                  <span className="text-sm text-slate-600 font-medium">
+                  <span className="text-sm text-slate-400 font-medium">
                     Page {currentPage} of {lastPage}
                   </span>
 
                   <button
                     disabled={currentPage === lastPage}
                     onClick={() => fetchJobs(currentPage + 1)}
-                    className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium text-sm transition hover:bg-slate-50"
+                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
                   >
                     Next
                   </button>
                 </div>
               </>
             ) : (
-              <div className="bg-white rounded-2xl py-16 text-center border">
-                <Briefcase className="mx-auto mb-4 text-slate-400" size={40} />
-                <h3 className="font-bold text-slate-800">No jobs found</h3>
-                <p className="text-slate-500 text-sm mt-1">Try changing your filters.</p>
+              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl py-16 text-center border border-slate-800/80 shadow-xl">
+                <Briefcase className="mx-auto mb-4 text-slate-500" size={40} />
+                <h3 className="font-bold text-white">No jobs found</h3>
+                <p className="text-slate-400 text-sm mt-1">Try changing your filters.</p>
               </div>
             )}
           </div>
