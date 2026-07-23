@@ -12,8 +12,16 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'location', 'github_url', 'linkedin_url', 'resume'
-    ];
+    'name', 
+    'email', 
+    'password', 
+    'role',
+    'location', 
+    'bio',
+    'github_url', 
+    'linkedin_url', 
+    'resume'
+];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
