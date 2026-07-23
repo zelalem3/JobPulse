@@ -52,17 +52,19 @@
     filter: invert(1) brightness(2);
   }
 }
+h1,h2 {
+  color: #000000 !important;
+}
 
 body {
   margin: 0;
 }
 
 #root {
-  width: 1126px;
+  width: 100%;          /* Change from 1126px to 100% */
   max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  margin: 0;            /* Remove auto centering margins */
+  /* border-inline: 1px solid var(--border); */ /* Remove this if you don't want the side borders */
   min-height: 100svh;
   display: flex;
   flex-direction: column;

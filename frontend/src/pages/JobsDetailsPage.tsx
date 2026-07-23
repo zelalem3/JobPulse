@@ -49,7 +49,6 @@ export default function JobDetails() {
     fetchJob();
   }, [id]);
 
-  // Handle bookmark saving action safely with optimistic updates
   const toggleSave = async () => {
     if (!job || isSaving) return;
     
@@ -62,7 +61,6 @@ export default function JobDetails() {
       console.log("Save status updated successfully", response.data);
     } catch (e) {
       console.error("Error updating save status:", e);
-      // Revert if API fails
       setJob(prev => prev ? { ...prev, isSaved: previousSavedState } : null);
     } finally {
       setIsSaving(false);
@@ -74,7 +72,7 @@ export default function JobDetails() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center space-y-2 flex flex-col items-center">
           <Loader2 className="animate-spin text-blue-600" size={32} />
-          <p className="text-sm font-semibold text-slate-500">Retrieving position registry indices...</p>
+          <p className="text-sm font-semibold text-slate-700">Retrieving position registry indices...</p>
         </div>
       </div>
     );
@@ -85,10 +83,10 @@ export default function JobDetails() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-sm text-center shadow-sm space-y-4">
           <ShieldAlert className="mx-auto text-rose-500" size={40} />
-          <p className="text-sm font-bold text-slate-700">{error || "Record missing."}</p>
+          <p className="text-sm font-bold text-slate-900">{error || "Record missing."}</p>
           <button 
             onClick={() => navigate(-1)} 
-            className="w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition"
+            className="w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-800 transition"
           >
             Go Back
           </button>
@@ -104,7 +102,7 @@ export default function JobDetails() {
         {/* --- BACK NAVIGATION LINK --- */}
         <button 
           onClick={() => navigate(-1)} 
-          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition group"
+          className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-blue-600 transition group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition" /> Back to Directories
         </button>
@@ -113,38 +111,42 @@ export default function JobDetails() {
         <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-100 text-blue-600 font-bold text-[10px] rounded uppercase tracking-wide">
+              <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 font-bold text-[10px] rounded uppercase tracking-wide">
                 {job.source}
               </span>
-              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-500 font-medium text-[10px] rounded uppercase tracking-wide">
+              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 font-semibold text-[10px] rounded uppercase tracking-wide">
                 {job.type}
               </span>
             </div>
-            {/* High-visibility Title styling */}
-            <h1 className="text-2xl sm:text-3xl font-black text-black antialiased tracking-tight leading-tight">
+            
+            {/* Forced solid black heading title */}
+            <h1 
+  className="text-2xl sm:text-3xl font-black tracking-tight leading-tight" 
+  style={{ color: '#000000 !important' }}
+>
   {job.title}
 </h1>
-            <p className="text-base font-semibold text-slate-500">
-              {job.company} — <a href={job.companyWebsite || "#"} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-normal text-sm inline-flex items-center gap-0.5">Visit Site <ExternalLink size={12} /></a>
+            
+            <p className="text-base font-bold text-slate-800">
+              {job.company} — <a href={job.companyWebsite || "#"} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-bold text-sm inline-flex items-center gap-0.5">Visit Site <ExternalLink size={12} /></a>
             </p>
           </div>
 
           <div className="flex items-center gap-2 border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 justify-end shrink-0">
-            {/* Integrated Toolbar Save Button */}
             <button 
               onClick={toggleSave}
               disabled={isSaving}
               className={`p-3 rounded-xl border transition flex items-center justify-center ${
                 job.isSaved 
-                  ? 'bg-amber-50 border-amber-200 text-amber-500 hover:bg-amber-100' 
-                  : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                  ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               } ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
               title={job.isSaved ? "Unsave Position" : "Save Position"}
             >
               {job.isSaved ? <BookmarkCheck size={20} fill="currentColor" /> : <Bookmark size={20} />}
             </button>
             
-            <button className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-xl transition">
+            <button className="p-3 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition">
               <Share2 size={20} />
             </button>
 
@@ -164,57 +166,51 @@ export default function JobDetails() {
           
           {/* --- HYBRID SAFE DESCRIPTION PANEL --- */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Job Description</h2>
+            <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-4">Job Description</h2>
             
-            <article className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed">
+            <article className="prose prose-slate max-w-none text-slate-900 text-sm leading-relaxed">
               {(() => {
                 const descriptionText = job.description || "";
-                
-                // 1. Detect if payload is scraped raw HTML node string
                 const hasHtml = /<\/?[a-z][\s\S]*>/i.test(descriptionText);
 
                 if (hasHtml) {
                   return (
                     <div 
-                      className="space-y-4 prose-p:text-slate-600 prose-p:text-[14px] prose-p:leading-relaxed prose-headings:text-slate-900 prose-headings:font-bold prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:text-slate-600"
+                      className="space-y-4 text-slate-900 prose-p:text-slate-900 prose-p:font-normal prose-p:text-[14px] prose-p:leading-relaxed prose-headings:text-slate-900 prose-headings:font-black prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:text-slate-900"
                       dangerouslySetInnerHTML={{ __html: descriptionText }} 
                     />
                   );
                 }
 
-                // 2. Fallback execution: Structured string processor if raw text
                 return (
-                  <div className="space-y-4">
+                  <div className="space-y-4 text-slate-900">
                     {descriptionText.split(/\n+/).map((paragraph, index) => {
                       const trimmed = paragraph.trim();
                       if (!trimmed) return null;
 
-                      // Headers parser
                       if (trimmed.startsWith('###')) {
                         return (
-                          <h3 key={index} className="text-base font-bold text-slate-900 pt-3 pb-1 border-b border-slate-100 mt-6 first:mt-0">
+                          <h3 key={index} className="text-base font-black text-slate-900 pt-3 pb-1 border-b border-slate-200 mt-6 first:mt-0">
                             {trimmed.replace('###', '').trim()}
                           </h3>
                         );
                       }
 
-                      // Bullet point normalization parser
                       if (trimmed.startsWith('*') || trimmed.startsWith('-')) {
                         const cleanLi = trimmed.replace(/^[*-\s]+/, '').trim();
                         return (
                           <ul key={index} className="list-disc pl-5 my-1">
-                            <li className="text-slate-600 text-[14px]">
+                            <li className="text-slate-900 text-[14px] font-normal">
                               {cleanLi.split('**').map((chunk, cIdx) => 
-                                cIdx % 2 === 1 ? <strong key={cIdx} className="text-slate-900 font-semibold">{chunk}</strong> : chunk
+                                cIdx % 2 === 1 ? <strong key={cIdx} className="text-slate-900 font-bold">{chunk}</strong> : chunk
                               )}
                             </li>
                           </ul>
                         );
                       }
 
-                      // Default continuous copy segment block
                       return (
-                        <p key={index} className="text-slate-600 text-[14px] leading-relaxed">
+                        <p key={index} className="text-slate-900 text-[14px] leading-relaxed font-normal">
                           {trimmed}
                         </p>
                       );
@@ -228,59 +224,59 @@ export default function JobDetails() {
           {/* --- SIDEBAR TECH INFO PANELS --- */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
-              <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Position Specs</h4>
+              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Position Specs</h4>
               
               <div className="space-y-3.5">
                 <div className="flex items-start gap-3">
-                  <MapPin size={18} className="text-slate-400 shrink-0 mt-0.5" />
+                  <MapPin size={18} className="text-slate-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Location</p>
-                    <p className="text-sm font-semibold text-slate-700">{job.location}</p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">Location</p>
+                    <p className="text-sm font-bold text-slate-900">{job.location}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <DollarSign size={18} className="text-slate-400 shrink-0 mt-0.5" />
+                  <DollarSign size={18} className="text-slate-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Compensation</p>
-                    <p className="text-sm font-semibold text-slate-700">{job.salary || "Not Specified"}</p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">Compensation</p>
+                    <p className="text-sm font-bold text-slate-900">{job.salary || "Not Specified"}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Briefcase size={18} className="text-slate-400 shrink-0 mt-0.5" />
+                  <Briefcase size={18} className="text-slate-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Employment Type</p>
-                    <p className="text-sm font-semibold text-slate-700">{job.type}</p>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">Employment Type</p>
+                    <p className="text-sm font-bold text-slate-900">{job.type}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md text-slate-300 space-y-4">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md text-slate-200 space-y-4">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Database size={14} /> Pipeline Telemetry
               </h4>
 
               <div className="space-y-3 font-mono text-xs">
                 <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-500">Index ID:</span>
-                  <span className="text-slate-300 font-bold">#JP-{job.id}</span>
+                  <span className="text-slate-400">Index ID:</span>
+                  <span className="text-white font-bold">#JP-{job.id}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-500">Discovered:</span>
-                  <span className="text-emerald-400 flex items-center gap-1">
+                  <span className="text-slate-400">Discovered:</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
                     <Calendar size={12} /> {job.scrapedAt}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Ingest Engine:</span>
+                  <span className="text-slate-400">Ingest Engine:</span>
                   <span className="text-blue-400 font-bold">Playwright/BS4</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-100 border border-slate-200/60 rounded-xl flex gap-2 items-start text-slate-400">
-              <ShieldAlert size={16} className="shrink-0 mt-0.5 text-slate-400" />
-              <p className="text-[11px] leading-relaxed font-medium">
+            <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex gap-2 items-start text-slate-700">
+              <ShieldAlert size={16} className="shrink-0 mt-0.5 text-slate-700" />
+              <p className="text-[11px] leading-relaxed font-bold text-slate-800">
                 This listing was automatically scraped by the JobPulse system cluster. Always cross-verify external source application loops before submitting sensitive account keys or CV credentials.
               </p>
             </div>
