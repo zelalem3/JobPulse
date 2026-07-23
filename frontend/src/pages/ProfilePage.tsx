@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Briefcase, Bell, MapPin, Mail, Save, Lock, Plus, X } from 'lucide-react';
+import { User, Briefcase, Bell, MapPin, Mail, Save, Lock, Plus, X, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 import api from '../services/axios';
 
 interface UserProfile {
@@ -19,10 +19,10 @@ export default function Profile() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [profile, setProfile] = useState<UserProfile>({
-    name: '',
+    name: 'Zelalem Getnet',
     role: 'Full Stack Developer',
     email: '',
-    location: '',
+    location: 'Addis Ababa',
     bio: '',
     skills: [],
   });
@@ -43,23 +43,21 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-
   const fetchProfile = async () => {
     try {
       setLoading(true);
       const res = await api.get('/api/profile');
       const data = res.data;
       
-      // Safely extract skill names whether they are objects or strings
       const formattedSkills = Array.isArray(data.skills)
         ? data.skills.map((s: any) => (typeof s === 'object' && s !== null ? s.name : s))
         : [];
 
       setProfile({
-        name: data.name || '',
+        name: data.name || 'Zelalem Getnet',
         role: data.role || 'Full Stack Developer',
         email: data.email || '',
-        location: data.location || '',
+        location: data.location || 'Addis Ababa',
         bio: data.bio || '',
         skills: formattedSkills,
       });
@@ -69,6 +67,7 @@ export default function Profile() {
       setLoading(false);
     }
   };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
@@ -99,7 +98,7 @@ export default function Profile() {
     setPasswords(prev => ({ ...prev, [name]: value }));
   };
 
-const handleSaveProfile = async () => {
+  const handleSaveProfile = async () => {
     try {
       setSaving(true);
       setMessage(null);
@@ -112,7 +111,6 @@ const handleSaveProfile = async () => {
         role: profile.role,
       });
 
-      // Extract skills from the response user object, whether they come back as relations or strings
       const savedUser = res.data.user;
       const updatedSkills = savedUser?.skills
         ? savedUser.skills.map((s: any) => (typeof s === 'object' && s !== null ? s.name : s))
@@ -131,7 +129,9 @@ const handleSaveProfile = async () => {
     } finally {
       setSaving(false);
     }
-  };  const handleUpdatePassword = async (e: React.FormEvent) => {
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setPassLoading(true);
@@ -149,38 +149,65 @@ const handleSaveProfile = async () => {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" />
+      <div className="h-screen flex items-center justify-center bg-slate-950">
+        <div className="relative">
+          <div className="animate-spin h-12 w-12 rounded-full border-4 border-slate-700 border-t-slate-200" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Sparkles size={16} className="text-slate-400 animate-pulse" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-12 px-4 sm:px-6 lg:px-8 font-sans selection:bg-slate-800 selection:text-white">
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* --- FEEDBACK NOTIFICATIONS --- */}
         {message && (
-          <div className={`p-4 rounded-xl text-sm font-semibold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+          <div className={`p-4 rounded-2xl text-sm font-medium flex items-center gap-3 backdrop-blur-xl transition-all duration-300 animate-fadeIn ${
+            message.type === 'success' 
+              ? 'bg-slate-900 text-slate-200 border border-slate-800 shadow-lg' 
+              : 'bg-rose-500/10 text-rose-300 border border-rose-500/20 shadow-lg'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${message.type === 'success' ? 'bg-slate-400' : 'bg-rose-400'} animate-ping`} />
             {message.text}
           </div>
         )}
 
         {/* --- PROFILE HEADER CARD --- */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-700" />
-          <div className="px-6 pb-6 relative flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-16">
-            <div className="w-28 h-28 rounded-2xl bg-slate-200 border-4 border-white shadow-sm flex items-center justify-center text-slate-400 overflow-hidden">
-              <User size={56} className="text-slate-500" />
+        <div className="bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800/80 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-slate-900/40 pointer-events-none" />
+          <div className="h-40 bg-slate-900 relative overflow-hidden border-b border-slate-800/80">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.05),transparent)]" />
+          </div>
+          
+          <div className="px-8 pb-8 relative flex flex-col sm:flex-row items-start sm:items-end gap-6 -mt-16">
+            <div className="w-32 h-32 rounded-3xl bg-slate-900 border-4 border-slate-950 shadow-2xl flex items-center justify-center text-slate-400 overflow-hidden relative group/avatar">
+              <div className="absolute inset-0 bg-slate-800/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
+              <User size={60} className="text-slate-400 transition-transform duration-300 group-hover/avatar:scale-110" />
             </div>
-            <div className="flex-1 pt-14 sm:pt-0">
-              <h1 className="text-2xl font-bold text-slate-900">{profile.name}</h1>
-              <p className="text-slate-500 font-medium">{profile.role}</p>
-              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-slate-400">
-                <span className="flex items-center gap-1"><MapPin size={16} /> {profile.location || 'Location not set'}</span>
-                <span className="flex items-center gap-1"><Mail size={16} /> {profile.email}</span>
+
+            <div className="flex-1 pt-4 sm:pt-0">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-extrabold tracking-tight text-white">{profile.name}</h1>
+                <span className="px-3 py-1 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold rounded-full flex items-center gap-1 shadow-inner">
+                  <Zap size={12} className="text-slate-400" /> Pro
+                </span>
+              </div>
+              <p className="text-slate-400 font-medium mt-1">{profile.role}</p>
+              
+              <div className="flex flex-wrap items-center gap-6 mt-3 text-sm text-slate-400">
+                <span className="flex items-center gap-1.5 hover:text-slate-200 transition-colors">
+                  <MapPin size={16} className="text-slate-400" /> {profile.location || 'Addis Ababa'}
+                </span>
+                <span className="flex items-center gap-1.5 hover:text-slate-200 transition-colors">
+                  <Mail size={16} className="text-slate-400" /> {profile.email}
+                </span>
               </div>
             </div>
+
             <button 
               onClick={() => {
                 if (isEditing) {
@@ -190,10 +217,10 @@ const handleSaveProfile = async () => {
                 }
               }}
               disabled={saving}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition shadow-sm ${
+              className={`px-6 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-300 shadow-lg flex items-center gap-2 ${
                 isEditing 
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2' 
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
+                  ? 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700' 
+                  : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 shadow-slate-950/50'
               }`}
             >
               {isEditing ? <><Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}</> : 'Edit Profile'}
@@ -202,27 +229,33 @@ const handleSaveProfile = async () => {
         </div>
 
         {/* --- NAVIGATION TABS --- */}
-        <div className="flex border-b border-slate-200 gap-6">
+        <div className="flex border-b border-slate-800/80 gap-8">
           <button
             onClick={() => setActiveTab('info')}
-            className={`pb-3 text-sm font-semibold border-b-2 transition ${
-              activeTab === 'info' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+            className={`pb-4 text-sm font-semibold border-b-2 transition-all duration-300 ${
+              activeTab === 'info' 
+                ? 'border-slate-200 text-white' 
+                : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
             Account Details
           </button>
           <button
             onClick={() => setActiveTab('security')}
-            className={`pb-3 text-sm font-semibold border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === 'security' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+            className={`pb-4 text-sm font-semibold border-b-2 transition-all duration-300 flex items-center gap-2 ${
+              activeTab === 'security' 
+                ? 'border-slate-200 text-white' 
+                : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
             <Lock size={16} /> Security
           </button>
           <button
             onClick={() => setActiveTab('alerts')}
-            className={`pb-3 text-sm font-semibold border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === 'alerts' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'
+            className={`pb-4 text-sm font-semibold border-b-2 transition-all duration-300 flex items-center gap-2 ${
+              activeTab === 'alerts' 
+                ? 'border-slate-200 text-white' 
+                : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
             <Bell size={16} /> Scraper Alerts
@@ -234,63 +267,67 @@ const handleSaveProfile = async () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Left column: Bio & Form fields */}
             <div className="md:col-span-2 space-y-6">
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                <h3 className="text-lg font-bold text-slate-900">About Me</h3>
+              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-slate-800/80 space-y-6 relative overflow-hidden">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Sparkles size={18} className="text-slate-400" /> About Me
+                </h3>
                 {isEditing ? (
                   <textarea
                     name="bio"
                     value={profile.bio}
                     onChange={handleInputChange}
                     rows={4}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 outline-none transition"
+                    className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-2xl focus:ring-1 focus:ring-slate-500 focus:border-slate-500 text-slate-200 outline-none transition-all duration-300 resize-none shadow-inner"
                   />
                 ) : (
-                  <p className="text-slate-600 leading-relaxed text-sm">{profile.bio || 'No bio provided yet.'}</p>
+                  <p className="text-slate-300 leading-relaxed text-sm bg-slate-950/40 p-4 rounded-2xl border border-slate-800/50">
+                    {profile.bio || 'No bio provided yet.'}
+                  </p>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Name</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Full Name</label>
                     <input
                       type="text"
                       name="name"
                       disabled={!isEditing}
                       value={profile.name}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 disabled:bg-slate-50 disabled:text-slate-500 border border-slate-200 rounded-xl text-slate-700 outline-none transition"
+                      className="w-full px-4 py-3 bg-slate-950/80 disabled:bg-slate-950/40 disabled:text-slate-400 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all duration-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Email Address</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Email Address</label>
                     <input
                       type="email"
                       name="email"
                       disabled={!isEditing}
                       value={profile.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 disabled:bg-slate-50 disabled:text-slate-500 border border-slate-200 rounded-xl text-slate-700 outline-none transition"
+                      className="w-full px-4 py-3 bg-slate-950/80 disabled:bg-slate-950/40 disabled:text-slate-400 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all duration-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Job Title</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Job Title</label>
                     <input
                       type="text"
                       name="role"
                       disabled={!isEditing}
                       value={profile.role}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 disabled:bg-slate-50 disabled:text-slate-500 border border-slate-200 rounded-xl text-slate-700 outline-none transition"
+                      className="w-full px-4 py-3 bg-slate-950/80 disabled:bg-slate-950/40 disabled:text-slate-400 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all duration-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Location</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Location</label>
                     <input
                       type="text"
                       name="location"
                       disabled={!isEditing}
                       value={profile.location}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 disabled:bg-slate-50 disabled:text-slate-500 border border-slate-200 rounded-xl text-slate-700 outline-none transition"
+                      className="w-full px-4 py-3 bg-slate-950/80 disabled:bg-slate-950/40 disabled:text-slate-400 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all duration-300"
                     />
                   </div>
                 </div>
@@ -299,8 +336,8 @@ const handleSaveProfile = async () => {
 
             {/* Right column: Technical Skills List */}
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-slate-800/80 space-y-5">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Briefcase size={18} className="text-slate-400" /> Monitored Tech & Skills
                 </h3>
 
@@ -318,12 +355,12 @@ const handleSaveProfile = async () => {
                           handleAddSkill();
                         }
                       }}
-                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="flex-1 px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-2xl text-sm text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all"
                     />
                     <button
                       type="button"
                       onClick={handleAddSkill}
-                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm transition flex items-center justify-center"
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl text-sm transition-all duration-300 shadow-lg flex items-center justify-center border border-slate-700"
                     >
                       <Plus size={16} />
                     </button>
@@ -336,14 +373,14 @@ const handleSaveProfile = async () => {
                     profile.skills.map((skill, index) => (
                       <span 
                         key={index} 
-                        className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg tracking-wide border border-slate-200/40 flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 bg-slate-800/80 text-slate-200 text-xs font-medium rounded-xl tracking-wide border border-slate-700/60 flex items-center gap-2 shadow-sm hover:border-slate-600 transition-colors"
                       >
                         {skill}
                         {isEditing && (
                           <button
                             type="button"
                             onClick={() => handleRemoveSkill(skill)}
-                            className="text-slate-400 hover:text-rose-600 transition"
+                            className="text-slate-400 hover:text-rose-400 transition-colors"
                           >
                             <X size={14} />
                           </button>
@@ -351,7 +388,7 @@ const handleSaveProfile = async () => {
                       </span>
                     ))
                   ) : (
-                    <p className="text-xs text-slate-400">No skills added yet.</p>
+                    <p className="text-xs text-slate-500 italic">No skills added yet.</p>
                   )}
                 </div>
               </div>
@@ -361,56 +398,61 @@ const handleSaveProfile = async () => {
 
         {/* --- TAB WINDOW: SECURITY --- */}
         {activeTab === 'security' && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 max-w-xl space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Change Password</h3>
-              <p className="text-slate-400 text-sm mt-0.5">Ensure your account is using a secure password.</p>
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-slate-800/80 max-w-xl space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-slate-800 rounded-2xl border border-slate-700 text-slate-300">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Change Password</h3>
+                <p className="text-slate-400 text-sm mt-0.5">Ensure your account is using a secure password.</p>
+              </div>
             </div>
 
             {passMessage && (
-              <div className={`p-3 rounded-xl text-xs font-semibold ${passMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+              <div className={`p-4 rounded-2xl text-xs font-semibold ${passMessage.type === 'success' ? 'bg-slate-900 text-slate-200 border border-slate-800' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'}`}>
                 {passMessage.text}
               </div>
             )}
 
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <form onSubmit={handleUpdatePassword} className="space-y-5">
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Current Password</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Current Password</label>
                 <input
                   type="password"
                   name="current_password"
                   required
                   value={passwords.current_password}
                   onChange={handlePasswordChange}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">New Password</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">New Password</label>
                 <input
                   type="password"
                   name="password"
                   required
                   value={passwords.password}
                   onChange={handlePasswordChange}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Confirm New Password</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Confirm New Password</label>
                 <input
                   type="password"
                   name="password_confirmation"
                   required
                   value={passwords.password_confirmation}
                   onChange={handlePasswordChange}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-slate-200 outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={passLoading}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-50"
+                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl text-sm font-semibold transition-all duration-300 shadow-lg border border-slate-700 disabled:opacity-50"
               >
                 {passLoading ? 'Updating...' : 'Update Password'}
               </button>
@@ -420,28 +462,28 @@ const handleSaveProfile = async () => {
 
         {/* --- TAB WINDOW: SCRAPER ALERTS --- */}
         {activeTab === 'alerts' && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-slate-800/80 space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Configured Search Watches</h3>
+              <h3 className="text-lg font-bold text-white">Configured Search Watches</h3>
               <p className="text-slate-400 text-sm mt-0.5">Control filters handled by your backend scrapers.</p>
             </div>
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-800/80">
               <div className="py-4 flex justify-between items-center">
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-800">Remote Python Engineers</h4>
+                  <h4 className="text-sm font-semibold text-slate-200">Remote Python Engineers</h4>
                   <p className="text-xs text-slate-400 mt-0.5">Scanning RemoteOK and LinkedIn hourly</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold rounded-md">
+                <span className="px-3 py-1 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-xl shadow-inner">
                   Active
                 </span>
               </div>
               <div className="py-4 flex justify-between items-center">
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-800">Laravel Core Architect Roles</h4>
+                  <h4 className="text-sm font-semibold text-slate-200">Laravel Core Architect Roles</h4>
                   <p className="text-xs text-slate-400 mt-0.5">Scanning Indeed daily</p>
                 </div>
-                <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-400 text-xs font-bold rounded-md">
+                <span className="px-3 py-1 bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold rounded-xl">
                   Paused
                 </span>
               </div>

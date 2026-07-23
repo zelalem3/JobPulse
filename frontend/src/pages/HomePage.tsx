@@ -159,7 +159,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-slate-800 selection:text-white">
       <SearchBar
         onSearch={handleSearchLog}
         placeholder="Search jobs..."
@@ -168,56 +168,64 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto py-10 px-4">
         {/* Metric Cards Top Row Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+          <div className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-slate-800/80">
             <div className="flex items-center gap-3">
-              <Database className="text-blue-600" size={20} />
+              <div className="p-2.5 bg-slate-800 rounded-2xl border border-slate-700 text-slate-300">
+                <Database size={18} />
+              </div>
               <div>
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                   Total Jobs
                 </p>
-                <h3 className="font-black text-xl text-slate-900">
+                <h3 className="font-black text-xl text-white">
                   {total}
                 </h3>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+          <div className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-slate-800/80">
             <div className="flex items-center gap-3">
-              <RefreshCw className="text-emerald-500 animate-spin-slow" size={20} />
+              <div className="p-2.5 bg-slate-800 rounded-2xl border border-slate-700 text-slate-300">
+                <RefreshCw size={18} className="animate-spin-slow" />
+              </div>
               <div>
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                   Scraper
                 </p>
-                <h3 className="font-black text-xl text-emerald-600">
+                <h3 className="font-black text-xl text-slate-200">
                   Active
                 </h3>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+          <div className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-slate-800/80">
             <div className="flex items-center gap-3">
-              <Briefcase className="text-amber-500" size={20} />
+              <div className="p-2.5 bg-slate-800 rounded-2xl border border-slate-700 text-slate-300">
+                <Briefcase size={18} />
+              </div>
               <div>
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                   Results
                 </p>
-                <h3 className="font-black text-xl text-slate-900">
+                <h3 className="font-black text-xl text-white">
                   {filteredListings.length}
                 </h3>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+          <div className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-slate-800/80">
             <div className="flex items-center gap-3">
-              <Filter className="text-purple-500" size={20} />
+              <div className="p-2.5 bg-slate-800 rounded-2xl border border-slate-700 text-slate-300">
+                <Filter size={18} />
+              </div>
               <div>
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                   Sources
                 </p>
-                <h3 className="font-black text-xl text-slate-900">
+                <h3 className="font-black text-xl text-white">
                   3
                 </h3>
               </div>
@@ -227,7 +235,7 @@ export default function HomePage() {
 
         {/* Core Listings Processing Logic Block */}
         {loading ? (
-          <div className="text-center py-20 text-sm font-semibold text-slate-500">
+          <div className="text-center py-20 text-sm font-semibold text-slate-400">
             Loading position indexes...
           </div>
         ) : filteredListings.length > 0 ? (
@@ -236,23 +244,23 @@ export default function HomePage() {
               {filteredListings.map((job) => (
                 <div
                   key={job.id}
-                  className="bg-white rounded-2xl p-6 shadow-sm border hover:border-slate-300 transition"
+                  className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-slate-800/80 hover:border-slate-700/80 transition-all duration-300"
                 >
                   <div className="flex justify-between flex-col md:flex-row gap-4">
                     <div>
-                      <div className="flex gap-2 mb-2">
-                        <span className="text-xs bg-slate-100 px-2 py-1 rounded font-medium text-slate-600">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <span className="text-xs bg-slate-800 border border-slate-700/60 px-2.5 py-1 rounded-xl font-medium text-slate-300">
                           {job.source}
                         </span>
 
                         {job.type && (
-                          <span className="text-xs bg-blue-100 px-2 py-1 rounded font-medium text-blue-700">
+                          <span className="text-xs bg-slate-800 border border-slate-700/60 px-2.5 py-1 rounded-xl font-medium text-slate-300">
                             {job.type}
                           </span>
                         )}
 
-                        <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
-                          <Calendar size={12} />
+                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium px-1">
+                          <Calendar size={12} className="text-slate-500" />
                           {job.scraped_at}
                         </span>
                       </div>
@@ -260,41 +268,41 @@ export default function HomePage() {
                       <h2 className="text-xl font-black tracking-tight transition antialiased">
                         <Link 
                           to={`/jobs/${job.id}`} 
-                          className="text-slate-900 hover:text-blue-600 transition-colors duration-200"
+                          className="text-white hover:text-slate-300 transition-colors duration-200"
                         >
                           {job.title}
                         </Link>
                       </h2>
 
-                      <p className="text-slate-500 mt-1 font-medium text-sm">
+                      <p className="text-slate-400 mt-1 font-medium text-sm">
                         {job.company} — {job.location}
                       </p>
 
                       {job.salary && (
-                        <p className="mt-2 text-xs font-semibold text-slate-600 bg-slate-50 inline-block px-2.5 py-1 rounded-md border border-slate-100">
+                        <p className="mt-2 text-xs font-semibold text-slate-300 bg-slate-950/60 inline-block px-3 py-1.5 rounded-xl border border-slate-800">
                           Salary: {job.salary}
                         </p>
                       )}
                     </div>
 
-                    <div className="flex items-start gap-2 self-end md:self-start">
+                    <div className="flex items-start gap-2.5 self-end md:self-start">
                       <button
                         onClick={() => toggleSaveJob(job.id)}
                         disabled={isSaving === job.id}
-                        className={`p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition ${
-                          job.isSaved ? "text-amber-500" : "text-slate-400"
+                        className={`p-2.5 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all shadow-lg ${
+                          job.isSaved ? "text-slate-200 border-slate-700" : "text-slate-400"
                         } ${isSaving === job.id ? "opacity-50" : ""}`}
                       >
                         {job.isSaved ? (
-                          <BookmarkCheck fill="currentColor" size={20} />
+                          <BookmarkCheck fill="currentColor" size={18} />
                         ) : (
-                          <Bookmark size={20} />
+                          <Bookmark size={18} />
                         )}
                       </button>
 
                       <Link
                         to={`/jobs/${job.id}`}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition shadow-sm"
+                        className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-2xl flex items-center gap-2 transition-all shadow-lg border border-slate-700"
                       >
                         View Details
                         <ExternalLink size={14} />
@@ -310,32 +318,32 @@ export default function HomePage() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => fetchJobs(currentPage - 1)}
-                className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium text-sm transition hover:bg-slate-50"
+                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
               >
                 Previous
               </button>
 
-              <span className="text-sm text-slate-600 font-medium">
+              <span className="text-sm text-slate-400 font-medium">
                 Page {currentPage} of {lastPage}
               </span>
 
               <button
                 disabled={currentPage === lastPage}
                 onClick={() => fetchJobs(currentPage + 1)}
-                className="px-4 py-2 border rounded-lg disabled:opacity-50 font-medium text-sm transition hover:bg-slate-50"
+                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
               >
                 Next
               </button>
             </div>
           </>
         ) : (
-          <div className="bg-white rounded-2xl py-16 text-center border">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl py-16 text-center border border-slate-800/80 shadow-xl">
             <Briefcase
-              className="mx-auto mb-4 text-slate-400"
+              className="mx-auto mb-4 text-slate-500"
               size={40}
             />
-            <h3 className="font-bold text-slate-800">No jobs found</h3>
-            <p className="text-slate-500 text-sm mt-1">
+            <h3 className="font-bold text-white">No jobs found</h3>
+            <p className="text-slate-400 text-sm mt-1">
               Try changing your filters.
             </p>
           </div>
