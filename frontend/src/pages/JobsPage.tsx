@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 // 1. Import Link from react-router-dom for client-side routing
 import { Link } from "react-router-dom"; 
 import {
-  Search,
   MapPin,
   Briefcase,
   ExternalLink,
@@ -11,6 +10,7 @@ import {
   Calendar,
   SlidersHorizontal,
 } from "lucide-react";
+import SearchBar from "../components/SearchBar";
 import api from "../services/axios";
 
 interface JobListing {
@@ -29,62 +29,69 @@ export default function JobsPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const [listings, setListings] = useState<JobListing[]>([]);
+  const [allListings, setAllListings] = useState<JobListing[]>([]);
+  const [allSources, setAllSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
-  const fetchJobs = async (page = 1) => {
-    try {
-      setLoading(true);
-
-      // Fetch jobs and user's saved IDs concurrently to sync bookmark states accurately
-      const [jobsResponse, savedResponse] = await Promise.all([
-        api.get(`/api/jobs?page=${page}&per_page=10`),
-        api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
-      ]);
-
-      const jobsData = jobsResponse.data.data || [];
-      const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
-      
-      // Extract array of saved job listing IDs belonging to this user
-      const savedJobIds = new Set(
-        rawSavedJobs.map((item: any) => String(item.job_listing_id || item.job?.id || item.id))
-      );
-
-      // Map listings and attach initial isSaved status
-      const processedJobs = jobsData.map((job: any) => ({
-        ...job,
-        id: String(job.id),
-        isSaved: savedJobIds.has(String(job.id)),
-      }));
-
-      setListings(processedJobs);
-      setCurrentPage(jobsResponse.data.current_page);
-      setLastPage(jobsResponse.data.last_page);
-      setTotal(jobsResponse.data.total);
-    } catch (error) {
-      console.log("Error loading jobs or saved states:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch all jobs and saved states on mount
   useEffect(() => {
-    fetchJobs(1);
+    const fetchAllJobs = async () => {
+      try {
+        setLoading(true);
+
+        const [jobsResponse, savedResponse] = await Promise.all([
+          api.get(`/api/jobs?per_page=1000`), // Fetch full dataset for smooth client-side filtering
+          api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
+        ]);
+
+        const jobsData = jobsResponse.data.data || jobsResponse.data || [];
+        const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
+        
+        const savedJobIds = new Set(
+          rawSavedJobs.map((item: any) => String(item.job_listing_id || item.job?.id || item.id))
+        );
+
+        const processedJobs = jobsData.map((job: any) => ({
+          ...job,
+          id: String(job.id),
+          isSaved: savedJobIds.has(String(job.id)),
+        }));
+
+        setAllListings(processedJobs);
+
+        // Extract unique sources dynamically
+        const uniqueSources = Array.from(
+          new Set(processedJobs.map((job: JobListing) => job.source).filter(Boolean))
+        ) as string[];
+        setAllSources(uniqueSources);
+
+      } catch (error) {
+        console.log("Error loading jobs or saved states:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllJobs();
   }, []);
+
+  // Reset to page 1 whenever filters or search keywords change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchKeyword, searchLocation, selectedSources]);
 
   const toggleSaveJob = async (id: string) => {
     if (isSaving !== null) return;
 
     let previousSavedState = false;
-    setListings((prev) =>
+    setAllListings((prev) =>
       prev.map((job) => {
         if (job.id === id) {
           previousSavedState = !!job.isSaved;
@@ -99,7 +106,7 @@ export default function JobsPage() {
       await api.post(`api/savejob/${id}`);
     } catch (e) {
       console.error("Error updating save status:", e);
-      setListings((prev) =>
+      setAllListings((prev) =>
         prev.map((job) => (job.id === id ? { ...job, isSaved: previousSavedState } : job))
       );
     } finally {
@@ -119,62 +126,63 @@ export default function JobsPage() {
     }
   };
 
-  const filteredListings = listings.filter((job) => {
-    const title = job.title ?? "";
-    const company = job.company ?? "";
-    const location = job.location ?? "";
-    const source = job.source ?? "";
-    const type = job.type ?? "";
+  // Filter across the entire dataset
+  const filteredListings = allListings.filter((job) => {
+    const title = (job.title ?? "").toLowerCase();
+    const company = (job.company ?? "").toLowerCase();
+    const location = (job.location ?? "").toLowerCase();
+    const source = (job.source ?? "").trim().toLowerCase();
+   
 
     const matchesKeyword =
-      title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-      company.toLowerCase().includes(searchKeyword.toLowerCase());
+      title.includes(searchKeyword.toLowerCase().trim()) ||
+      company.includes(searchKeyword.toLowerCase().trim());
 
-    const matchesLocation = location
-      .toLowerCase()
-      .includes(searchLocation.toLowerCase());
+    const matchesLocation = location.includes(
+      searchLocation.toLowerCase().trim()
+    );
 
     const matchesSource =
       selectedSources.length === 0 ||
-      selectedSources.includes(source);
+      selectedSources.some((s) => s.trim().toLowerCase() === source);
 
-    const matchesType =
-      selectedTypes.length === 0 ||
-      selectedTypes.includes(type);
 
     return (
       matchesKeyword &&
       matchesLocation &&
-      matchesSource &&
-      matchesType
+      matchesSource 
     );
   });
+
+  // Calculate client-side pagination parameters
+  const totalItems = filteredListings.length;
+  const lastPage = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentPaginatedListings = filteredListings.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-slate-800 selection:text-white">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Search */}
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-3 border border-slate-800/80 shadow-xl flex flex-col md:flex-row gap-2 items-center">
-          <div className="flex items-center gap-2.5 px-3 w-full border-b md:border-b-0 md:border-r border-slate-800 py-2.5">
-            <Search size={18} className="text-slate-400" />
-            <input
-              type="text"
-              placeholder="Job title or company..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              className="w-full bg-transparent outline-none text-slate-100 placeholder:text-slate-500 text-sm"
+        {/* Search Bar Component Row */}
+        <div className="flex flex-col md:flex-row gap-3 items-center">
+          <div className="w-full">
+            <SearchBar
+              onSearch={(term) => setSearchKeyword(term)}
+              placeholder="Search jobs by title or company..."
             />
           </div>
 
-          <div className="flex items-center gap-2.5 px-3 w-full md:w-80 py-2.5">
-            <MapPin size={18} className="text-slate-400" />
-            <input
-              type="text"
-              placeholder="Location..."
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="w-full bg-transparent outline-none text-slate-100 placeholder:text-slate-500 text-sm"
-            />
+          <div className="w-full md:w-80">
+            <div className="relative flex items-center w-full h-12 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 shadow-xl overflow-hidden focus-within:border-slate-700 transition-all duration-300 px-3">
+              <MapPin size={18} className="text-slate-400 shrink-0 mr-2.5" />
+              <input
+                type="text"
+                placeholder="Filter by location..."
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                className="w-full bg-transparent outline-none text-slate-100 placeholder:text-slate-500 text-sm"
+              />
+            </div>
           </div>
         </div>
 
@@ -188,45 +196,31 @@ export default function JobsPage() {
             <div className="space-y-6">
               <div>
                 <h4 className="font-bold text-sm text-white mb-3 tracking-wide">Sources</h4>
-                {["EthioReporter", "Afriwork", "EthioJobs","Josad software","ET carrers","Jobs in Ethio"].map((src) => (
-                  <label key={src} className="flex items-center gap-2.5 mb-2.5 text-sm text-slate-300 hover:text-white cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedSources.includes(src)}
-                      onChange={() =>
-                        handleCheckboxToggle(
-                          src,
-                          selectedSources,
-                          setSelectedSources
-                        )
-                      }
-                      className="rounded bg-slate-950 border-slate-700 text-slate-700 focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                    />
-                    {src}
-                  </label>
-                ))}
+                {allSources.length > 0 ? (
+                  allSources.map((src) => (
+                    <label key={src} className="flex items-center gap-2.5 mb-2.5 text-sm text-slate-300 hover:text-white cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedSources.includes(src)}
+                        onChange={() =>
+                          handleCheckboxToggle(
+                            src,
+                            selectedSources,
+                            setSelectedSources
+                          )
+                        }
+                        className="rounded bg-slate-950 border-slate-700 text-slate-700 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                      />
+                      {src}
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500">No sources available</p>
+                )}
               </div>
 
               <div className="pt-2 border-t border-slate-800">
-                <h4 className="font-bold text-sm text-white mb-3 tracking-wide">Type</h4>
-                {["Remote", "Full-time", "Part-time", "Contract"].map((type) => (
-                  <label key={type} className="flex items-center gap-2.5 mb-2.5 text-sm text-slate-300 hover:text-white cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedTypes.includes(type)}
-                      onChange={() =>
-                        handleCheckboxToggle(
-                          type,
-                          selectedTypes,
-                          setSelectedTypes
-                        )
-                      }
-                      className="rounded bg-slate-950 border-slate-700 text-slate-700 focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                    />
-                    {type}
-                  </label>
-                ))}
-              </div>
+                </div>
             </div>
           </div>
 
@@ -234,7 +228,7 @@ export default function JobsPage() {
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6 px-1">
               <h3 className="font-bold text-sm text-slate-400">
-                Showing {filteredListings.length} of {total} Jobs
+                Showing {totalItems > 0 ? startIndex + 1 : 0}–{Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} Jobs
               </h3>
 
               <button
@@ -249,10 +243,10 @@ export default function JobsPage() {
               <div className="text-center py-20 text-slate-400 font-medium text-sm">
                 Loading jobs...
               </div>
-            ) : filteredListings.length > 0 ? (
+            ) : currentPaginatedListings.length > 0 ? (
               <>
                 <div className="space-y-4">
-                  {filteredListings.map((job) => (
+                  {currentPaginatedListings.map((job) => (
                     <div
                       key={job.id}
                       className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-slate-800/80 hover:border-slate-700/80 transition-all duration-300"
@@ -321,8 +315,8 @@ export default function JobsPage() {
                 <div className="flex justify-center items-center gap-4 mt-10">
                   <button
                     disabled={currentPage === 1}
-                    onClick={() => fetchJobs(currentPage - 1)}
-                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
                   >
                     Previous
                   </button>
@@ -333,8 +327,8 @@ export default function JobsPage() {
 
                   <button
                     disabled={currentPage === lastPage}
-                    onClick={() => fetchJobs(currentPage + 1)}
-                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, lastPage))}
+                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
                   >
                     Next
                   </button>
