@@ -3,6 +3,7 @@ import asyncio
 from datetime import datetime
 from common.base_scraper import BaseScraper
 from common.models import JobListing
+from addskill import extract_skills  
 
 # Reusing this helper to prevent StringDataRightTruncation errors
 def safe_str(text: any, length: int = 250) -> str:
@@ -46,17 +47,23 @@ class AfriworkScraper(BaseScraper):
         if posted_at:
             posted_at = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
 
+        raw_description = item.get("description") or ""
+
+        
+        extracted_skills = extract_skills(raw_description)
+
         return JobListing(
             title=safe_str(item.get("title"), 250) or "Untitled Job",
             company=safe_str(item.get("entity", {}).get("name"), 250) or "Unknown",
             location=safe_str(item.get("city", {}).get("name"), 250) or "Addis Ababa",
-            description=safe_str(item.get("description"), 2500), # Truncate to avoid DB error
+            description=safe_str(raw_description, 2500),
             requirements=safe_str(item.get("experience_level"), 250),
             employment_type=safe_str(item.get("job_type", {}).get("name") if isinstance(item.get("job_type"), dict) else "N/A", 250),
             salary=safe_str(salary, 250),
             posted_at=posted_at,
             source="Afriwork",
-            url=f"https://afriworket.com/jobs/{item.get('id')}"
+            url=f"https://afriworket.com/jobs/{item.get('id')}",
+            skills=extracted_skills # 👈 Attach extracted skills array here
         )
 
     async def run(self):

@@ -3,7 +3,7 @@ from google import genai
 from google.genai import types
 import json
 
-# Initialize the client using your key (or set it as an env variable GEMINI_API_KEY)
+
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def extract_skills(job_description_text):
@@ -17,7 +17,7 @@ def extract_skills(job_description_text):
     """
 
     response = client.models.generate_content(
-        model='gemini-2.5-flash', # Or gemini-2.5-flash
+        model='gemini-2.5-flash', 
         contents=prompt,
     )
 
