@@ -7,8 +7,9 @@ import {
 import api from '../services/axios';
 
 interface Skill {
-  id: number;
-  name: string;
+  id?: number;
+  name?: string;
+  title?: string;
 }
 
 interface JobDetails {
@@ -24,7 +25,7 @@ interface JobDetails {
   isSaved: boolean;
   description: string;
   companyWebsite?: string;
-  skills?: Skill[];
+  skills?: (Skill | string)[];
 }
 
 export default function JobDetails() {
@@ -35,6 +36,15 @@ export default function JobDetails() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Helper function to safely extract skill names whether they are strings, relational objects, or pivot records
+  const renderSkillName = (skill: Skill | string): string => {
+    if (typeof skill === "string") return skill;
+    if (skill && typeof skill === "object") {
+      return skill.name || skill.title || String(skill.id || "");
+    }
+    return String(skill);
+  };
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -126,7 +136,7 @@ export default function JobDetails() {
             </div>
             
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white">
-              {job.title}
+              {(job.title || "").replace(/\*\*/g, "")}
             </h1>
             
             <p className="text-sm font-semibold text-slate-400">
@@ -231,12 +241,12 @@ export default function JobDetails() {
               <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/80 shadow-xl space-y-4">
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Required Skills</h4>
                 <div className="flex flex-wrap gap-2">
-                  {job.skills.map((skill) => (
+                  {job.skills.map((skill, index) => (
                     <span 
-                      key={skill.id} 
+                      key={index} 
                       className="px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-bold rounded-xl tracking-wide"
                     >
-                      {skill.name}
+                      {renderSkillName(skill)}
                     </span>
                   ))}
                 </div>

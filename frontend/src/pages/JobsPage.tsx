@@ -23,6 +23,7 @@ interface JobListing {
   salary: string;
   scrapedAt: string;
   isSaved: boolean;
+  skills: any[]; // Can be string or relational object from backend
 }
 
 export default function JobsPage() {
@@ -39,6 +40,15 @@ export default function JobsPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Helper function to safely extract skill string names whether they come as strings or objects
+  const renderSkillName = (skill: any): string => {
+    if (typeof skill === "string") return skill;
+    if (skill && typeof skill === "object") {
+      return skill.name || skill.title || String(skill.id || "");
+    }
+    return String(skill);
+  };
 
   // Fetch all jobs and saved states on mount
   useEffect(() => {
@@ -62,6 +72,7 @@ export default function JobsPage() {
           ...job,
           id: String(job.id),
           isSaved: savedJobIds.has(String(job.id)),
+          skills: job.skills || [], // Ensure skills defaults to an array
         }));
 
         setAllListings(processedJobs);
@@ -132,7 +143,6 @@ export default function JobsPage() {
     const company = (job.company ?? "").toLowerCase();
     const location = (job.location ?? "").toLowerCase();
     const source = (job.source ?? "").trim().toLowerCase();
-   
 
     const matchesKeyword =
       title.includes(searchKeyword.toLowerCase().trim()) ||
@@ -145,7 +155,6 @@ export default function JobsPage() {
     const matchesSource =
       selectedSources.length === 0 ||
       selectedSources.some((s) => s.trim().toLowerCase() === source);
-
 
     return (
       matchesKeyword &&
@@ -219,8 +228,7 @@ export default function JobsPage() {
                 )}
               </div>
 
-              <div className="pt-2 border-t border-slate-800">
-                </div>
+              <div className="pt-2 border-t border-slate-800"></div>
             </div>
           </div>
 
@@ -252,8 +260,8 @@ export default function JobsPage() {
                       className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-slate-800/80 hover:border-slate-700/80 transition-all duration-300"
                     >
                       <div className="flex justify-between flex-col md:flex-row gap-4">
-                        <div>
-                          <div className="flex flex-wrap gap-2 mb-2">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
                             <span className="text-xs bg-slate-800 border border-slate-700/60 px-2.5 py-1 rounded-xl font-medium text-slate-300">
                               {job.source}
                             </span>
@@ -268,16 +276,30 @@ export default function JobsPage() {
 
                           <h2 className="text-xl font-black tracking-tight transition antialiased">
                             <Link to={`/jobs/${job.id}`} className="text-white hover:text-slate-300 transition-colors duration-200">
-                              {job.title}
+                              {(job.title || "").replace(/\*\*/g, "")}
                             </Link>
                           </h2>
 
-                          <p className="text-slate-400 mt-1 font-medium text-sm">
+                          <p className="text-slate-400 font-medium text-sm">
                             {job.company} — {job.location}
                           </p>
 
+                          {/* Render Extracted Skills Badges Safely */}
+                          {job.skills && job.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {job.skills.map((skill, index) => (
+                                <span
+                                  key={index}
+                                  className="text-[11px] bg-blue-950/50 border border-blue-800/50 text-blue-300 px-2.5 py-0.5 rounded-lg font-medium"
+                                >
+                                  {renderSkillName(skill)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
                           {job.salary && (
-                            <p className="mt-2 text-xs font-semibold text-slate-300 bg-slate-950/60 inline-block px-3 py-1.5 rounded-xl border border-slate-800">
+                            <p className="text-xs font-semibold text-slate-300 bg-slate-950/60 inline-block px-3 py-1.5 rounded-xl border border-slate-800 mt-1">
                               Salary: {job.salary}
                             </p>
                           )}

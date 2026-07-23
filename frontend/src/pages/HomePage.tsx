@@ -285,7 +285,7 @@ export default function HomePage() {
                           to={`/jobs/${job.id}`} 
                           className="text-white hover:text-slate-300 transition-colors duration-200"
                         >
-                          {job.title}
+                          {(job.title || "").replace(/\*\*/g, "")}
                         </Link>
                       </h2>
 
