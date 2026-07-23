@@ -10,8 +10,6 @@ import {
   BookmarkCheck,
   Calendar,
   SlidersHorizontal,
-  
-  Link as LinkIcon, 
 } from "lucide-react";
 import api from "../services/axios";
 
@@ -36,6 +34,7 @@ export default function JobsPage() {
 
   const [listings, setListings] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -45,16 +44,33 @@ export default function JobsPage() {
     try {
       setLoading(true);
 
-      const response = await api.get(
-        `/api/jobs?page=${page}&per_page=10`
+      // Fetch jobs and user's saved IDs concurrently to sync bookmark states accurately
+      const [jobsResponse, savedResponse] = await Promise.all([
+        api.get(`/api/jobs?page=${page}&per_page=10`),
+        api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
+      ]);
+
+      const jobsData = jobsResponse.data.data || [];
+      const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
+      
+      // Extract array of saved job listing IDs belonging to this user
+      const savedJobIds = new Set(
+        rawSavedJobs.map((item: any) => String(item.job_listing_id || item.job?.id || item.id))
       );
 
-      setListings(response.data.data);
-      setCurrentPage(response.data.current_page);
-      setLastPage(response.data.last_page);
-      setTotal(response.data.total);
+      // Map listings and attach initial isSaved status
+      const processedJobs = jobsData.map((job: any) => ({
+        ...job,
+        id: String(job.id),
+        isSaved: savedJobIds.has(String(job.id)),
+      }));
+
+      setListings(processedJobs);
+      setCurrentPage(jobsResponse.data.current_page);
+      setLastPage(jobsResponse.data.last_page);
+      setTotal(jobsResponse.data.total);
     } catch (error) {
-      console.log(error);
+      console.log("Error loading jobs or saved states:", error);
     } finally {
       setLoading(false);
     }
@@ -64,14 +80,31 @@ export default function JobsPage() {
     fetchJobs(1);
   }, []);
 
-  const toggleSaveJob = (id: string) => {
+  const toggleSaveJob = async (id: string) => {
+    if (isSaving !== null) return;
+
+    let previousSavedState = false;
     setListings((prev) =>
-      prev.map((job) =>
-        job.id === id
-          ? { ...job, isSaved: !job.isSaved }
-          : job
-      )
+      prev.map((job) => {
+        if (job.id === id) {
+          previousSavedState = !!job.isSaved;
+          return { ...job, isSaved: !job.isSaved };
+        }
+        return job;
+      })
     );
+    setIsSaving(id);
+
+    try {
+      await api.post(`api/savejob/${id}`);
+    } catch (e) {
+      console.error("Error updating save status:", e);
+      setListings((prev) =>
+        prev.map((job) => (job.id === id ? { ...job, isSaved: previousSavedState } : job))
+      );
+    } finally {
+      setIsSaving(null);
+    }
   };
 
   const handleCheckboxToggle = (
@@ -237,7 +270,6 @@ export default function JobsPage() {
                             </span>
                           </div>
 
-                          {/* 3. Wrap Title in a router Link for direct details click access */}
                           <h2 className="text-xl font-bold text-slate-900 hover:text-blue-600 transition">
                             <Link to={`/jobs/${job.id}`}>
                               {job.title}
@@ -258,7 +290,10 @@ export default function JobsPage() {
                         <div className="flex items-start gap-2 self-end md:self-start">
                           <button
                             onClick={() => toggleSaveJob(job.id)}
-                            className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition text-slate-500"
+                            disabled={isSaving === job.id}
+                            className={`p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition ${
+                              job.isSaved ? "text-amber-500" : "text-slate-400"
+                            } ${isSaving === job.id ? "opacity-50" : ""}`}
                           >
                             {job.isSaved ? (
                               <BookmarkCheck className="text-amber-500" fill="currentColor" />
@@ -267,7 +302,6 @@ export default function JobsPage() {
                             )}
                           </button>
 
-                          {/* 4. Corrected internal view path navigation link configuration */}
                           <Link
                             to={`/jobs/${job.id}`}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-bold transition shadow-sm"

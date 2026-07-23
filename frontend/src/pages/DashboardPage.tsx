@@ -15,11 +15,14 @@ interface JobListing {
   id: number;
   title: string;
   location: string;
-  company_id: number;
+  company_id?: number;
   salary: string | null;
-  employment_type: string;
-  deadline: string | null;
+  employment_type?: string;
+  deadline?: string | null;
   url: string | null;
+  match_score?: number;
+  matched_skills?: string[];
+  location_match?: boolean;
 }
 
 interface SavedJobPivot {
@@ -28,14 +31,7 @@ interface SavedJobPivot {
   job_listing_id: number;
   created_at: string;
   updated_at: string;
-  job?: JobListing; // Nested relationship from backend
-}
-
-interface Recommendation {
-  job: JobListing;
-  match_score: number;
-  matched_skills: string[];
-  location_match: boolean;
+  job?: JobListing;
 }
 
 interface Stats {
@@ -49,7 +45,7 @@ interface Stats {
 
 export default function DashboardPage() {
   const [savedJobs, setSavedJobs] = useState<JobListing[]>([]);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<JobListing[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -79,7 +75,6 @@ export default function DashboardPage() {
 
       const formattedSavedJobs = Array.isArray(savedData)
         ? savedData.map((item: SavedJobPivot | JobListing) => {
-            // Check if it's wrapped via the pivot model structure with a nested 'job' property
             if ('job' in item && item.job) {
               return {
                 id: item.job.id,
@@ -100,9 +95,6 @@ export default function DashboardPage() {
 
       // -------- stats --------
       setStats(statsRes.data);
-
-      console.log("STATS RESPONSE:", statsRes.data);
-      console.log("SAVED RESPONSE:", savedData);
     } catch (err) {
       console.error("Dashboard error:", err);
     } finally {
@@ -120,11 +112,27 @@ export default function DashboardPage() {
 
       const res = await api.get("api/recommendations");
 
-      // Safely handle recommendations data whether wrapped in an object or returned as a raw array
-      const recData = res.data?.recommendations || res.data || [];
-      setRecommendations(Array.isArray(recData) ? recData : []);
+      // Handle wrapped objects or direct array responses securely
+      const responseData = res.data;
+      const recData = responseData?.recommendations || responseData?.data || responseData || [];
+      
+      // Normalize items whether they are direct job records or wrapped with a .job property
+      const normalizedRecs = Array.isArray(recData)
+        ? recData.map((item: any) => {
+            if (item && typeof item === 'object' && 'job' in item && item.job) {
+              return {
+                ...item.job,
+                match_score: item.match_score,
+                matched_skills: item.matched_skills,
+                location_match: item.location_match,
+              };
+            }
+            return item as JobListing;
+          })
+        : [];
 
-      console.log("RECOMMENDATIONS RESPONSE:", res.data);
+      setRecommendations(normalizedRecs);
+      console.log("NORMALIZED RECOMMENDATIONS:", normalizedRecs);
     } catch (err) {
       console.error("Recommendation error:", err);
       setRecommendations([]);
@@ -156,15 +164,12 @@ export default function DashboardPage() {
 
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
         <div className="bg-white p-5 rounded-xl shadow">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-semibold text-slate-500">Total Jobs</h3>
             <Briefcase className="text-indigo-600" size={20} />
           </div>
-          <p className="text-2xl font-bold mt-2">
-            {stats?.totalJobs ?? 0}
-          </p>
+          <p className="text-2xl font-bold mt-2">{stats?.totalJobs ?? 0}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">
@@ -172,9 +177,7 @@ export default function DashboardPage() {
             <h3 className="text-sm font-semibold text-slate-500">Total Companies</h3>
             <Bookmark className="text-indigo-600" size={20} />
           </div>
-          <p className="text-2xl font-bold mt-2">
-            {stats?.totalCompanies ?? 0}
-          </p>
+          <p className="text-2xl font-bold mt-2">{stats?.totalCompanies ?? 0}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">
@@ -182,9 +185,7 @@ export default function DashboardPage() {
             <h3 className="text-sm font-semibold text-slate-500">New Today</h3>
             <TrendingUp className="text-indigo-600" size={20} />
           </div>
-          <p className="text-2xl font-bold mt-2">
-            {stats?.newToday ?? 0}
-          </p>
+          <p className="text-2xl font-bold mt-2">{stats?.newToday ?? 0}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">
@@ -192,11 +193,8 @@ export default function DashboardPage() {
             <h3 className="text-sm font-semibold text-slate-500">Active Jobs</h3>
             <Briefcase className="text-indigo-600" size={20} />
           </div>
-          <p className="text-2xl font-bold mt-2">
-            {stats?.activeJobs ?? 0}
-          </p>
+          <p className="text-2xl font-bold mt-2">{stats?.activeJobs ?? 0}</p>
         </div>
-
       </div>
 
       {/* SAVED JOBS */}
@@ -211,9 +209,8 @@ export default function DashboardPage() {
               <div key={job.id} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
                 <div>
                   <h3 className="font-bold text-slate-900">{job.title}</h3>
-
                   <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                    <MapPin size={14} /> {job.location}
+                    <MapPin size={14} /> {job.location || 'Remote / Unspecified'}
                   </p>
                 </div>
 
@@ -243,31 +240,30 @@ export default function DashboardPage() {
           <p className="text-slate-500">No recommendations found</p>
         ) : (
           <div className="grid md:grid-cols-3 gap-4">
-            {recommendations.map((rec) => (
-              <div key={rec.job?.id || Math.random()} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
-
+            {recommendations.map((job) => (
+              <div key={job.id || Math.random()} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-bold text-slate-900">{rec.job?.title}</h3>
-                    {rec.match_score && (
+                    <h3 className="font-bold text-slate-900">{job.title}</h3>
+                    {job.match_score && (
                       <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                        {rec.match_score}% Match
+                        {job.match_score}% Match
                       </span>
                     )}
                   </div>
 
                   <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                    <MapPin size={14} /> {rec.job?.location}
+                    <MapPin size={14} /> {job.location || 'Remote / Unspecified'}
                   </p>
 
-                  {rec.location_match && (
+                  {job.location_match && (
                     <p className="text-xs text-blue-600 font-semibold mt-1">
                       📍 Location match
                     </p>
                   )}
 
                   <div className="flex gap-1.5 flex-wrap mt-3">
-                    {rec.matched_skills?.map((s) => (
+                    {job.matched_skills?.map((s) => (
                       <span
                         key={s}
                         className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md font-medium"
@@ -278,9 +274,9 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {rec.job?.url && (
+                {job.url && (
                   <a
-                    href={rec.job.url}
+                    href={job.url}
                     target="_blank"
                     rel="noreferrer"
                     className="text-indigo-600 font-semibold text-sm flex items-center gap-1 mt-4 hover:underline"
@@ -288,7 +284,6 @@ export default function DashboardPage() {
                     Apply <ArrowUpRight size={14} />
                   </a>
                 )}
-
               </div>
             ))}
           </div>

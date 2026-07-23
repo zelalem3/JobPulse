@@ -56,16 +56,32 @@ export default function HomePage() {
     try {
       setLoading(true);
 
-      const response = await api.get(
-        `/api/jobs?page=${page}&per_page=10`
+      // Fetch jobs and user's saved IDs concurrently to sync bookmark states accurately
+      const [jobsResponse, savedResponse] = await Promise.all([
+        api.get(`/api/jobs?page=${page}&per_page=10`),
+        api.get(`api/savedjobs`).catch(() => ({ data: { savedjobs: [] } }))
+      ]);
+
+      const jobsData = jobsResponse.data.data || [];
+      const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
+      
+      // Extract array of saved job listing IDs belonging to this user
+      const savedJobIds = new Set(
+        rawSavedJobs.map((item: any) => item.job_listing_id || item.job?.id || item.id)
       );
 
-      setListings(response.data.data);
-      setCurrentPage(response.data.current_page);
-      setLastPage(response.data.last_page);
-      setTotal(response.data.total);
+      // Map listings and attach initial isSaved status
+      const processedJobs = jobsData.map((job: Job) => ({
+        ...job,
+        isSaved: savedJobIds.has(job.id),
+      }));
+
+      setListings(processedJobs);
+      setCurrentPage(jobsResponse.data.current_page);
+      setLastPage(jobsResponse.data.last_page);
+      setTotal(jobsResponse.data.total);
     } catch (error) {
-      console.log(error);
+      console.log("Error loading jobs or saved states:", error);
     } finally {
       setLoading(false);
     }
@@ -241,16 +257,14 @@ export default function HomePage() {
                         </span>
                       </div>
 
-                      {/* 3. Pure bold black link targeting dynamic details route mapping */}
-                      {/* 3. Pure bold black link targeting dynamic details route mapping */}
-<h2 className="text-xl font-black tracking-tight transition antialiased">
-  <Link 
-    to={`/jobs/${job.id}`} 
-    className="text-slate-900 hover:text-blue-600 transition-colors duration-200"
-  >
-    {job.title}
-  </Link>
-</h2>
+                      <h2 className="text-xl font-black tracking-tight transition antialiased">
+                        <Link 
+                          to={`/jobs/${job.id}`} 
+                          className="text-slate-900 hover:text-blue-600 transition-colors duration-200"
+                        >
+                          {job.title}
+                        </Link>
+                      </h2>
 
                       <p className="text-slate-500 mt-1 font-medium text-sm">
                         {job.company} — {job.location}
@@ -278,7 +292,6 @@ export default function HomePage() {
                         )}
                       </button>
 
-                      {/* 4. Swapped layout anchor targeting the SPA JobDetails container views cleanly */}
                       <Link
                         to={`/jobs/${job.id}`}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition shadow-sm"
