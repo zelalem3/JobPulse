@@ -1,108 +1,93 @@
 # JobPulse 🔍💼
 
-JobPulse is a full-stack job aggregation and recommendation platform that collects job postings from multiple sources, helps users discover opportunities, save jobs, receive personalized recommendations, and get notified when new jobs match their interests.
+JobPulse is a full-stack job aggregation and recommendation platform designed to collect job postings from multiple regional and remote sources, help users discover career opportunities, save listings, receive personalized recommendations, and get notified when new jobs match their interests.
 
-## Features
+---
 
-### 🔐 Authentication
+## 🚀 Features
 
-* User registration and login
-* Secure API authentication using Laravel Sanctum
-* Protected routes and user sessions
+### 🔐 Authentication & Security
+* User registration and login functionality.
+* Secure API authentication powered by **Laravel Sanctum**.
+* Protected routes and robust session management.
 
-### 💼 Job Listings
+### 💼 Job Listings & Search
+* Browse aggregated job postings from diverse channels.
+* Detailed job view containing full descriptions, company info, and requirements.
+* Advanced search and multi-parameter filtering capabilities.
+* Multi-source job aggregation engine.
 
-* Browse aggregated job postings
-* View detailed job information
-* Search and filter jobs
-* Multi-source job aggregation
-
-### 🔖 Saved Jobs
-
-* Bookmark interesting job opportunities
-* Manage saved jobs from a personal dashboard
+### 🔖 Saved Jobs Dashboard
+* Bookmark interesting job opportunities instantly.
+* Centralized management of saved jobs from a personal user dashboard.
 
 ### 📊 Dashboard Analytics
-
-* Total jobs available
-* Saved jobs statistics
-* Top hiring companies
-* Most in-demand skills
-* Job posting trends and graphs
+* Real-time metrics tracking total available jobs and user-saved statistics.
+* Insights on top hiring companies and most in-demand technical skills.
+* Visualized job posting trends and graphs powered by **Recharts**.
 
 ### ⭐ Personalized Recommendations
+* Skill-based and location-based job recommendations.
+* Dynamic match score calculation matching user profiles to job listings.
 
-* Skill-based job recommendations
-* Location-based recommendations
-* Match score calculation
+### 🔔 Job Alerts & Notifications
+* Create and manage custom job alerts with multiple alert configurations.
+* Keyword and location-based matching algorithms.
+* Automated email notifications tested and previewed via **Mailpit**.
 
-### 🔔 Job Alerts
-
-* Create custom job alerts
-* Keyword and location-based matching
-* Automated email notifications
-* Multiple alert management
-
-### 🤖 Job Scraping System
-
-JobPulse aggregates jobs from multiple sources, including:
-
-* EthioJobs
-* GeezJobs
-* Telegram channels
-* Remote job boards
-
-The scraper system is designed to be easily extensible for additional sources.
+### 🤖 Automated Job Scraping System
+JobPulse features an extensible Python-based scraping and ingestion pipeline designed to extract listings from:
+* **EthioJobs**
+* **GeezJobs**
+* **Telegram Channels**
+* **Remote Job Boards**
+* Built with asynchronous scraping utilities and **Playwright** for dynamic single-page applications.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Backend
-
-* PHP 8
-* Laravel 12
-* Laravel Sanctum
-* PostgreSQL
-* Mailpit
-* Docker
+* **PHP 8**
+* **Laravel 12**
+* **Laravel Sanctum**
+* **PostgreSQL**
+* **Mailpit** (Email testing)
+* **Docker & Docker Compose**
 
 ### Frontend
+* **React**
+* **TypeScript**
+* **Vite**
+* **Tailwind CSS**
+* **Axios**
+* **Recharts**
 
-* React
-* TypeScript
-* Vite
-* Tailwind CSS
-* Axios
-* Recharts
-
-### Scrapers
-
-* Python
-* BeautifulSoup
-* Requests
-* Async scraping utilities
+### Scrapers & Ingestion
+* **Python**
+* **Playwright**
+* **BeautifulSoup**
+* **Requests**
+* **Asyncio utilities**
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```text
-React Frontend
-       │
-       ▼
-Laravel API
-       │
-       ├── PostgreSQL Database
-       ├── Email Notifications
-       └── Python Scrapers
+React Frontend (TypeScript / Vite)
+        │
+        ▼
+Laravel 12 API Backend
+        │
+        ├── PostgreSQL Database
+        ├── Mailpit (Email Notifications)
+        └── Python & Playwright Scrapers
+
 ```
+## 📂 Project Structure
 
----
-
-## Project Structure
-
-```text
+```
 JobPulse/
 ├── backend/
 │   ├── app/
@@ -121,148 +106,106 @@ JobPulse/
     ├── ethiojobs/
     ├── geezjobs/
     └── telegram/
+
 ```
 
----
 
-## Installation
-
-### Clone the repository
-
-```bash
-git clone https://github.com/zelalem3/JobPulse.git
+⚙️ Installation & Setup
+1. Clone the Repository
+```Bash
+git clone [https://github.com/zelalem3/JobPulse.git](https://github.com/zelalem3/JobPulse.git)
 cd JobPulse
 ```
-
-### Start Docker containers
-
-```bash
+2. Start Docker Containers
+``` Bash
 docker compose up -d --build
 ```
-
-### Backend setup
-
-```bash
+3. Backend Setup
+```Bash
 docker compose exec backend composer install
 docker compose exec backend php artisan migrate
 docker compose exec backend php artisan key:generate
 ```
 
-### Frontend setup
-
-```bash
+4. Frontend Setup
+``` Bash
 docker compose exec frontend npm install
 ```
+## 🚀 Running the Application
+Frontend Interface: http://localhost:3000
 
----
+Backend API: http://localhost:8000
 
-## Running the Application
+Mailpit Dashboard: http://localhost:8025
 
-### Frontend
-
-```bash
-http://localhost:3000
-```
-
-### Backend API
-
-```bash
-http://localhost:8000
-```
-
-### Mailpit
-
-```bash
-http://localhost:8025
-```
-
----
-
-## API Endpoints
-
-### Authentication
-
-```text
+🔌 API Endpoints
+Authentication
+Plaintext
 POST /api/auth/register
 POST /api/auth/login
-```
-
-### Jobs
-
-```text
+Jobs
+Plaintext
 GET /api/jobs
 GET /api/jobs/{id}
-```
-
-### Saved Jobs
-
-```text
+Saved Jobs
+Plaintext
 GET /api/savedjobs
 POST /api/savejob/{id}
-```
-
-### Job Alerts
-
-```text
+Job Alerts
+Plaintext
 GET /api/alerts
 POST /api/alerts
 PUT /api/alerts/{id}
 DELETE /api/alerts/{id}
-```
-
-### Recommendations
-
-```text
+Recommendations
+Plaintext
 GET /api/recommendations
-```
-
-### Dashboard
-
-```text
+Dashboard Analytics
+Plaintext
 GET /api/dashboard/stats
 GET /api/dashboard/topcompanies
 GET /api/dashboard/skills
 GET /api/dashboard/graph
-```
+🗺️ Future Improvements
+In-app notification center
 
----
+Automated resume parsing and matching integration
 
-## Future Improvements
+Direct Telegram bot alert notifications
 
-* In-app notifications
-* Resume parsing and matching
-* Telegram notifications
-* Advanced recommendation engine
-* Admin dashboard
-* Scraper monitoring dashboard
-* Application tracking system
-* AI-powered career recommendations
+Advanced recommendation engine enhancements
 
----
+Administrative management and scraper monitoring dashboard
 
-## Screenshots
+Complete application tracking system (ATS) workflow
 
-Add screenshots of:
+📸 Screenshots
+Login Page
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/82e6f089-528a-45f4-aaca-13826a19b89a" />
 
-* Login Page
-* Dashboard
-* Job Listings
-* Saved Jobs
-* Recommendations
-* Alerts
 
----
+User Dashboard
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/bbcd1ced-47ec-4efd-914c-64f315a2fa5c" />
 
-## Author
 
-**Zelalem**
+Job Listings & Search Filters
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e2d4b323-c544-437a-9a51-10a9d7fff3d7" />
 
-Recent graduate from the ALX Software Engineering program with a specialization in web development and programming.
 
-GitHub: https://github.com/zelalem3
+Saved Jobs Manager
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5ad25b80-669c-4ded-8e4b-8bc8cb78e75d" />
 
----
 
-## License
+Custom Alerts Configuration
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/31a5a28e-158d-47d4-9cdb-a652006f027a" />
 
+
+👨‍💻 Author
+Zelalem Getnet
+
+Software engineer and computer science graduate specializing in full-stack web engineering, backend architecture, and automated data pipelines.
+
+GitHub: zelalem3
+
+📜 License
 This project is licensed under the MIT License.
