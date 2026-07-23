@@ -1,5 +1,6 @@
 import requests
 import asyncio
+import time
 from datetime import datetime
 from common.base_scraper import BaseScraper
 from common.models import JobListing
@@ -49,7 +50,8 @@ class AfriworkScraper(BaseScraper):
 
         raw_description = item.get("description") or ""
 
-        
+        # ⏱️ Throttle to stay under Gemini free tier limit (5 requests per minute -> ~12s delay)
+        time.sleep(12)
         extracted_skills = extract_skills(raw_description)
 
         return JobListing(
@@ -63,10 +65,14 @@ class AfriworkScraper(BaseScraper):
             posted_at=posted_at,
             source="Afriwork",
             url=f"https://afriworket.com/jobs/{item.get('id')}",
-            skills=extracted_skills # 👈 Attach extracted skills array here
+            skills=extracted_skills
         )
 
     async def run(self):
         """Run fetch in a thread so it doesn't block the async event loop."""
         items = await asyncio.to_thread(self.fetch)
-        return [self.parse(item) for item in items]
+        # Process items sequentially with time.sleep to avoid 429 quota exhaustion errors
+        results = []
+        for item in items:
+            results.append(self.parse(item))
+        return results
