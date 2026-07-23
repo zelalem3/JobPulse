@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Added for routing
-import { UserPlus, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react"; // UI icons
+import { useNavigate } from "react-router-dom";
+import { UserPlus, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import api from '../services/axios';
 import { useAuthStore } from "../store/authStore";
 
@@ -13,7 +13,7 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const login = useAuthStore((state) => state.login);
-  const navigate = useNavigate(); // Hook for standard redirect handling
+  const navigate = useNavigate();
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,25 +68,25 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-      <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-slate-800 selection:text-white">
+      <div className="max-w-md w-full bg-slate-900/60 backdrop-blur-xl p-8 sm:p-10 rounded-3xl border border-slate-800/80 shadow-xl space-y-6">
         
         {/* --- BRANDING / HEADER HEADER --- */}
         <div className="space-y-2 text-center">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto border border-blue-100/50">
+          <div className="w-12 h-12 bg-slate-950 text-slate-300 rounded-2xl flex items-center justify-center mx-auto border border-slate-800 shadow-inner">
             <UserPlus size={22} />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-black text-white tracking-tight">
             Create Account
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm font-semibold text-slate-400">
             Join JobPulse to setup pipeline streams and monitor remote openings.
           </p>
         </div>
 
         {/* --- DYNAMIC INLINE VALIDATION TOAST DISMISSAL --- */}
         {errorMessage && (
-          <div className="p-3.5 bg-red-50 border border-red-100 rounded-xl flex gap-2.5 items-start text-red-600 text-xs font-medium leading-relaxed">
+          <div className="p-3.5 bg-rose-950/60 border border-rose-900/80 rounded-2xl flex gap-2.5 items-start text-rose-300 text-xs font-bold leading-relaxed shadow-xl">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <div className="whitespace-pre-line">{errorMessage}</div>
           </div>
@@ -100,14 +100,14 @@ const Register = () => {
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">
               Full Name
             </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:bg-white transition duration-150">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl focus-within:border-slate-700 transition duration-150 shadow-inner">
               <User size={16} className="text-slate-400 shrink-0" />
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+                className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
                 required
                 disabled={isLoading}
               />
@@ -119,14 +119,14 @@ const Register = () => {
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">
               Email Address
             </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:bg-white transition duration-150">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl focus-within:border-slate-700 transition duration-150 shadow-inner">
               <Mail size={16} className="text-slate-400 shrink-0" />
               <input 
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
-                className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+                className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
                 required
                 disabled={isLoading}
               />
@@ -138,14 +138,14 @@ const Register = () => {
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">
               Password
             </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:bg-white transition duration-150">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl focus-within:border-slate-700 transition duration-150 shadow-inner">
               <Lock size={16} className="text-slate-400 shrink-0" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimum 8 characters"
-                className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+                className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
                 required
                 disabled={isLoading}
               />
@@ -157,14 +157,14 @@ const Register = () => {
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">
               Confirm Password
             </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:bg-white transition duration-150">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl focus-within:border-slate-700 transition duration-150 shadow-inner">
               <Lock size={16} className="text-slate-400 shrink-0" />
               <input
                 type="password"
                 value={passwordConfirmation}
                 onChange={(e) => setPasswordConfirmation(e.target.value)}
                 placeholder="Repeat password"
-                className="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400"
+                className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
                 required
                 disabled={isLoading}
               />
@@ -175,11 +175,11 @@ const Register = () => {
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2 select-none"
+            className="w-full mt-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800/50 border border-slate-700/60 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2 select-none cursor-pointer"
           >
             {isLoading ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Provisioning Node Account...
+                <Loader2 size={16} className="animate-spin text-slate-300" /> Provisioning Node Account...
               </>
             ) : (
               "Create Account"
@@ -188,9 +188,9 @@ const Register = () => {
         </form>
 
         {/* Form Footer */}
-        <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-400 font-medium">
+        <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400 font-medium">
           Already have clear keys?{" "}
-          <a href="/login" className="text-blue-600 font-bold hover:underline">
+          <a href="/login" className="text-slate-200 font-bold hover:underline">
             Sign In instead
           </a>
         </div>
