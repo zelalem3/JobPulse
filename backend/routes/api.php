@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AlertController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\RecommendationController;
+use App\Http\Controllers\Api\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,11 @@ Route::get('jobs/{id}', [JobSearchController::class, 'index']);
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
+
+    //--- Profile Routes---
+    Route::get('profile',[ProfileController::class, 'show']);
+    Route::put('profile',[ProfileController::class, 'update']);
+
     
     // --- Dashboard Routes ---
     Route::get('dashboard/stats', [DashboardController::class, 'stats']);
