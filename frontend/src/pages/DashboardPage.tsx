@@ -7,15 +7,6 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
-
 import api from "../services/axios";
 
 /* -------------------- TYPES -------------------- */
@@ -29,6 +20,15 @@ interface JobListing {
   employment_type: string;
   deadline: string | null;
   url: string | null;
+}
+
+interface SavedJobPivot {
+  id: number;
+  user_id: number;
+  job_listing_id: number;
+  created_at: string;
+  updated_at: string;
+  job?: JobListing; // Nested relationship from backend
 }
 
 interface Recommendation {
@@ -70,14 +70,33 @@ export default function DashboardPage() {
         api.get("api/dashboard/stats"),
       ]);
 
-      // -------- saved jobs safe parsing --------
+      // -------- saved jobs safe parsing & flat mapping --------
       const savedData =
         savedRes.data?.savedjobs ||
         savedRes.data?.data ||
         savedRes.data ||
         [];
 
-      setSavedJobs(Array.isArray(savedData) ? savedData : []);
+      const formattedSavedJobs = Array.isArray(savedData)
+        ? savedData.map((item: SavedJobPivot | JobListing) => {
+            // Check if it's wrapped via the pivot model structure with a nested 'job' property
+            if ('job' in item && item.job) {
+              return {
+                id: item.job.id,
+                title: item.job.title,
+                location: item.job.location,
+                company_id: item.job.company_id,
+                salary: item.job.salary,
+                employment_type: item.job.employment_type,
+                deadline: item.job.deadline,
+                url: item.job.url,
+              };
+            }
+            return item as JobListing;
+          })
+        : [];
+
+      setSavedJobs(formattedSavedJobs);
 
       // -------- stats --------
       setStats(statsRes.data);
@@ -101,11 +120,14 @@ export default function DashboardPage() {
 
       const res = await api.get("api/recommendations");
 
-      setRecommendations(Array.isArray(res.data) ? res.data : []);
+      // Safely handle recommendations data whether wrapped in an object or returned as a raw array
+      const recData = res.data?.recommendations || res.data || [];
+      setRecommendations(Array.isArray(recData) ? recData : []);
 
       console.log("RECOMMENDATIONS RESPONSE:", res.data);
     } catch (err) {
       console.error("Recommendation error:", err);
+      setRecommendations([]);
     } finally {
       setRecLoading(false);
     }
@@ -136,9 +158,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
         <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between">
-            <h3>Total Jobs</h3>
-            <Briefcase />
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-slate-500">Total Jobs</h3>
+            <Briefcase className="text-indigo-600" size={20} />
           </div>
           <p className="text-2xl font-bold mt-2">
             {stats?.totalJobs ?? 0}
@@ -146,9 +168,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between">
-            <h3>Total Companies</h3>
-            <Bookmark />
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-slate-500">Total Companies</h3>
+            <Bookmark className="text-indigo-600" size={20} />
           </div>
           <p className="text-2xl font-bold mt-2">
             {stats?.totalCompanies ?? 0}
@@ -156,9 +178,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between">
-            <h3>New Today</h3>
-            <TrendingUp />
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-slate-500">New Today</h3>
+            <TrendingUp className="text-indigo-600" size={20} />
           </div>
           <p className="text-2xl font-bold mt-2">
             {stats?.newToday ?? 0}
@@ -166,9 +188,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white p-5 rounded-xl shadow">
-          <div className="flex justify-between">
-            <h3>Active Jobs</h3>
-            <Briefcase />
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-slate-500">Active Jobs</h3>
+            <Briefcase className="text-indigo-600" size={20} />
           </div>
           <p className="text-2xl font-bold mt-2">
             {stats?.activeJobs ?? 0}
@@ -186,18 +208,21 @@ export default function DashboardPage() {
             <p className="text-slate-500">No saved jobs found</p>
           ) : (
             savedJobs.map((job) => (
-              <div key={job.id} className="bg-white p-4 rounded-xl shadow">
-                <h3 className="font-bold">{job.title}</h3>
+              <div key={job.id} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-900">{job.title}</h3>
 
-                <p className="text-sm text-slate-500 flex items-center gap-1">
-                  <MapPin size={14} /> {job.location}
-                </p>
+                  <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                    <MapPin size={14} /> {job.location}
+                  </p>
+                </div>
 
                 {job.url && (
                   <a
                     href={job.url}
                     target="_blank"
-                    className="text-indigo-600 flex items-center gap-1 mt-3"
+                    rel="noreferrer"
+                    className="text-indigo-600 font-semibold text-sm flex items-center gap-1 mt-4 hover:underline"
                   >
                     Apply <ArrowUpRight size={14} />
                   </a>
@@ -213,36 +238,56 @@ export default function DashboardPage() {
         <h2 className="text-xl font-bold mb-4">Recommended Jobs</h2>
 
         {recLoading ? (
-          <p>Loading recommendations...</p>
+          <p className="text-slate-500">Loading recommendations...</p>
         ) : recommendations.length === 0 ? (
           <p className="text-slate-500">No recommendations found</p>
         ) : (
           <div className="grid md:grid-cols-3 gap-4">
             {recommendations.map((rec) => (
-              <div key={rec.job.id} className="bg-white p-4 rounded-xl shadow">
+              <div key={rec.job?.id || Math.random()} className="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
 
-                <h3 className="font-bold">{rec.job.title}</h3>
+                <div>
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="font-bold text-slate-900">{rec.job?.title}</h3>
+                    {rec.match_score && (
+                      <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                        {rec.match_score}% Match
+                      </span>
+                    )}
+                  </div>
 
-                <p className="text-sm text-slate-500">
-                  Match: {rec.match_score}%
-                </p>
-
-                {rec.location_match && (
-                  <p className="text-xs text-blue-600">
-                    📍 Location match
+                  <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                    <MapPin size={14} /> {rec.job?.location}
                   </p>
-                )}
 
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {rec.matched_skills?.map((s) => (
-                    <span
-                      key={s}
-                      className="text-xs bg-indigo-100 px-2 py-1 rounded"
-                    >
-                      {s}
-                    </span>
-                  ))}
+                  {rec.location_match && (
+                    <p className="text-xs text-blue-600 font-semibold mt-1">
+                      📍 Location match
+                    </p>
+                  )}
+
+                  <div className="flex gap-1.5 flex-wrap mt-3">
+                    {rec.matched_skills?.map((s) => (
+                      <span
+                        key={s}
+                        className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md font-medium"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+
+                {rec.job?.url && (
+                  <a
+                    href={rec.job.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-indigo-600 font-semibold text-sm flex items-center gap-1 mt-4 hover:underline"
+                  >
+                    Apply <ArrowUpRight size={14} />
+                  </a>
+                )}
 
               </div>
             ))}

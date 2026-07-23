@@ -10,7 +10,7 @@ import {
   BookmarkCheck,
   Calendar,
   SlidersHorizontal,
-  // 2. Renamed the lucide icon to avoid naming conflicts with the router Link
+  
   Link as LinkIcon, 
 } from "lucide-react";
 import api from "../services/axios";
@@ -155,7 +155,7 @@ export default function JobsPage() {
             <div className="space-y-6">
               <div>
                 <h4 className="font-bold mb-3">Sources</h4>
-                {["RemoteOK", "LinkedIn", "Indeed"].map((src) => (
+                {["EthioReporter", "Afriwork", "EthioJobs","Josad software","ET carrers","Jobs in Ethio"].map((src) => (
                   <label key={src} className="flex items-center gap-2 mb-2">
                     <input
                       type="checkbox"
