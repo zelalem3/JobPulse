@@ -1,0 +1,29 @@
+{
+    "reactjs": "React",
+    "react.js": "React",
+
+    "node": "Node.js",
+    "nodejs": "Node.js",
+
+    "postgres": "PostgreSQL",
+    "postgresql": "PostgreSQL",
+
+    "js": "JavaScript",
+    "javascript": "JavaScript",
+
+    "ts": "TypeScript",
+    "typescript": "TypeScript",
+
+    "amazon web services": "AWS",
+    "aws ec2": "EC2",
+
+    "google cloud": "Google Cloud Platform",
+    "gcp": "Google Cloud Platform",
+
+    "dotnet": "ASP.NET",
+    ".net": "ASP.NET",
+
+    "express": "Express.js",
+    "vue": "Vue.js",
+    "next": "Next.js"
+}

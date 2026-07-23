@@ -1,128 +1,146 @@
 {
-  "Programming & Core Tech": [
-    "Python", "JavaScript", "TypeScript", "Java", "C++", "C#", "C", "PHP", "Ruby", "Go", 
-    "Rust", "Swift", "Kotlin", "Scala", "R", "Dart", "Objective-C", "Shell", "Bash", "PowerShell",
-    "HTML", "HTML5", "CSS", "CSS3", "Tailwind CSS", "Bootstrap", "Sass", "LESS", "React", 
-    "React.js", "Next.js", "Vue.js", "Nuxt.js", "Angular", "Svelte", "jQuery", "Webpack", "Vite",
-    "Node.js", "Express.js", "Django", "Flask", "FastAPI", "Spring Boot", "Laravel", "Symfony", 
-    "ASP.NET", "Ruby on Rails", "NestJS", "GraphQL", "REST API", "gRPC", "SOAP", "WebSockets"
-  ],
-  "Databases & Storage": [
-    "PostgreSQL", "MySQL", "SQL Server", "Oracle", "SQLite", "MongoDB", "Cassandra", "DynamoDB", 
-    "Redis", "Memcached", "Elasticsearch", "Neo4j", "Firebase", "Supabase", "Prisma", "Sequelize",
-    "Snowflake", "Databricks", "Data Warehouse", "Data Modeling", "Data Pipeline", "Apache Hive"
-  ],
-  "DevOps, Cloud & Infrastructure": [
-    "Docker", "Docker Compose", "Kubernetes", "AWS", "Amazon Web Services", "Google Cloud Platform", "GCP", 
-    "Microsoft Azure", "Terraform", "Ansible", "Jenkins", "GitHub Actions", "GitLab CI", "CI/CD", 
-    "Linux", "Ubuntu", "Debian", "Fedora", "Red Hat", "CentOS", "Nginx", "Apache", "Serverless", 
-    "Prometheus", "Grafana", "EC2", "S3", "Lambda", "CloudFormation", "RDS", "Cloud Run"
-  ],
-  "Cybersecurity & Networking": [
-    "Cybersecurity", "Information Security", "Network Security", "Cloud Security", "Penetration Testing", 
-    "Ethical Hacking", "SOC", "SIEM", "Incident Response", "Digital Forensics", "Identity and Access Management", 
-    "IAM", "Zero Trust", "Vulnerability Assessment", "OWASP", "Security+", "CISSP", "ISO 27001",
-    "Cisco", "CCNA", "CCNP", "Networking", "TCP/IP", "DNS", "DHCP", "VPN", "Firewalls", "MikroTik", 
-    "Windows Server", "Active Directory", "VMware", "Virtualization", "Hyper-V", "System Administration",
-    "Telecommunications", "Fiber Optics", "RF Engineering", "LTE", "5G", "VoIP"
-  ],
-  "AI, Data Science & Analytics": [
-    "Artificial Intelligence", "Generative AI", "Machine Learning", "Deep Learning", "Large Language Models", 
-    "LLMs", "Prompt Engineering", "LangChain", "LlamaIndex", "Hugging Face", "Transformers", "RAG", 
-    "Vector Databases", "Pinecone", "Weaviate", "ChromaDB", "OpenAI API", "Anthropic API", "Ollama", 
-    "Data Analysis", "Data Science", "Pandas", "NumPy", "Scikit-Learn", "TensorFlow", "PyTorch", 
-    "OpenCV", "NLP", "Power BI", "Tableau", "Excel", "ETL", "Big Data", "Hadoop", "Spark"
-  ],
-  "Finance, Accounting & Banking": [
-    "Accounting", "Financial Analysis", "Auditing", "Bookkeeping", "Taxation", "Budgeting", 
-    "Corporate Finance", "Economics", "Banking", "Payroll", "QuickBooks", "SAP", "IFRS", "GAAP",
-    "Credit Analysis", "Loan Processing", "Risk Analysis", "Insurance", "Claims Processing", 
-    "Underwriting", "Treasury", "Investment Banking", "CPA", "ACCA", "CFA", "Asset Management"
-  ],
-  "Business Administration & Management": [
-    "Project Management", "Product Management", "Operations Management", "Business Analysis", 
-    "Strategic Planning", "Change Management", "Risk Management", "Agile", "Scrum", "Kanban", 
-    "Scrum Master", "Product Owner", "PMP", "Prince2", "ITIL", "Business Development", 
-    "Executive Leadership", "Team Management", "Office Management", "Administrative Support"
-  ],
-  "Human Resources & Talent": [
-    "Human Resources", "HR Management", "Recruitment", "Talent Acquisition", "Onboarding", 
-    "Performance Management", "Payroll Administration", "Employee Relations", "Training and Development", 
-    "Compensation and Benefits", "Labor Law", "HRIS", "Organizational Development", "Industrial Relations"
-  ],
-  "Marketing, Sales & Communications": [
-    "Digital Marketing", "SEO", "SEM", "Content Marketing", "Social Media Marketing", "Email Marketing", 
-    "Google Analytics", "Copywriting", "Sales", "B2B Sales", "B2C Sales", "Lead Generation", 
-    "Customer Relationship Management", "CRM", "Salesforce", "HubSpot", "Public Relations", 
-    "Brand Management", "Media Relations", "Corporate Communications", "Advertising", "Event Management"
-  ],
-  "Customer Service & Support": [
-    "Customer Service", "Customer Support", "Customer Success", "Account Management", 
-    "Call Center", "Help Desk", "Technical Support", "Complaint Resolution", "Client Relations"
-  ],
-  "Healthcare & Medical": [
-    "Healthcare", "Patient Care", "Public Health", "Clinical Research", "Nursing", "Pharmacy", 
-    "Medical Laboratory", "Laboratory", "Radiology", "Midwifery", "Physiotherapy", "Dentistry", 
-    "Emergency Care", "Medical Coding", "Health Information Management", "Epidemiology", 
-    "Pharmacology", "Health Consultancy", "Medicine", "Healthcare Administration", "Biostatistics"
-  ],
-  "Legal & Compliance": [
-    "Legal Research", "Contract Drafting", "Compliance", "Corporate Law", "Intellectual Property", 
-    "Litigation", "Legal Advice", "Regulatory Compliance", "Risk Assessment", "Arbitration", 
-    "Employment Law", "Tax Law", "Commercial Law", "Paralegal Support"
-  ],
-  "Engineering, Architecture & Construction": [
-    "Civil Engineering", "Mechanical Engineering", "Electrical Engineering", "Structural Design", 
-    "AutoCAD", "SolidWorks", "Revit", "Civil 3D", "BIM", "Building Information Modeling", 
-    "Construction Management", "Quantity Surveying", "Surveying", "Architecture", "Architectural Design",
-    "Chemical Engineering", "Environmental Engineering", "Geotechnical Engineering", "Urban Planning"
-  ],
-  "Supply Chain, Logistics & Procurement": [
-    "Supply Chain", "Logistics", "Procurement", "Vendor Management", "Import Export", 
-    "Freight Forwarding", "Fleet Management", "Inventory Control", "Warehouse Management", 
-    "Sourcing", "Tender Management", "Contract Negotiation", "Purchasing", "Distribution", 
-    "Shipping", "Customs Clearance", "Materials Management"
-  ],
-  "Education, Training & Research": [
-    "Teaching", "Tutoring", "Curriculum Development", "Lesson Planning", "Classroom Management", 
-    "Educational Technology", "Assessment", "E-learning", "LMS", "Moodle", "Research", 
-    "Academic Writing", "Training Delivery", "Instructional Design", "Higher Education Pedagogy"
-  ],
-  "Hospitality, Tourism & Food": [
-    "Hotel Management", "Hospitality", "Front Office", "Housekeeping", "Food and Beverage", 
-    "Bartending", "Tourism", "Travel Management", "Reservation Systems", "Cooking", "Chef", 
-    "Pastry", "Baking", "Food Safety", "HACCP", "Barista", "Restaurant Management", "Catering"
-  ],
-  "Media, Design & Creative Arts": [
-    "Graphic Design", "UI/UX Design", "Video Editing", "Photography", "Videography", 
-    "Adobe Photoshop", "Adobe Illustrator", "Adobe Premiere Pro", "Adobe After Effects", 
-    "Canva", "Adobe InDesign", "Motion Graphics", "Animation", "3D Modeling", "Blender", 
-    "Journalism", "Content Writing", "Editing", "Proofreading", "Broadcasting", "Sound Engineering"
-  ],
-  "Agriculture, NGO & Development": [
-    "Agriculture", "Agronomy", "Animal Science", "Veterinary Medicine", "Crop Production", 
-    "Irrigation", "Food Security", "Monitoring and Evaluation", "M&E", "Proposal Writing", 
-    "Grant Writing", "Donor Reporting", "Community Development", "Humanitarian Response", 
-    "Livelihood Programs", "Project Coordination", "Nonprofit Management", "Sustainability"
-  ],
-  "Specialized Industries (Mining, Energy, Aviation)": [
-    "Mining", "Geology", "Mineral Exploration", "Renewable Energy", "Solar Energy", "Hydropower", 
-    "Oil and Gas", "Petroleum Engineering", "Aviation", "Aircraft Maintenance", "Flight Operations", 
-    "Ground Operations", "Air Traffic Control", "Maritime Operations", "Marine Engineering"
-  ],
-  "ERP Systems & Advanced Tools": [
-    "SAP ERP", "SAP FICO", "SAP MM", "SAP SD", "Oracle ERP", "Odoo", "Microsoft Dynamics", 
-    "ERPNext", "MATLAB", "Simulink", "ANSYS", "SketchUp", "Fusion 360", "GIS", "ArcGIS", "QGIS",
-    "SPSS", "STATA", "SAS Analytics", "LabVIEW"
-  ],
-  "Languages": [
-    "English", "Amharic", "French", "Arabic", "Chinese", "German", "Spanish", "Oromo", "Tigrinya", 
-    "Italian", "Portuguese", "Swahili", "Japanese", "Russian", "Korean", "Hindi"
-  ],
-  "Soft Skills": [
-    "Communication", "Problem Solving", "Critical Thinking", "Time Management", "Adaptability", 
-    "Collaboration", "Negotiation", "Conflict Resolution", "Creativity", "Attention to Detail", 
-    "Work Ethic", "Interpersonal Skills", "Emotional Intelligence", "Decision Making", 
-    "Active Listening", "Presentation Skills", "Multitasking", "Crisis Management", "Cross-Cultural Communication"
-  ]
+    "Programming & Core Tech": [
+        "Python", "JavaScript", "TypeScript", "Java", "C++", "C#", "C", "PHP", "Ruby", "Go", 
+        "Rust", "Swift", "Kotlin", "Scala", "R", "Dart", "Objective-C", "Shell", "Bash", "PowerShell",
+        "HTML", "HTML5", "CSS", "CSS3", "Tailwind CSS", "Bootstrap", "Sass", "LESS", "React", 
+        "Next.js", "Vue.js", "Nuxt.js", "Angular", "Svelte", "jQuery", "Webpack", "Vite", "Electron", "Astro",
+        "Redux", "Redux Toolkit", "Zustand", "Material UI", "Shadcn UI", "Ant Design", "Chakra UI",
+        "Node.js", "Express.js", "Django", "Flask", "FastAPI", "Spring Boot", "Laravel", "Symfony", 
+        "ASP.NET", "Ruby on Rails", "NestJS", "GraphQL", "REST API", "gRPC", "SOAP", "WebSockets",
+        "Celery", "RabbitMQ", "BullMQ", "Celery Beat", "Socket.IO", "Prisma ORM", "SQLAlchemy", "Hibernate"
+    ],
+    "Mobile Development": [
+        "React Native", "Expo", "Flutter", "Android", "iOS", "Jetpack Compose", "SwiftUI", "Xamarin", "Ionic", "Cordova"
+    ],
+    "Databases & Storage": [
+        "PostgreSQL", "MySQL", "MariaDB", "SQL Server", "Oracle", "SQLite", "MongoDB", "Cassandra", "DynamoDB", 
+        "Redis", "Memcached", "Elasticsearch", "Neo4j", "Firebase", "Supabase", "CockroachDB", "TimescaleDB", 
+        "InfluxDB", "DuckDB", "Prisma", "Sequelize", "Snowflake", "Databricks", "Data Warehouse", "Data Modeling", 
+        "Data Pipeline", "Apache Hive"
+    ],
+    "DevOps, Cloud & Infrastructure": [
+        "Docker", "Docker Compose", "Kubernetes", "Helm", "Istio", "Traefik", "ArgoCD", "Vault", "Consul",
+        "AWS", "Amazon Web Services", "Google Cloud Platform", "GCP", "Microsoft Azure", "Terraform", "Ansible", 
+        "Jenkins", "GitHub Actions", "GitLab CI", "CI/CD", "Linux", "Ubuntu", "Debian", "Fedora", "Red Hat", 
+        "CentOS", "Nginx", "Apache", "Serverless", "Prometheus", "Grafana", "EC2", "S3", "Lambda", "CloudFormation", 
+        "RDS", "Cloud Run"
+    ],
+    "Testing & QA": [
+        "Pytest", "Jest", "Vitest", "Mocha", "JUnit", "Playwright", "Cypress", "Selenium", "Postman", "Insomnia"
+    ],
+    "Version Control": [
+        "Git", "GitHub", "GitLab", "Bitbucket"
+    ],
+    "Emerging Fields (Blockchain, Data, MLOps)": [
+        "Blockchain", "Ethereum", "Solidity", "Smart Contracts", "Web3", "Hardhat", "Foundry", "Bitcoin", "Hyperledger",
+        "Apache Airflow", "Kafka", "dbt", "Delta Lake", "Lakehouse", "Apache Beam",
+        "MLflow", "Kubeflow", "Weights & Biases", "Ray", "ONNX"
+    ],
+    "Cybersecurity & Networking": [
+        "Cybersecurity", "Information Security", "Network Security", "Cloud Security", "Penetration Testing", 
+        "Ethical Hacking", "SOC", "SIEM", "Incident Response", "Digital Forensics", "Identity and Access Management", 
+        "IAM", "Zero Trust", "Vulnerability Assessment", "OWASP", "Security+", "CISSP", "ISO 27001",
+        "Cisco", "CCNA", "CCNP", "Networking", "TCP/IP", "DNS", "DHCP", "VPN", "Firewalls", "MikroTik", 
+        "Windows Server", "Active Directory", "VMware", "Virtualization", "Hyper-V", "System Administration",
+        "Telecommunications", "Fiber Optics", "RF Engineering", "LTE", "5G", "VoIP"
+    ],
+    "AI, Data Science & Analytics": [
+        "Artificial Intelligence", "Generative AI", "Machine Learning", "Deep Learning", "Large Language Models", 
+        "LLMs", "Prompt Engineering", "LangChain", "LlamaIndex", "Hugging Face", "Transformers", "RAG", 
+        "Vector Databases", "Pinecone", "Weaviate", "ChromaDB", "OpenAI API", "Anthropic API", "Ollama", 
+        "Data Analysis", "Data Science", "Pandas", "NumPy", "Scikit-Learn", "TensorFlow", "PyTorch", 
+        "OpenCV", "NLP", "Power BI", "Tableau", "Excel", "ETL", "Big Data", "Hadoop", "Spark"
+    ],
+    "Finance, Accounting & Banking": [
+        "Accounting", "Financial Analysis", "Auditing", "Bookkeeping", "Taxation", "Budgeting", 
+        "Corporate Finance", "Economics", "Banking", "Payroll", "QuickBooks", "SAP", "IFRS", "GAAP",
+        "Credit Analysis", "Loan Processing", "Risk Analysis", "Insurance", "Claims Processing", 
+        "Underwriting", "Treasury", "Investment Banking", "CPA", "ACCA", "CFA", "Asset Management"
+    ],
+    "Business Administration & Management": [
+        "Project Management", "Product Management", "Operations Management", "Business Analysis", 
+        "Strategic Planning", "Change Management", "Risk Management", "Agile", "Scrum", "Kanban", 
+        "Scrum Master", "Product Owner", "PMP", "Prince2", "ITIL", "Business Development", 
+        "Executive Leadership", "Team Management", "Office Management", "Administrative Support"
+    ],
+    "Human Resources & Talent": [
+        "Human Resources", "HR Management", "Recruitment", "Talent Acquisition", "Onboarding", 
+        "Performance Management", "Payroll Administration", "Employee Relations", "Training and Development", 
+        "Compensation and Benefits", "Labor Law", "HRIS", "Organizational Development", "Industrial Relations"
+    ],
+    "Marketing, Sales & Communications": [
+        "Digital Marketing", "SEO", "SEM", "Content Marketing", "Social Media Marketing", "Email Marketing", 
+        "Google Analytics", "Copywriting", "Sales", "B2B Sales", "B2C Sales", "Lead Generation", 
+        "Customer Relationship Management", "CRM", "Salesforce", "HubSpot", "Public Relations", 
+        "Brand Management", "Media Relations", "Corporate Communications", "Advertising", "Event Management"
+    ],
+    "Customer Service & Support": [
+        "Customer Service", "Customer Support", "Customer Success", "Account Management", 
+        "Call Center", "Help Desk", "Technical Support", "Complaint Resolution", "Client Relations"
+    ],
+    "Healthcare & Medical": [
+        "Healthcare", "Patient Care", "Public Health", "Clinical Research", "Nursing", "Pharmacy", 
+        "Medical Laboratory", "Laboratory", "Radiology", "Midwifery", "Physiotherapy", "Dentistry", 
+        "Emergency Care", "Medical Coding", "Health Information Management", "Epidemiology", 
+        "Pharmacology", "Health Consultancy", "Medicine", "Healthcare Administration", "Biostatistics"
+    ],
+    "Legal & Compliance": [
+        "Legal Research", "Contract Drafting", "Compliance", "Corporate Law", "Intellectual Property", 
+        "Litigation", "Legal Advice", "Regulatory Compliance", "Risk Assessment", "Arbitration", 
+        "Employment Law", "Tax Law", "Commercial Law", "Paralegal Support"
+    ],
+    "Engineering, Architecture & Construction": [
+        "Civil Engineering", "Mechanical Engineering", "Electrical Engineering", "Structural Design", 
+        "AutoCAD", "SolidWorks", "Revit", "Civil 3D", "BIM", "Building Information Modeling", 
+        "Construction Management", "Quantity Surveying", "Surveying", "Architecture", "Architectural Design",
+        "Chemical Engineering", "Environmental Engineering", "Geotechnical Engineering", "Urban Planning"
+    ],
+    "Supply Chain, Logistics & Procurement": [
+        "Supply Chain", "Logistics", "Procurement", "Vendor Management", "Import Export", 
+        "Freight Forwarding", "Fleet Management", "Inventory Control", "Warehouse Management", 
+        "Sourcing", "Tender Management", "Contract Negotiation", "Purchasing", "Distribution", 
+        "Shipping", "Customs Clearance", "Materials Management"
+    ],
+    "Education, Training & Research": [
+        "Teaching", "Tutoring", "Curriculum Development", "Lesson Planning", "Classroom Management", 
+        "Educational Technology", "Assessment", "E-learning", "LMS", "Moodle", "Research", 
+        "Academic Writing", "Training Delivery", "Instructional Design", "Higher Education Pedagogy"
+    ],
+    "Hospitality, Tourism & Food": [
+        "Hotel Management", "Hospitality", "Front Office", "Housekeeping", "Food and Beverage", 
+        "Bartending", "Tourism", "Travel Management", "Reservation Systems", "Cooking", "Chef", 
+        "Pastry", "Baking", "Food Safety", "HACCP", "Barista", "Restaurant Management", "Catering"
+    ],
+    "Media, Design & Creative Arts": [
+        "Graphic Design", "UI/UX Design", "Video Editing", "Photography", "Videography", 
+        "Adobe Photoshop", "Adobe Illustrator", "Adobe Premiere Pro", "Adobe After Effects", 
+        "Canva", "Adobe InDesign", "Motion Graphics", "Animation", "3D Modeling", "Blender", 
+        "Journalism", "Content Writing", "Editing", "Proofreading", "Broadcasting", "Sound Engineering"
+    ],
+    "Agriculture, NGO & Development": [
+        "Agriculture", "Agronomy", "Animal Science", "Veterinary Medicine", "Crop Production", 
+        "Irrigation", "Food Security", "Monitoring and Evaluation", "M&E", "Proposal Writing", 
+        "Grant Writing", "Donor Reporting", "Community Development", "Humanitarian Response", 
+        "Livelihood Programs", "Project Coordination", "Nonprofit Management", "Sustainability"
+    ],
+    "Specialized Industries (Mining, Energy, Aviation)": [
+        "Mining", "Geology", "Mineral Exploration", "Renewable Energy", "Solar Energy", "Hydropower", 
+        "Oil and Gas", "Petroleum Engineering", "Aviation", "Aircraft Maintenance", "Flight Operations", 
+        "Ground Operations", "Air Traffic Control", "Maritime Operations", "Marine Engineering"
+    ],
+    "ERP Systems & Advanced Tools": [
+        "SAP ERP", "SAP FICO", "SAP MM", "SAP SD", "Oracle ERP", "Odoo", "Microsoft Dynamics", 
+        "ERPNext", "MATLAB", "Simulink", "ANSYS", "SketchUp", "Fusion 360", "GIS", "ArcGIS", "QGIS",
+        "SPSS", "STATA", "SAS Analytics", "LabVIEW"
+    ],
+    "Spoken Languages": [
+        "English", "Amharic", "French", "Arabic", "Chinese", "German", "Spanish", "Oromo", "Tigrinya", 
+        "Italian", "Portuguese", "Swahili", "Japanese", "Russian", "Korean", "Hindi"
+    ],
+    "Soft Skills": [
+        "Communication", "Problem Solving", "Critical Thinking", "Time Management", "Adaptability", 
+        "Collaboration", "Negotiation", "Conflict Resolution", "Creativity", "Attention to Detail", 
+        "Work Ethic", "Interpersonal Skills", "Emotional Intelligence", "Decision Making", 
+        "Active Listening", "Presentation Skills", "Multitasking", "Crisis Management", "Cross-Cultural Communication"
+    ]
 }
