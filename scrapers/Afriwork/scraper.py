@@ -50,10 +50,7 @@ class AfriworkScraper(BaseScraper):
 
         raw_description = item.get("description") or ""
 
-        # ⏱️ Throttle to stay under Gemini free tier limit (5 requests per minute -> ~12s delay)
-        time.sleep(12)
-        extracted_skills = extract_skills(raw_description)
-
+        extracted_skills = extract_skills(job_description_text=safe_str(raw_description, 2500), job_title=safe_str(item.get("title"), 250) or "Untitled Job",)
         return JobListing(
             title=safe_str(item.get("title"), 250) or "Untitled Job",
             company=safe_str(item.get("entity", {}).get("name"), 250) or "Unknown",
@@ -71,7 +68,6 @@ class AfriworkScraper(BaseScraper):
     async def run(self):
         """Run fetch in a thread so it doesn't block the async event loop."""
         items = await asyncio.to_thread(self.fetch)
-        # Process items sequentially with time.sleep to avoid 429 quota exhaustion errors
         results = []
         for item in items:
             results.append(self.parse(item))
