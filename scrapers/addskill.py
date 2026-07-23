@@ -43,22 +43,30 @@ def _smart_local_extraction(text: str, job_title: str = "") -> list:
             
     return list(found_skills)
 
-def extract_skills(job_description_text, job_title=""):
+def extract_skills(job_description_text="", job_title=""):
     """
-    Extracts skills using Gemini AI with robust error logging 
-    and context-aware fallback matching.
+    Extracts skills using Gemini AI after stripping out noise, 
+    with robust error logging and context-aware fallback matching.
     """
-    if not job_description_text or len(job_description_text.strip()) < 5:
+
+    raw_text = job_description_text or ""
+    clean_desc = re.sub(r'https?://\S+|www\.\S+', '', raw_text)
+    clean_desc = re.sub(r'[*_#`]', ' ', clean_desc) 
+    
+    sanitized_description = clean_desc.strip()
+    sanitized_title = re.sub(r'[*_#`]', '', job_title or "").strip()
+
+    if not sanitized_description or len(sanitized_description) < 5:
         return []
 
     if not client:
-        return _smart_local_extraction(job_description_text, job_title)
+        return _smart_local_extraction(sanitized_description, sanitized_title)
 
     prompt = f"""
-    You are an expert technical and professional recruiter. Analyze the job title and description below and extract a list of relevant required professional, technical, or domain skills (e.g., Healthcare, Public Health, Accounting, Project Management, Python, etc.).
+    You are an expert technical and professional recruiter. Analyze the job title and description below and extract a list of relevant required professional, technical, or domain skills (e.g., Python, React, Fullstack Development, Accounting, Healthcare, etc.).
     
-    Job Title: {job_title}
-    Description: {job_description_text}
+    Job Title: {sanitized_title}
+    Description: {sanitized_description}
 
     Return the response STRICTLY as a valid JSON array of strings containing standard industry skill names from your knowledge. 
     Do not include any markdown formatting, code blocks, or extra text—just the raw JSON array. If none are found, return [].
@@ -70,17 +78,17 @@ def extract_skills(job_description_text, job_title=""):
             contents=prompt,
         )
         
-        raw_text = response.text.strip()
-        print(f"[AI Extraction Raw Output for '{job_title}']: {raw_text}")
+        raw_text_ai = response.text.strip()
+        print(f"[AI Extraction Raw Output for '{sanitized_title}']: {raw_text_ai}")
         
-        clean_text = raw_text.replace("```json", "").replace("```", "").strip()
+        clean_text = raw_text_ai.replace("```json", "").replace("```", "").strip()
         skills = json.loads(clean_text)
         
         if isinstance(skills, list) and len(skills) > 0:
             return skills
             
-        return _smart_local_extraction(job_description_text, job_title)
+        return _smart_local_extraction(sanitized_description, sanitized_title)
         
     except Exception as e:
         print(f"[AI Fallback Notice] Error: {e}. Using smart local parser.")
-        return _smart_local_extraction(job_description_text, job_title)
+        return _smart_local_extraction(sanitized_description, sanitized_title)
