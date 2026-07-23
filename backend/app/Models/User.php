@@ -73,4 +73,8 @@ class User extends Authenticatable
     {
         return $this->skills()->sync($skillIds);
     }
+    public function savedJobs()
+    {
+        return $this->hasMany(SavedJob::class);
+    }
 }

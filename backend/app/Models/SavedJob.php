@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +11,7 @@ class SavedJob extends Model
     protected $fillable = [
         'user_id',
         'job_listing_id',
+      
     ];
 
     public function user()
@@ -19,6 +19,7 @@ class SavedJob extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Add this relationship method
     public function job()
     {
         return $this->belongsTo(JobListing::class, 'job_listing_id');
