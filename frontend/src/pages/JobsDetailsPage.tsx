@@ -6,6 +6,11 @@ import {
 } from 'lucide-react';
 import api from '../services/axios';
 
+interface Skill {
+  id: number;
+  name: string;
+}
+
 interface JobDetails {
   id: string;
   title: string;
@@ -19,6 +24,7 @@ interface JobDetails {
   isSaved: boolean;
   description: string;
   companyWebsite?: string;
+  skills?: Skill[];
 }
 
 export default function JobDetails() {
@@ -119,10 +125,7 @@ export default function JobDetails() {
               </span>
             </div>
             
-            {/* Forced solid white heading title */}
-            <h1 
-              className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white"
-            >
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white">
               {job.title}
             </h1>
             
@@ -222,6 +225,24 @@ export default function JobDetails() {
 
           {/* --- SIDEBAR TECH INFO PANELS --- */}
           <div className="space-y-6">
+            
+            {/* --- SKILLS BADGES PANEL --- */}
+            {job.skills && job.skills.length > 0 && (
+              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/80 shadow-xl space-y-4">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Required Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {job.skills.map((skill) => (
+                    <span 
+                      key={skill.id} 
+                      className="px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-bold rounded-xl tracking-wide"
+                    >
+                      {skill.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/80 shadow-xl space-y-4">
               <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Position Specs</h4>
               
