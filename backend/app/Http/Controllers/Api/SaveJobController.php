@@ -10,33 +10,24 @@ use Illuminate\Support\Facades\Auth;
 
 class SaveJobController extends Controller
 {
-    /**
-     * Get all saved job listings for the authenticated user.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        // Check if user is authenticated
-        if (!Auth::check()) {
-            return response()->json([
-                'message' => 'Unauthorized access'
-            ], 401); 
-        }
-        
-        // Fetch saved jobs relative to the logged-in user
-        $saved_jobs = Auth::user()->savedJobs; 
+        $savedJobs = $request->user()
+            ->savedJobs()
+            ->with('job') // Matches the public function job() in your SavedJob model
+            ->get();
 
         return response()->json([
-            "message" => "successfully fetched",
-            'savedjobs' => $saved_jobs,
-        ], 200);
+            'message' => 'successfully fetched',
+            'savedjobs' => $savedJobs
+        ]);
     }
 
     /**
-     * Save a job listing for the authenticated user.
+     * Toggle save/unsave for a job listing.
      */
     public function store(Request $request, $id)
     {
-        // Check if user is authenticated
         if (!Auth::check()) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
@@ -44,15 +35,20 @@ class SaveJobController extends Controller
         $user = $request->user();
 
         // Check if already saved
-        $alreadySaved = SavedJob::where('user_id', $user->id)
+        $savedJob = SavedJob::where('user_id', $user->id)
             ->where('job_listing_id', $id)
-            ->exists();
+            ->first();
 
-        if ($alreadySaved) {
-            return response()->json(['message' => 'You have already saved this job.'], 400);
+        if ($savedJob) {
+            // If already saved, delete it (Unsave)
+            $savedJob->delete();
+            return response()->json([
+                'message' => 'Job unsaved successfully.',
+                'isSaved' => false
+            ], 200);
         }
 
-        // Create the record
+        // Otherwise, create the record (Save)
         $new_save = SavedJob::create([
             'user_id' => $user->id,
             'job_listing_id' => $id,
@@ -61,6 +57,40 @@ class SaveJobController extends Controller
         return response()->json([
             'message' => 'Job saved successfully.',
             'job' => $new_save,
+            'isSaved' => true
         ], 201);
+    }
+
+    /**
+     * Explicitly remove/unsave a job listing by ID.
+     */
+    public function destroy(Request $request, $id)
+    {
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user = $request->user();
+
+        // Find the saved record by job_listing_id (or pivot record id depending on setup)
+        $savedJob = SavedJob::where('user_id', $user->id)
+            ->where(function ($query) use ($id) {
+                $query->where('job_listing_id', $id)
+                      ->orWhere('id', $id);
+            })
+            ->first();
+
+        if (!$savedJob) {
+            return response()->json([
+                'message' => 'Saved job not found.'
+            ], 404);
+        }
+
+        $savedJob->delete();
+
+        return response()->json([
+            'message' => 'Job removed successfully.',
+            'isSaved' => false
+        ], 200);
     }
 }
