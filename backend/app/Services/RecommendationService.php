@@ -3,27 +3,31 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\JobListing;
+use Illuminate\Support\Facades\DB;
 
 class RecommendationService
 {
-    /**
-     * Get tailored job listings for a specific user.
-     */
     public function getRecommendations(User $user)
     {
-        $userSkills = $user->skills()->pluck('skills.id')->toArray();
+        $userSkills = $user->skills()
+            ->pluck('name')
+            ->map(fn ($skill) => strtolower($skill))
+            ->toArray();
 
         if (empty($userSkills)) {
-            return \App\Models\JobListing::latest()->take(10)->get();
+            return JobListing::latest()->take(10)->get();
         }
 
-        return \App\Models\JobListing::query()
+        return JobListing::query()
             ->whereHas('skills', function ($q) use ($userSkills) {
-                $q->whereIn('skills.id', $userSkills);
+                $q->whereIn(DB::raw('LOWER(name)'), $userSkills);
             })
-            ->withCount(['skills as matching_skills_count' => function ($q) use ($userSkills) {
-                $q->whereIn('skills.id', $userSkills);
-            }])
+            ->withCount([
+                'skills as matching_skills_count' => function ($q) use ($userSkills) {
+                    $q->whereIn(DB::raw('LOWER(name)'), $userSkills);
+                }
+            ])
             ->orderByDesc('matching_skills_count')
             ->latest()
             ->get();
