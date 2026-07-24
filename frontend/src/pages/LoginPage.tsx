@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import axios from "../services/axios";
 import { useAuthStore } from '../store/authStore'; 
+
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,6 +13,7 @@ const Login = () => {
 
   const loginAction = useAuthStore((state) => state.login);
   const navigate = useNavigate();
+  
 
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +49,17 @@ const Login = () => {
       setIsLoading(false);
     }
   }
+  
+  const token = useAuthStore((state) => state.token);
+  const isLoggedIn = !!token;
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isLoggedIn, navigate]);
+
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-slate-800 selection:text-white">

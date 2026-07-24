@@ -217,7 +217,7 @@ export default function DashboardPage() {
                   <div className="space-y-2">
                     <h3 className="font-black text-lg text-white leading-tight">{job.title}</h3>
                     <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5">
-                      <MapPin size={14} className="text-slate-500 shrink-0" /> {job.location || 'Remote / Unspecified'}
+                      <MapPin size={14} className="text-slate-500 shrink-0" /> {'Addis Ababa'}
                     </p>
                   </div>
 
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                     </div>
 
                     <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5">
-                      <MapPin size={14} className="text-slate-500 shrink-0" /> {job.location || 'Remote / Unspecified'}
+                      <MapPin size={14} className="text-slate-500 shrink-0" /> {'Addis Ababa'}
                     </p>
 
                     {job.location_match && (
