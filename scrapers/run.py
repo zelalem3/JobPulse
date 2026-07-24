@@ -17,12 +17,12 @@ from common.database import save_job
 
 SCRAPERS = [
     # AfriworkScraper(),
-    EthioReport(),
+    # EthioReport(),
     # EthioJob(),
  
     # TelegramChannelScraper("effoyjobs"),
     # JosadTelegramScraper("Josad"),
-    # EtcarrerTelegramScraper("etcareersjobs"),
+    EtcarrerTelegramScraper("etcareersjobs"),
     # JobsEthioTelegramScraper("jobs_in_ethio")
 
 
