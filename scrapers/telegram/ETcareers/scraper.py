@@ -6,8 +6,15 @@ from common.models import JobListing
 from common.database import save_job
 from dotenv import load_dotenv
 from datetime import timedelta
+from addskill import extract_skills  
 
 load_dotenv()
+
+
+def safe_str(text: any, length: int = 250) -> str:
+    if text is None: return ""
+    return str(text).strip()[:length]
+
 
 class EtcarrerTelegramScraper(BaseScraper):
     def __init__(self, channel_username):
@@ -39,7 +46,7 @@ class EtcarrerTelegramScraper(BaseScraper):
         return any(k in text.lower() for k in spam_keywords)
 
     def parse(self, message) -> list[JobListing]:
-        """Parses a Telegram message into one or more JobListing objects."""
+        """Parses a Telegram message into one or more JobListing objects with addskill integration."""
         text = message.text
         if not text or self._is_spam(text):
             return []
@@ -66,18 +73,12 @@ class EtcarrerTelegramScraper(BaseScraper):
         if url_match:
             base_job["url"] = url_match.group()
 
-    
         # -----------------------------
         # Deadline (Calculated)
         # -----------------------------
-        # Use the message date as the base, add 7 days
-        # This creates a real datetime object which Pydantic loves
         deadline_date = message.date + timedelta(days=7)
-        
-        # Assign the datetime object directly
         base_job["deadline"] = deadline_date
         
-
         location = re.search(r"📍\s*(.+)", text)
         if location:
             base_job["location"] = location.group(1).strip()
@@ -101,7 +102,6 @@ class EtcarrerTelegramScraper(BaseScraper):
                 base_job["company"] = company.replace("is Hiring!", "").strip()
                 break
 
-   
         positions = []
         for line in text.splitlines():
             line = line.strip()
@@ -115,11 +115,29 @@ class EtcarrerTelegramScraper(BaseScraper):
         if not positions:
             positions = ["General Vacancy"]
 
-       
         listings = []
         for pos in positions:
             job_dict = base_job.copy()
             job_dict["title"] = pos
+            
+            # --- Unified Skill Extraction via addskill ---
+            extracted_skills = extract_skills(
+                job_description_text=safe_str(f"{job_dict['description']}\n{job_dict['requirements'] or ''}", 2500),
+                job_title=safe_str(pos, 250)
+            )
+            job_dict["skills"] = extracted_skills
+
+            # Apply safe string bounds
+            job_dict["title"] = safe_str(job_dict["title"], 250)
+            job_dict["company"] = safe_str(job_dict["company"], 250)
+            job_dict["location"] = safe_str(job_dict["location"], 250)
+            job_dict["description"] = safe_str(job_dict["description"], 2000)
+            job_dict["requirements"] = safe_str(job_dict["requirements"], 1000) if job_dict["requirements"] else None
+            job_dict["employment_type"] = safe_str(job_dict["employment_type"], 50)
+            job_dict["experience_level"] = safe_str(job_dict["experience_level"], 50)
+            job_dict["salary"] = safe_str(job_dict["salary"], 250)
+            job_dict["url"] = str(job_dict["url"])
+
             try:
                 listings.append(JobListing(**job_dict))
             except Exception as e:
