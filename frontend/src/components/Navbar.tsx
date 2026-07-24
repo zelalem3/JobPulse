@@ -21,8 +21,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-slate-900/90 backdrop-blur-2xl border-b border-slate-800/80 sticky top-0 z-50 font-sans text-slate-100 shadow-xl shadow-slate-950/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="w-full bg-slate-900/90 backdrop-blur-2xl border-b border-slate-800/80 sticky top-0 z-50 font-sans text-slate-100 shadow-xl shadow-slate-950/20">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-18 items-center py-3">
           
           {/* --- LEFT: LOGO BLOCK --- */}
@@ -79,7 +79,7 @@ export default function Navbar() {
                 <div className="relative">
                   <button 
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                    className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl hover:bg-slate-800/80 transition-all border border-slate-800 hover:border-slate-700 group"
+                    className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl hover:bg-slate-800/80 transition-all border border-slate-800 hover:border-slate-700 group cursor-pointer"
                   >
                     <span className="text-xs font-semibold text-slate-300 group-hover:text-white">Account</span>
                     <div className="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-500/30">
@@ -98,7 +98,7 @@ export default function Navbar() {
                       </Link>
                       <button 
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800/80 mt-1"
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800/80 mt-1 cursor-pointer"
                       >
                         <LogOut size={16} /> Sign Out
                       </button>
@@ -128,7 +128,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors border border-slate-800"
+              className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors border border-slate-800 cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
               {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -140,7 +140,7 @@ export default function Navbar() {
 
       {/* --- MOBILE RESPONSIVE DRAWER --- */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-900/98 backdrop-blur-2xl px-4 pt-4 pb-6 space-y-2.5 shadow-2xl">
+        <div className="md:hidden border-t border-slate-800 bg-slate-900/98 backdrop-blur-2xl px-4 pt-4 pb-6 space-y-2.5 shadow-2xl w-full">
           <Link 
             to="/jobs" 
             onClick={() => setIsMobileMenuOpen(false)} 
@@ -174,7 +174,7 @@ export default function Navbar() {
               </Link>
               <button 
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800 mt-3"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800 mt-3 cursor-pointer"
               >
                 <LogOut size={18} /> Sign Out
               </button>
