@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, ShieldAlert, Loader2, Check } from 'lucide-react';
 import api from '../services/axios';
-import AlertForm from '../components/AlertForm';
-import AlertItem from '../components/AlertItem';
+import AlertForm from '../components/alert/AlertForm';
+import AlertItem from '../components/alert/AlertItem';
 
 interface Skill {
   id: number;
