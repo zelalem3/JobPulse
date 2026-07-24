@@ -81,9 +81,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return 'Email sent!';
     });
 
-    // --- User Profile ---
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+   
     
 });

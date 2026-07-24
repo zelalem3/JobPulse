@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('recommendations:send')->dailyAt('08:00');
 
+
+Schedule::command('jobs:purge-old')->daily();
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

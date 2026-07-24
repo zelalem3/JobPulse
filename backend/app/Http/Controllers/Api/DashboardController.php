@@ -8,9 +8,46 @@ use App\Models\Company;
 use App\Models\Skill;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function graph()
+    {
+        $totalJobs = JobListing::count();
+
+        // 1. Job Source Distribution (for percentage breakdown bars)
+        $rawSources = JobListing::select('source', DB::raw('count(*) as total'))
+            ->groupBy('source')
+            ->get();
+
+        $sources = $rawSources->map(function ($item) use ($totalJobs) {
+            return [
+                'source' => $item->source ?: 'Direct Board',
+                'total' => $item->total,
+                'percentage' => $totalJobs > 0 ? round(($item->total / $totalJobs) * 100) : 0,
+            ];
+        });
+
+        // 2. Weekly Inflow Trend (Last 7 Days activity for trend chart)
+        $weeklyTrend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $count = JobListing::whereDate('created_at', $date->format('Y-m-d'))->count();
+            
+            $weeklyTrend[] = [
+                'day' => $date->format('D'), // Mon, Tue, Wed, etc.
+                'date' => $date->format('Y-m-d'),
+                'total' => $count,
+            ];
+        }
+
+        return response()->json([
+            'sources' => $sources,
+            'weeklyTrend' => $weeklyTrend,
+        ]);
+    }
+
     public function stats()
     {
         $totaljobs = JobListing::count();
@@ -36,9 +73,7 @@ class DashboardController extends Controller
 
     }
 
-    public function graph(){
-
-    }
+    
 
     public function topcompanies()
 {
