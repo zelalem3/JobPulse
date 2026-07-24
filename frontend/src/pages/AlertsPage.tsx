@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, ShieldAlert, Loader2, Calendar, Plus, Trash2, Check } from 'lucide-react';
+import { Bell, ShieldAlert, Loader2, Check } from 'lucide-react';
 import api from '../services/axios';
+import AlertForm from '../components/AlertForm';
+import AlertItem from '../components/AlertItem';
 
 interface Skill {
   id: number;
@@ -10,7 +11,6 @@ interface Skill {
 }
 
 export default function AlertsPage() {
-  const navigate = useNavigate();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,6 @@ export default function AlertsPage() {
       setError(null);
       const response = await api.get('/api/alerts');
       
-      // Your controller returns: { skills: [...] }
       const data = response.data;
       if (data && Array.isArray(data.skills)) {
         setSkills(data.skills);
@@ -56,12 +55,11 @@ export default function AlertsPage() {
         name: newName,
       });
 
-      // Your controller returns updated skills array on store
       const updatedSkills = response.data.skills;
       if (Array.isArray(updatedSkills)) {
         setSkills(updatedSkills);
       } else {
-        fetchSkills(); // Fallback reload
+        fetchSkills();
       }
       
       setNewName('');
@@ -90,7 +88,7 @@ export default function AlertsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center w-full">
         <div className="text-center space-y-2 flex flex-col items-center">
           <Loader2 className="animate-spin text-slate-400" size={32} />
           <p className="text-sm font-semibold text-slate-400">Retrieving alert configurations...</p>
@@ -100,8 +98,8 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-slate-800 selection:text-white">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-slate-800 selection:text-white w-full">
+      <div className="w-full space-y-6">
 
         {showToast && (
           <div className="fixed bottom-5 right-5 bg-slate-900 border border-slate-700/80 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold z-50">
@@ -109,7 +107,7 @@ export default function AlertsPage() {
           </div>
         )}
         
-        <div className="flex items-center justify-between bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/80 shadow-xl">
+        <div className="flex items-center justify-between bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/80 shadow-xl w-full">
           <div className="space-y-1">
             <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
               <Bell className="text-slate-400" size={24} /> Job Alerts / Skill Monitors
@@ -119,43 +117,20 @@ export default function AlertsPage() {
         </div>
 
         {error && (
-          <div className="p-4 bg-rose-950/60 border border-rose-900/80 text-rose-300 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-xl">
+          <div className="p-4 bg-rose-950/60 border border-rose-900/80 text-rose-300 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-xl w-full">
             <ShieldAlert size={18} /> {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start w-full">
           
-          {/* Create Alert Form */}
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/80 shadow-xl space-y-5">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-3">
-              <Plus size={16} className="text-slate-300" /> New Alert Monitor
-            </h3>
+          <AlertForm 
+            newName={newName}
+            setNewName={setNewName}
+            onSubmit={handleCreateSkill}
+            isSubmitting={isSubmitting}
+          />
 
-            <form onSubmit={handleCreateSkill} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Skill Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g., React, Python..." 
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl text-sm text-slate-100 outline-none placeholder:text-slate-500 shadow-inner focus:border-slate-700 transition-all font-semibold"
-                  required
-                />
-              </div>
-
-     <button 
-  type="submit"
-  disabled={isSubmitting}
-  className="w-full mt-2 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300 hover:text-white bg-amber-950/60 border border-amber-800/60 hover:bg-amber-900/80 px-4 py-3 rounded-2xl transition-all shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
->
-  <Plus size={16} /> Save Alert
-</button>
-            </form>
-          </div>
-
-          {/* Active Alerts List Area */}
           <div className="md:col-span-2 bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800/80 shadow-xl overflow-hidden">
             <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">
@@ -176,22 +151,11 @@ export default function AlertsPage() {
             ) : (
               <div className="divide-y divide-slate-800/80">
                 {skills.map((skill) => (
-                  <div key={skill.id} className="p-5 flex items-center justify-between hover:bg-slate-800/40 transition">
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-bold text-white">Monitor: <span className="text-slate-300 font-black">{skill.name}</span></h3>
-                      <p className="text-xs text-slate-400 flex items-center gap-1.5 font-medium">
-                        <Calendar size={12} className="text-slate-500" /> Active Watch
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => handleDeleteSkill(skill.id)}
-                      className="p-2.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900/60 rounded-2xl transition cursor-pointer shadow-lg"
-                      title="Delete Alert"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  <AlertItem 
+                    key={skill.id} 
+                    skill={skill} 
+                    onDelete={handleDeleteSkill} 
+                  />
                 ))}
               </div>
             )}
