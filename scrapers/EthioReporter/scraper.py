@@ -5,6 +5,13 @@ from bs4 import BeautifulSoup
 from curl_cffi import requests
 from common.base_scraper import BaseScraper
 from common.models import JobListing
+from addskill import extract_skills  
+
+
+def safe_str(text: any, length: int = 250) -> str:
+    if text is None: return ""
+    return str(text).strip()[:length]
+
 
 class EthioReport(BaseScraper):
     def __init__(self):
@@ -185,21 +192,29 @@ class EthioReport(BaseScraper):
                     req = req[:req.upper().index("HOW TO APPLY")]
                 requirements = req.strip()
 
+            # ----------------------------
+            # Skill Extraction via addskill
+            # ----------------------------
+            extracted_skills = extract_skills(
+                job_description_text=safe_str(f"{description}\n{requirements}", 2500),
+                job_title=safe_str(title, 250)
+            )
+
             return JobListing(
-                title=title[:255] if title else "Untitled Position",
+                title=safe_str(title, 255) or "Untitled Position",
                 company="Catholic Caritas Ethiopia",
-                location=location[:255] if location else "Addis Ababa",
-                requirements=requirements[:4000] if requirements else None,
-                description=description[:10000] if description else "",
-                employment_type=employment_type,
-                experience_level=experience_level,
-                salary=salary,
+                location=safe_str(location, 255) or "Addis Ababa",
+                requirements=safe_str(requirements, 4000) or None,
+                description=safe_str(description, 10000) or "",
+                employment_type=safe_str(employment_type, 50),
+                experience_level=safe_str(experience_level, 50),
+                salary=safe_str(salary, 100),
                 category="IT & Telecom",
                 deadline=None,
                 posted_at=datetime.utcnow(),
                 source="Ethiopian Reporter",
-                url=url,
-                skills=[],
+                url=str(url),
+                skills=extracted_skills,
             )
 
         except Exception as e:
