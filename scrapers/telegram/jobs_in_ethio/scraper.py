@@ -4,6 +4,7 @@ from telethon import TelegramClient
 from common.base_scraper import BaseScraper
 from common.models import JobListing
 from datetime import timedelta, datetime
+from addskill import extract_skills  
 
 def safe_truncate(text: any, length: int = 250) -> str:
     """Safely converts to string, cleans whitespace, and truncates to avoid DB errors."""
@@ -16,7 +17,7 @@ class JobsEthioTelegramScraper(BaseScraper):
         super().__init__(f"Telegram:{channel_username}")
         self.channel = channel_username
         
-        # FIX 1: Convert API_ID to an integer
+        # Convert API_ID to an integer
         raw_api_id = os.getenv("API_ID")
         self.api_id = int(raw_api_id) if raw_api_id else 0
         
@@ -44,13 +45,12 @@ class JobsEthioTelegramScraper(BaseScraper):
         return any(k in text.lower() for k in spam_keywords)
 
     def parse(self, message) -> list[JobListing]:
-        """Parses message and returns a list of JobListing objects."""
+        """Parses message and returns a list of JobListing objects with addskill integration."""
         text = message.text or ""
         if self._is_spam(text):
             return []
 
-        # FIX 2: Use message.id in the URL so every post has a unique URL 
-        # (preventing the database ON CONFLICT crash/overwrite)
+        # Use message.id in the URL so every post has a unique URL 
         message_url = f"https://t.me/{self.channel}/{message.id}"
 
         job_data = {
@@ -65,15 +65,9 @@ class JobsEthioTelegramScraper(BaseScraper):
             "category": "General",
             "posted_at": message.date,
             "source": f"Telegram - {self.channel}",
-            "url": message_url
+            "url": message_url,
+            "skills": []
         }
-
-        # Extract fields
-        url_match = re.search(r"https?://\S+", text)
-        if url_match:
-            # If the post has a direct application link, you can use it, 
-            # or keep the Telegram message URL as the primary unique identifier.
-            pass 
 
         loc_match = re.search(r"Location\s*:?\s*(.+)", text, re.IGNORECASE)
         if loc_match:
@@ -105,6 +99,13 @@ class JobsEthioTelegramScraper(BaseScraper):
                 if company:
                     job_data["company"] = safe_truncate(company, 250)
                 break
+
+        # Unified Skill Extraction via addskill
+        extracted_skills = extract_skills(
+            job_description_text=safe_truncate(f"{job_data['description']}\n{job_data['requirements']}", 2500),
+            job_title=safe_truncate(job_data['title'], 250)
+        )
+        job_data["skills"] = extracted_skills
 
         try:
             listing = JobListing(**job_data)

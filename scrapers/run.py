@@ -5,6 +5,7 @@ from telegram.EffoyJobs.scraper import TelegramChannelScraper
 from telegram.Josad.scraper import JosadTelegramScraper
 from telegram.ETcareers.scraper import EtcarrerTelegramScraper
 from telegram.jobs_in_ethio.scraper import JobsEthioTelegramScraper
+from addskill import save_cache,SKILL_CACHE
 
 
 
@@ -16,14 +17,14 @@ import asyncio
 from common.database import save_job
 
 SCRAPERS = [
-    # AfriworkScraper(),
-    # EthioReport(),
-    # EthioJob(),
+    AfriworkScraper(),
+    EthioReport(),
+    EthioJob(),
  
-    # TelegramChannelScraper("effoyjobs"),
-    # JosadTelegramScraper("Josad"),
+    TelegramChannelScraper("effoyjobs"),
+    JosadTelegramScraper("Josad"),
     EtcarrerTelegramScraper("etcareersjobs"),
-    # JobsEthioTelegramScraper("jobs_in_ethio")
+    JobsEthioTelegramScraper("jobs_in_ethio")
 
 
 
@@ -41,9 +42,13 @@ async def main ():
             print(f"{scraper.name} failed: {e}")
 
     print(f"\nTotal jobs: {len(all_jobs)}")
+    save_cache(SKILL_CACHE)
+
 
     for job in all_jobs:
         save_job(job)
+
+
 
 if __name__ == "__main__":
     asyncio.run(main())
