@@ -28,7 +28,7 @@ interface JobListing {
 
 export default function JobsPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [searchLocation, setSearchLocation] = useState("");
+ 
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
 
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -96,7 +96,7 @@ export default function JobsPage() {
   // Reset to page 1 whenever filters or search keywords change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchKeyword, searchLocation, selectedSources]);
+  }, [searchKeyword, selectedSources]);
 
   const toggleSaveJob = async (id: string) => {
     if (isSaving !== null) return;
@@ -148,9 +148,7 @@ export default function JobsPage() {
       title.includes(searchKeyword.toLowerCase().trim()) ||
       company.includes(searchKeyword.toLowerCase().trim());
 
-    const matchesLocation = location.includes(
-      searchLocation.toLowerCase().trim()
-    );
+   
 
     const matchesSource =
       selectedSources.length === 0 ||
@@ -158,7 +156,7 @@ export default function JobsPage() {
 
     return (
       matchesKeyword &&
-      matchesLocation &&
+     
       matchesSource 
     );
   });
@@ -177,22 +175,11 @@ export default function JobsPage() {
           <div className="w-full">
             <SearchBar
               onSearch={(term) => setSearchKeyword(term)}
-              placeholder="Search jobs by title or company..."
+              placeholder="Search jobs by title"
             />
           </div>
 
-          <div className="w-full md:w-80">
-            <div className="relative flex items-center w-full h-12 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 shadow-xl overflow-hidden focus-within:border-slate-700 transition-all duration-300 px-3">
-              <MapPin size={18} className="text-slate-400 shrink-0 mr-2.5" />
-              <input
-                type="text"
-                placeholder="Filter by location..."
-                value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-                className="w-full bg-transparent outline-none text-slate-100 placeholder:text-slate-500 text-sm"
-              />
-            </div>
-          </div>
+          
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">
@@ -314,7 +301,7 @@ export default function JobsPage() {
                             } ${isSaving === job.id ? "opacity-50" : ""}`}
                           >
                             {job.isSaved ? (
-                              <BookmarkCheck className="text-slate-200" fill="currentColor" size={18} />
+                              <BookmarkCheck className="text-amber-400" fill="currentColor" size={18} />
                             ) : (
                               <Bookmark size={18} />
                             )}

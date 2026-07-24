@@ -11,6 +11,7 @@ import JobDetails from './pages/JobsDetailsPage';
 import Alerts from "./pages/AlertsPage";
 import ProtectedRoute from './components/ProtectedRoute';
 import PageNotFound from './pages/404';
+import Footer from './components/Footer';
 
 function App() {
   return (
@@ -66,6 +67,9 @@ function App() {
        
         <Route path="*" element={<PageNotFound />} />
       </Routes>
+
+
+      <Footer />
     </BrowserRouter>
   );
 }
