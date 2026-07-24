@@ -16,10 +16,10 @@ import asyncio
 from common.database import save_job
 
 SCRAPERS = [
-    AfriworkScraper(),
+    # AfriworkScraper(),
     # EthioReport(),
-    # EthioJob(),
-    # EthioJob(),
+    EthioJob(),
+ 
     # TelegramChannelScraper("effoyjobs"),
     # JosadTelegramScraper("Josad"),
     # EtcarrerTelegramScraper("etcareersjobs"),

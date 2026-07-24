@@ -1,9 +1,17 @@
+import os
 import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from common.base_scraper import BaseScraper
 from common.models import JobListing
+from addskill import extract_skills  
+
+
+def safe_str(text: any, length: int = 250) -> str:
+    if text is None: return ""
+    return str(text).strip()[:length]
+
 
 class EthioJob(BaseScraper):
     def __init__(self):
@@ -51,19 +59,16 @@ class EthioJob(BaseScraper):
         return list(links)
 
     async def parse_page(self, page, url: str) -> JobListing | None:
-        """Parses an individual job page with full diagnostic instrumentation."""
+        """Parses an individual job page with full diagnostic instrumentation and addskill integration."""
         try:
-            # 4. Use wait_until="domcontentloaded" instead of "commit"
             await page.goto(url, wait_until="domcontentloaded", timeout=60000)
             await page.wait_for_timeout(3000)
 
-            # 3. Check the HTML title & Cloudflare block
             page_title = await page.title()
             print(f"PAGE TITLE: {page_title}")
 
             content = await page.content()
             
-            # 1. Save the HTML of one job page for local inspection
             with open("ethiojob_debug.html", "w", encoding="utf-8") as f:
                 f.write(content)
 
@@ -72,7 +77,6 @@ class EthioJob(BaseScraper):
 
             soup = BeautifulSoup(content, "lxml")
             
-            # 5. Wait for <h1> explicitly
             try:
                 await page.wait_for_selector("h1", timeout=15000)
             except Exception:
@@ -83,7 +87,6 @@ class EthioJob(BaseScraper):
 
             text = soup.get_text("\n", strip=True)
 
-            # 6. Print the first 1000 characters of the page text
             print("-" * 40 + " TEXT SNIPPET " + "-" * 40)
             print(text[:1000])
             print("-" * 94)
@@ -183,10 +186,12 @@ class EthioJob(BaseScraper):
             if responsibilities:
                 full_requirements = f"Key Responsibilities:\n{responsibilities}\n\nRequirements:\n{requirements}"
 
-            raw_skills = extract_between("Requirement Skill", ["How To Apply", "More Jobs"]).splitlines()
-            skills = [s.strip("•- ") for s in raw_skills if len(s.strip()) > 1][:15]
+            # --- Unified Skill Extraction via addskill ---
+            extracted_skills = extract_skills(
+                job_description_text=safe_str(f"{description}\n{full_requirements}", 2500),
+                job_title=safe_str(title, 250)
+            )
 
-            # 2. Print what is actually being extracted
             print("=" * 80)
             print("URL:", url)
             print("TITLE:", title)
@@ -195,19 +200,19 @@ class EthioJob(BaseScraper):
             print("EMPLOYMENT:", employment_type)
             print("EXPERIENCE:", experience_level)
             print("DEADLINE:", deadline)
-            print("SKILLS:", skills)
+            print("SKILLS:", extracted_skills)
             print("=" * 80)
 
             return JobListing(
-                title=title,
-                company=company,
-                location=location.strip()[:100],
-                description=description[:5000],
-                requirements=full_requirements[:3000],
-                employment_type=employment_type.strip()[:50],
-                experience_level=experience_level.strip()[:50],
+                title=safe_str(title, 250) or "Untitled Position",
+                company=safe_str(company, 250) or "Unknown",
+                location=safe_str(location, 250) or "Addis Ababa",
+                description=safe_str(description, 5000),
+                requirements=safe_str(full_requirements, 3000),
+                employment_type=safe_str(employment_type, 50) or "Full Time",
+                experience_level=safe_str(experience_level, 50) or "Not Specified",
                 salary="Negotiable",
-                skills=skills,
+                skills=extracted_skills,
                 deadline=deadline,
                 posted_at=datetime.utcnow(),
                 source="EthioJobs",
