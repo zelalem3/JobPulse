@@ -250,16 +250,7 @@ export default function Profile() {
           >
             <Lock size={16} /> Security
           </button>
-          <button
-            onClick={() => setActiveTab('alerts')}
-            className={`pb-4 text-sm font-semibold border-b-2 transition-all duration-300 flex items-center gap-2 ${
-              activeTab === 'alerts' 
-                ? 'border-slate-200 text-white' 
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Bell size={16} /> Scraper Alerts
-          </button>
+         
         </div>
 
         {/* --- TAB WINDOW: ACCOUNT DETAILS --- */}
@@ -460,36 +451,7 @@ export default function Profile() {
           </div>
         )}
 
-        {/* --- TAB WINDOW: SCRAPER ALERTS --- */}
-        {activeTab === 'alerts' && (
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-slate-800/80 space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-white">Configured Search Watches</h3>
-              <p className="text-slate-400 text-sm mt-0.5">Control filters handled by your backend scrapers.</p>
-            </div>
-
-            <div className="divide-y divide-slate-800/80">
-              <div className="py-4 flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-200">Remote Python Engineers</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Scanning RemoteOK and LinkedIn hourly</p>
-                </div>
-                <span className="px-3 py-1 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold rounded-xl shadow-inner">
-                  Active
-                </span>
-              </div>
-              <div className="py-4 flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-200">Laravel Core Architect Roles</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Scanning Indeed daily</p>
-                </div>
-                <span className="px-3 py-1 bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold rounded-xl">
-                  Paused
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+      
 
       </div>
     </div>

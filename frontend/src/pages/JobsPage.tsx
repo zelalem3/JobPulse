@@ -205,7 +205,7 @@ export default function JobsPage() {
                             setSelectedSources
                           )
                         }
-                        className="rounded bg-slate-950 border-slate-700 text-slate-700 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        className="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
                       {src}
                     </label>
@@ -277,7 +277,7 @@ export default function JobsPage() {
                               {job.skills.map((skill, index) => (
                                 <span
                                   key={index}
-                                  className="text-[11px] bg-blue-950/50 border border-blue-800/50 text-blue-300 px-2.5 py-0.5 rounded-lg font-medium"
+                                  className="text-[11px] bg-emerald-950/50 border border-emerald-800/50 text-emerald-300 px-2.5 py-0.5 rounded-lg font-medium"
                                 >
                                   {renderSkillName(skill)}
                                 </span>
@@ -320,24 +320,24 @@ export default function JobsPage() {
                   ))}
                 </div>
 
-                {/* Pagination */}
+                {/* Pagination Controls Footer Container with Colored Accents */}
                 <div className="flex justify-center items-center gap-4 mt-10">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
+                    className="px-5 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl disabled:opacity-40 font-semibold text-sm transition-all hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white shadow-lg cursor-pointer"
                   >
                     Previous
                   </button>
 
-                  <span className="text-sm text-slate-400 font-medium">
-                    Page {currentPage} of {lastPage}
+                  <span className="text-sm font-bold text-slate-300 bg-slate-900/60 px-4 py-2.5 rounded-2xl border border-slate-800/80 shadow-inner flex items-center gap-1.5">
+                    Page <span className="text-emerald-400 font-black">{currentPage}</span> of <span className="text-slate-100">{lastPage}</span>
                   </span>
 
                   <button
                     disabled={currentPage === lastPage}
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, lastPage))}
-                    className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
+                    className="px-5 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl disabled:opacity-40 font-semibold text-sm transition-all hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white shadow-lg cursor-pointer"
                   >
                     Next
                   </button>

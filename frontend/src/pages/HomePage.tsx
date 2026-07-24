@@ -27,6 +27,7 @@ interface Job {
   type?: string;
   salary?: string;
   isSaved?: boolean;
+  skills?: any[];
 }
 
 export default function HomePage() {
@@ -43,6 +44,15 @@ export default function HomePage() {
 
   const handleSearchLog = (term: string) => {
     setSearchTerm(term);
+  };
+
+  // Helper function to safely extract skill string names whether they come as strings or objects
+  const renderSkillName = (skill: any): string => {
+    if (typeof skill === "string") return skill;
+    if (skill && typeof skill === "object") {
+      return skill.name || skill.title || String(skill.id || "");
+    }
+    return String(skill);
   };
 
   // Fetch all jobs on mount for smooth global filtering and pagination
@@ -66,6 +76,7 @@ export default function HomePage() {
         const processedJobs = jobsData.map((job: Job) => ({
           ...job,
           isSaved: savedJobIds.has(job.id),
+          skills: job.skills || [],
         }));
 
         setAllListings(processedJobs);
@@ -181,7 +192,7 @@ export default function HomePage() {
                 <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                   Scraper
                 </p>
-                <h3 className="font-black text-xl text-slate-200">
+                <h3 className="font-black text-xl !text-emerald-600">
                   Active
                 </h3>
               </div>
@@ -292,6 +303,20 @@ export default function HomePage() {
                       <p className="text-slate-400 mt-1 font-medium text-sm">
                         {job.company} — {job.location}
                       </p>
+                      
+                      {/* Render Extracted Skills Badges Safely */}
+                      {job.skills && job.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-2">
+                          {job.skills.map((skill, index) => (
+                            <span
+                              key={index}
+                              className="text-[11px] bg-blue-950/50 border border-blue-800/50 text-blue-300 px-2.5 py-0.5 rounded-lg font-medium"
+                            >
+                              {renderSkillName(skill)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {job.salary && (
                         <p className="mt-2 text-xs font-semibold text-slate-300 bg-slate-950/60 inline-block px-3 py-1.5 rounded-xl border border-slate-800">
@@ -305,11 +330,11 @@ export default function HomePage() {
                         onClick={() => toggleSaveJob(job.id)}
                         disabled={isSaving === job.id}
                         className={`p-2.5 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all shadow-lg ${
-                          job.isSaved ? "text-slate-200 border-slate-700" : "text-slate-400"
+                          job.isSaved ? "text-blue-400 border-slate-700" : "text-slate-400"
                         } ${isSaving === job.id ? "opacity-50" : ""}`}
                       >
                         {job.isSaved ? (
-                          <BookmarkCheck fill="currentColor" size={18} />
+                          <BookmarkCheck className="text-blue-400" fill="currentColor" size={18} />
                         ) : (
                           <Bookmark size={18} />
                         )}
@@ -328,24 +353,24 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Pagination Controls Footer Container */}
+            {/* Pagination Controls Footer Container with Colored Accents */}
             <div className="flex justify-center items-center gap-4 mt-10">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
+                className="px-5 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl disabled:opacity-40 font-semibold text-sm transition-all hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white shadow-lg cursor-pointer"
               >
                 Previous
               </button>
 
-              <span className="text-sm text-slate-400 font-medium">
-                Page {currentPage} of {lastPage}
+              <span className="text-sm font-bold text-slate-300 bg-slate-900/60 px-4 py-2.5 rounded-2xl border border-slate-800/80 shadow-inner flex items-center gap-1.5">
+                Page <span className="text-emerald-400 font-black">{currentPage}</span> of <span className="text-slate-100">{lastPage}</span>
               </span>
 
               <button
                 disabled={currentPage === lastPage}
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, lastPage))}
-                className="px-5 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl disabled:opacity-50 font-semibold text-sm transition-all hover:bg-slate-800 text-slate-300 shadow-lg cursor-pointer"
+                className="px-5 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl disabled:opacity-40 font-semibold text-sm transition-all hover:bg-slate-800 hover:border-slate-700 text-slate-300 hover:text-white shadow-lg cursor-pointer"
               >
                 Next
               </button>

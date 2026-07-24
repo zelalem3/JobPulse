@@ -140,7 +140,7 @@ export default function JobDetails() {
             </h1>
             
             <p className="text-sm font-semibold text-slate-400">
-              {job.company} — <a href={job.companyWebsite || "#"} target="_blank" rel="noreferrer" className="text-slate-300 hover:text-white underline font-bold inline-flex items-center gap-1">Visit Site <ExternalLink size={12} /></a>
+              {job.company} — <a href={job.url || "#"} target="_blank" rel="noreferrer" className="text-slate-300 hover:text-white underline font-bold inline-flex items-center gap-1">Visit Site <ExternalLink size={12} /></a>
             </p>
           </div>
 
@@ -162,14 +162,7 @@ export default function JobDetails() {
               <Share2 size={20} />
             </button>
 
-            <a 
-              href={job.url}
-              target="_blank"
-              rel="noreferrer"
-              className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl text-sm transition-all shadow-lg border border-slate-700 flex items-center gap-2"
-            >
-              Apply Externally <ExternalLink size={15} />
-            </a>
+            
           </div>
         </div>
 
