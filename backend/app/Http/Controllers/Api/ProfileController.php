@@ -19,6 +19,21 @@ class ProfileController extends Controller
     /**
      * Update the authenticated user's profile information and skills.
      */
+    public function updatePassword(Request $request)
+{
+    $request->validate([
+        'current_password' => ['required', 'current_password'],
+        'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+    ]);
+
+    $request->user()->update([
+        'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+    ]);
+
+    return response()->json([
+        'message' => 'Password updated successfully!'
+    ]);
+}
    public function update(Request $request)
 {
     $user = $request->user();
@@ -57,22 +72,6 @@ class ProfileController extends Controller
     ]);
 }
 
-    /**
-     * Update the authenticated user's password.
-     */
-    public function updatePassword(Request $request)
-    {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        return response()->json([
-            'message' => 'Password updated successfully.',
-        ]);
-    }
+    
+    
 }

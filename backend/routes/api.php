@@ -39,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //--- Profile Routes---
     Route::get('profile',[ProfileController::class, 'show']);
     Route::put('profile',[ProfileController::class, 'update']);
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
     //-- Job Search ---
     Route::get('search',[SearchController::class, '__invoke']);
