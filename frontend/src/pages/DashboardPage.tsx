@@ -179,15 +179,7 @@ export default function DashboardPage() {
             <p className="text-3xl font-black text-white">{stats?.totalJobs ?? 0}</p>
           </div>
 
-          <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 space-y-3">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">Total Companies</h3>
-              <div className="p-2 bg-slate-800 rounded-2xl border border-slate-700/60 text-slate-300">
-                <Bookmark size={16} />
-              </div>
-            </div>
-            <p className="text-3xl font-black text-white">{stats?.totalCompanies ?? 0}</p>
-          </div>
+          
 
           <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-800/80 space-y-3">
             <div className="flex justify-between items-center">
