@@ -66,11 +66,22 @@ export default function SavedJobs() {
     }
   };
 
-  // Filter & Search Logic
+  // Comprehensive Search & Filter Logic across title, company, location, and source
   const filteredJobs = savedJobs.filter(job => {
-    const matchesSearch = (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
-                          (job.company?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return true;
+
+    const title = (job.title || '').toLowerCase();
+    const company = (job.company || '').toLowerCase();
+    const location = (job.location || '').toLowerCase();
+    const source = (job.source || '').toLowerCase();
+
+    return (
+      title.includes(term) || 
+      company.includes(term) || 
+      location.includes(term) || 
+      source.includes(term)
+    );
   });
 
   if (loading) {
@@ -107,7 +118,7 @@ export default function SavedJobs() {
             <Search size={16} className="text-slate-400 shrink-0" />
             <input 
               type="text" 
-              placeholder="Filter by title or company..."
+              placeholder="Search saved jobs by title, company, location, or source..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-none outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500 w-full"

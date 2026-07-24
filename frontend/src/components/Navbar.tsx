@@ -47,7 +47,7 @@ export default function Navbar() {
             {isLoggedIn && (
               <>
                 <Link 
-                  to="/saved-jobs" 
+                  to="/saved" 
                   className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
                 >
                   <Bookmark size={16} className="text-blue-400" /> Saved Jobs
@@ -72,7 +72,7 @@ export default function Navbar() {
                   title="Notifications"
                 >
                   <Bell size={18} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 </Link>
 
                 {/* Profile Dropdown Container */}
@@ -152,7 +152,7 @@ export default function Navbar() {
           {isLoggedIn ? (
             <>
               <Link 
-                to="/saved-jobs" 
+                to="/saved" 
                 onClick={() => setIsMobileMenuOpen(false)} 
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
               >

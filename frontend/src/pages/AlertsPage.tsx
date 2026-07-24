@@ -145,13 +145,13 @@ export default function AlertsPage() {
                 />
               </div>
 
-              <button 
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full mt-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Plus size={16} /> Save Alert
-              </button>
+     <button 
+  type="submit"
+  disabled={isSubmitting}
+  className="w-full mt-2 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300 hover:text-white bg-amber-950/60 border border-amber-800/60 hover:bg-amber-900/80 px-4 py-3 rounded-2xl transition-all shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <Plus size={16} /> Save Alert
+</button>
             </form>
           </div>
 
