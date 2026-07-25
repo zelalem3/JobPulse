@@ -32,6 +32,7 @@ jobs:
 
       - name: Run scraper
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
