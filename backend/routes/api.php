@@ -26,6 +26,21 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [LoginController::class, 'login']); 
 });
 
+Route::get('/trigger-daily-recommendations', function (Request $request) {
+    // Validate the secret token to keep it secure
+    if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    // Run your existing Artisan command programmatically
+    Artisan::call('recommendations:send');
+
+    return response()->json([
+        'status' => 'Recommendation emails triggered successfully!',
+        'output' => Artisan::output()
+    ]);
+});
+
 Route::apiResource('jobs', JobListingController::class)->only(['index', 'show']);
 Route::get('jobs/{id}', [JobSearchController::class, 'index']);
 Route::get('/test-mail', function () {
