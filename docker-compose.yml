@@ -20,7 +20,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DB_HOST=postgres
+     
       - REDIS_HOST=redis
     depends_on:
       - postgres
@@ -40,7 +40,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - DB_HOST=postgres
+  
       - REDIS_HOST=redis
     depends_on:
       - backend
