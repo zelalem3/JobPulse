@@ -28,6 +28,13 @@ Route::prefix('auth')->group(function () {
 
 Route::apiResource('jobs', JobListingController::class)->only(['index', 'show']);
 Route::get('jobs/{id}', [JobSearchController::class, 'index']);
+Route::get('/test-mail', function () {
+        Mail::raw('Hello from JobPulse!', function ($message) {
+            $message->to('test@example.com')
+                    ->subject('Test Email');
+        });
+        return 'Email sent!';
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -74,13 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('job-alerts/{id}', [AlertController::class, 'destroy']);
 
     // --- Testing Routes ---
-    Route::get('/test-mail', function () {
-        Mail::raw('Hello from JobPulse!', function ($message) {
-            $message->to('test@example.com')
-                    ->subject('Test Email');
-        });
-        return 'Email sent!';
-    });
+    
 
    
     
