@@ -9,12 +9,23 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is not configured")
+    db_user = os.getenv("DB_USERNAME")
+    db_password = os.getenv("DB_PASSWORD")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_DATABASE")
+    db_sslmode = os.getenv("DB_SSLMODE", "require")
+    
+    if db_user and db_host and db_name:
+        DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?sslmode={db_sslmode}"
+
+
 
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
 )
+
 
 SessionLocal = sessionmaker(bind=engine)
 
