@@ -22,7 +22,7 @@ SCRAPERS = [
     EthioJob(),
  
     TelegramChannelScraper("effoyjobs"),
-    JosadTelegramScraper("Josad"),
+    JosadTelegramScraper("josad_software"),
     EtcarrerTelegramScraper("etcareersjobs"),
     JobsEthioTelegramScraper("jobs_in_ethio")
 
