@@ -41,4 +41,5 @@ jobs:
           DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
           API_ID: ${{ secrets.TELEGRAM_API_ID }}
           API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python run.py
