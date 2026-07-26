@@ -21,6 +21,10 @@ use App\Http\Controllers\Api\SearchController;
 | Anyone can access these routes without logging in.
 */
 
+Route::get('/ping', function () {
+    return response()->json(['status' => 'alive']);
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('/register', [ApiRegisterController::class, 'register']);
     Route::post('/login', [LoginController::class, 'login']); 
