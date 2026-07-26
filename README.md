@@ -1,3 +1,4 @@
+
 # JobPulse 🔍💼
 
 JobPulse is a full-stack job aggregation and recommendation platform designed to collect job postings from multiple regional and remote sources, help users discover career opportunities, save listings, receive personalized recommendations, and get notified when new jobs match their interests.
@@ -83,55 +84,54 @@ Laravel 12 API Backend
         ├── PostgreSQL Database
         ├── Mailpit (Email Notifications)
         └── Python & Playwright Scrapers
-
 ```
-## 📂 Project Structure
 
-```
+### 📂 Project Structure
+```text
 JobPulse/
 ├── backend/
 │   ├── app/
 │   ├── routes/
 │   ├── database/
 │   └── docker/
-│
 ├── frontend/
 │   ├── src/
 │   ├── components/
 │   ├── pages/
 │   └── services/
-│
 └── scrapers/
     ├── common/
     ├── ethiojobs/
     ├── geezjobs/
     └── telegram/
-
 ```
 
-
-⚙️ Installation & Setup
+### ⚙️ Installation & Setup
 1. Clone the Repository
-```Bash
+```
 git clone [https://github.com/zelalem3/JobPulse.git](https://github.com/zelalem3/JobPulse.git)
+
 cd JobPulse
+
 ```
 2. Start Docker Containers
-``` Bash
+``` 
 docker compose up -d --build
+
 ```
 3. Backend Setup
-```Bash
+```
 docker compose exec backend composer install
 docker compose exec backend php artisan migrate
 docker compose exec backend php artisan key:generate
 ```
-
 4. Frontend Setup
-``` Bash
+```
 docker compose exec frontend npm install
+
 ```
 ## 🚀 Running the Application
+
 Frontend Interface: http://localhost:3000
 
 Backend API: http://localhost:8000
@@ -140,72 +140,58 @@ Mailpit Dashboard: http://localhost:8025
 
 🔌 API Endpoints
 Authentication
-Plaintext
 POST /api/auth/register
+
 POST /api/auth/login
+
 Jobs
-Plaintext
 GET /api/jobs
+
 GET /api/jobs/{id}
+
 Saved Jobs
-Plaintext
 GET /api/savedjobs
+
 POST /api/savejob/{id}
+
 Job Alerts
-Plaintext
 GET /api/alerts
+
 POST /api/alerts
+
 PUT /api/alerts/{id}
+
 DELETE /api/alerts/{id}
+
 Recommendations
-Plaintext
 GET /api/recommendations
+
 Dashboard Analytics
-Plaintext
 GET /api/dashboard/stats
+
 GET /api/dashboard/topcompanies
+
 GET /api/dashboard/skills
+
 GET /api/dashboard/graph
-🗺️ Future Improvements
-In-app notification center
 
-Automated resume parsing and matching integration
+## 🗺️ Future Improvements
+In-app notification center.
 
-Direct Telegram bot alert notifications
+Direct Telegram bot alert notifications.
 
-Advanced recommendation engine enhancements
+Advanced recommendation engine enhancements.
 
-Administrative management and scraper monitoring dashboard
+Administrative management and scraper monitoring dashboard.
 
-Complete application tracking system (ATS) workflow
+Complete application tracking system (ATS) workflow.
 
 ## 📸 Screenshots
-
-# Login Page
-
-<img width="1604" height="896" alt="image" src="https://github.com/user-attachments/assets/cb6d967c-7179-40f7-b077-0d2dac4a15e5" />
-
-
-# User Dashboard
-
-<img width="1596" height="854" alt="image" src="https://github.com/user-attachments/assets/37836e3b-18e4-44a1-b90b-7d2ecba8b1cc" />
-
-
-# Job Listings & Search Filters
-
-<img width="1624" height="896" alt="image" src="https://github.com/user-attachments/assets/f4711b4c-34a1-4173-8f8f-1e59209258ae" />
-
-
-# Saved Jobs Manager
-
-<img width="1565" height="864" alt="image" src="https://github.com/user-attachments/assets/d90cda36-4208-4d28-8cb0-c0aed37aae0c" />
-
-
-# Custom Alerts Configuration
-
-<img width="1530" height="791" alt="image" src="https://github.com/user-attachments/assets/964ce871-429b-4fcb-97a2-724d471e66ff" />
-
-
+Login Page
+User Dashboard
+Job Listings & Search Filters
+Saved Jobs Manager
+Custom Alerts Configuration
 ## 👨‍💻 Author
 Zelalem Getnet
 
@@ -213,5 +199,5 @@ Software engineer and computer science graduate specializing in full-stack web e
 
 GitHub: zelalem3
 
-## 📜 License
+📜 License
 This project is licensed under the MIT License.
