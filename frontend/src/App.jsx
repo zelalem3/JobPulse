@@ -12,11 +12,13 @@ import Alerts from "./pages/AlertsPage";
 import ProtectedRoute from './components/ProtectedRoute';
 import PageNotFound from './pages/404';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <BrowserRouter>
       <NavBar />
+      <ScrollToTop />
 
       <Routes>
       
