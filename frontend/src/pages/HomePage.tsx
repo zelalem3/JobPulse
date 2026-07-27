@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Briefcase } from "lucide-react";
+import { Briefcase, SlidersHorizontal } from "lucide-react";
 import SearchBar from "../components/SearchBar";
 import api from "../services/axios";
 import { Job } from "../types/job";
 import HomeMetricsGrid from "../components/home/HomeMetricsGrid";
-import SourceFilterBar from "../components/home/SourceFilterBar";
+import JobsSidebarFilter from "../components/home/JobsSidebarFilter";
 import JobCard from "../components/home/JobCard";
 import PaginationControls from "../components/home/PaginationControls";
 
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSource, setSelectedSource] = useState("All");
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [allListings, setAllListings] = useState<Job[]>([]);
   const [allSources, setAllSources] = useState<string[]>([]);
@@ -66,7 +67,15 @@ export default function HomePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedSource]);
+  }, [searchTerm, selectedSources]);
+
+  const handleCheckboxToggle = (source: string) => {
+    setSelectedSources((prev) =>
+      prev.includes(source)
+        ? prev.filter((s) => s !== source)
+        : [...prev, source]
+    );
+  };
 
   const toggleSaveJob = async (id: number) => {
     if (isSaving !== null) return;
@@ -107,11 +116,11 @@ export default function HomePage() {
       company.includes(searchTerm.toLowerCase().trim()) ||
       location.includes(searchTerm.toLowerCase().trim());
 
-    const matchesSelectedSource =
-      selectedSource === "All" ||
-      source.toLowerCase() === selectedSource.toLowerCase();
+    const matchesSelectedSources =
+      selectedSources.length === 0 ||
+      selectedSources.some((s) => s.toLowerCase() === source.toLowerCase());
 
-    return matchesSearch && matchesSelectedSource;
+    return matchesSearch && matchesSelectedSources;
   });
 
   const totalItems = filteredListings.length;
@@ -135,47 +144,64 @@ export default function HomePage() {
           allSourcesCount={allSources.length}
         />
 
-        <SourceFilterBar
-          allSources={allSources}
-          selectedSource={selectedSource}
-          onSelectSource={setSelectedSource}
-        />
+        {/* Mobile Filter Toggle Button */}
+        <div className="flex justify-between items-center mb-6 md:hidden">
+          <button
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-2xl flex items-center gap-2 text-xs font-bold shadow-lg"
+          >
+            <SlidersHorizontal size={14} />
+            {isFilterOpen ? "Hide Filters" : "Filter Sources"}
+          </button>
+        </div>
 
-        {loading ? (
-          <div className="text-center py-20 text-sm font-semibold text-slate-400">
-            Loading position indexes...
-          </div>
-        ) : currentPaginatedListings.length > 0 ? (
-          <>
-            <div className="space-y-4">
-              {currentPaginatedListings.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  onToggleSave={toggleSaveJob}
-                  isSaving={isSaving === job.id}
+        {/* Main Content Grid: Sidebar + Job Listings */}
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          <JobsSidebarFilter
+            allSources={allSources}
+            selectedSources={selectedSources}
+            onCheckboxToggle={handleCheckboxToggle}
+            isOpen={isFilterOpen}
+          />
+
+          <div className="flex-1 w-full">
+            {loading ? (
+              <div className="text-center py-20 text-sm font-semibold text-slate-400">
+                Loading position indexes...
+              </div>
+            ) : currentPaginatedListings.length > 0 ? (
+              <>
+                <div className="space-y-4">
+                  {currentPaginatedListings.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      onToggleSave={toggleSaveJob}
+                      isSaving={isSaving === job.id}
+                    />
+                  ))}
+                </div>
+
+                <PaginationControls
+                  currentPage={currentPage}
+                  lastPage={lastPage}
+                  onPageChange={setCurrentPage}
                 />
-              ))}
-            </div>
-
-            <PaginationControls
-              currentPage={currentPage}
-              lastPage={lastPage}
-              onPageChange={setCurrentPage}
-            />
-          </>
-        ) : (
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl py-16 text-center border border-slate-800/80 shadow-xl">
-            <Briefcase
-              className="mx-auto mb-4 text-slate-500"
-              size={40}
-            />
-            <h3 className="font-bold text-white">No jobs found</h3>
-            <p className="text-slate-400 text-sm mt-1">
-              Try changing your search term or filters.
-            </p>
+              </>
+            ) : (
+              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl py-16 text-center border border-slate-800/80 shadow-xl">
+                <Briefcase
+                  className="mx-auto mb-4 text-slate-500"
+                  size={40}
+                />
+                <h3 className="font-bold text-white">No jobs found</h3>
+                <p className="text-slate-400 text-sm mt-1">
+                  Try changing your search term or filters.
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
