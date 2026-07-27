@@ -165,6 +165,17 @@ export default function Navbar() {
               >
                 <LayoutDashboard size={18} className="text-emerald-400" /> Dashboard
               </Link>
+              {/* Added Notifications link for mobile screens */}
+              <Link 
+                to="/alerts" 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Bell size={18} className="text-red-400" /> Notifications
+                </div>
+                <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+              </Link>
               <Link 
                 to="/profile" 
                 onClick={() => setIsMobileMenuOpen(false)} 
