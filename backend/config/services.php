@@ -13,6 +13,9 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'telegram' => [
+    'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
