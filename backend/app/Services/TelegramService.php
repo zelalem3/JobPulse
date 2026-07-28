@@ -19,7 +19,7 @@ class TelegramService
     /**
      * Send a text message to a specific Telegram chat.
      */
-    public function sendMessage(string $chatId, string $message, string $parseMode = 'Markdown'): bool
+    public function sendMessage(string $chatId, string $message, ?string $parseMode = null): bool
     {
         if (empty($this->token) || empty($chatId)) {
             Log::warning('Telegram notification skipped: Missing token or chat ID.');
@@ -27,12 +27,18 @@ class TelegramService
         }
 
         try {
-            $response = Http::post("{$this->apiUrl}/sendMessage", [
+            $payload = [
                 'chat_id' => $chatId,
                 'text' => $message,
-                'parse_mode' => $parseMode,
                 'disable_web_page_preview' => true,
-            ]);
+            ];
+
+            // Only add parse_mode if explicitly passed
+            if ($parseMode) {
+                $payload['parse_mode'] = $parseMode;
+            }
+
+            $response = Http::post("{$this->apiUrl}/sendMessage", $payload);
 
             if ($response->successful()) {
                 return true;
@@ -45,8 +51,14 @@ class TelegramService
             Log::error("Telegram API Error [{$errorCode}]: {$description} for chat_id: {$chatId}");
 
             if (in_array($errorCode, [403, 400])) {
-                // User blocked bot or chat not found; consider cleaning up chat_id if needed
                 Log::warning("Deactivating Telegram for chat_id {$chatId} due to delivery failure.");
+                
+                // Optional: Automatically clear the invalid chat_id from the database
+                \App\Models\User::where('telegram_chat_id', $chatId)->update([
+                    'telegram_chat_id' => null,
+                    'telegram_username' => null,
+                    'telegram_connected_at' => null,
+                ]);
             }
 
             return false;
@@ -57,19 +69,28 @@ class TelegramService
     }
 
     /**
-     * Format and send a job alert notification.
+     * Format and send a job alert notification using safe HTML formatting.
      */
     public function sendJobAlert(string $chatId, $job, string $alertKeyword): bool
     {
-        $message = "🚨 *New Job Match*\n\n" .
-                   "*{$job->title}*\n\n" .
-                   "🏢 *Company:* " . ($job->company->name ?? 'Private/Unknown') . "\n" .
-                   "📍 *Location:* {$job->location}\n" .
-                   "💼 *Type:* " . ($job->employment_type ?? 'Not Specified') . "\n\n" .
-                   "━━━━━━━━━━━━━━━━━━\n" .
-                   "🎯 *Matched Alert:* {$alertKeyword}\n\n" .
-                   "[🔗 View Job Details]({$job->url})";
+        // Escape special HTML characters to prevent breaking layout
+        $title = htmlspecialchars($job->title ?? 'Untitled', ENT_QUOTES, 'UTF-8');
+        $company = htmlspecialchars($job->company->name ?? 'Private/Unknown', ENT_QUOTES, 'UTF-8');
+        $location = htmlspecialchars($job->location ?? 'Remote/Not Specified', ENT_QUOTES, 'UTF-8');
+        $employmentType = htmlspecialchars($job->employment_type ?? 'Not Specified', ENT_QUOTES, 'UTF-8');
+        $keyword = htmlspecialchars($alertKeyword, ENT_QUOTES, 'UTF-8');
+        $jobUrl = $job->url ?? '#';
 
-        return $this->sendMessage($chatId, $message);
+        $message = "🚨 <b>New Job Match</b>\n\n" .
+                   "<b>{$title}</b>\n\n" .
+                   "🏢 <b>Company:</b> {$company}\n" .
+                   "📍 <b>Location:</b> {$location}\n" .
+                   "💼 <b>Type:</b> {$employmentType}\n\n" .
+                   "━━━━━━━━━━━━━━━━━━\n" .
+                   "🎯 <b>Matched Alert:</b> {$keyword}\n\n" .
+                   "<a href=\"{$jobUrl}\">🔗 View Job Details</a>";
+
+        // Send using HTML mode instead of Markdown to completely avoid entity parsing errors
+        return $this->sendMessage($chatId, $message, 'HTML');
     }
 }
