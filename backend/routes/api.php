@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\TelegramWebhookController;
 |--------------------------------------------------------------------------
 | Anyone can access these routes without logging in.
 */
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
 
 Route::get('/ping', function () {
     return response()->json(['status' => 'alive']);
@@ -71,8 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //-- Job Search ---
     Route::get('search',[SearchController::class, '__invoke']);
 
-    // -- Telegram bot ---
-    Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
 
 
     //---Telegram Notification ---
