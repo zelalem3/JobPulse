@@ -73,10 +73,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     
     // --- Dashboard Routes ---
-    Route::get('dashboard/stats', [DashboardController::class, 'stats']);
-    Route::get('dashboard/topcompanies', [DashboardController::class, 'topcompanies']);
-    Route::get('dashboard/skills', [DashboardController::class, 'skills']);
-    Route::get('dashboard/graph', [DashboardController::class, 'graph']);
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('/dashboard/graph', [DashboardController::class, 'graph']);
+    Route::get('/dashboard/skills', [DashboardController::class, 'skills']);
+    Route::get('/dashboard/topcompanies', [DashboardController::class, 'topcompanies']);
     
     // --- Saved Jobs ---
     Route::get('savedjobs', [SaveJobController::class, 'index']);
