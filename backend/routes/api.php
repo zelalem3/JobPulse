@@ -22,6 +22,25 @@ use App\Http\Controllers\Api\TelegramController;
 |--------------------------------------------------------------------------
 | Anyone can access these routes without logging in.
 */
+
+Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
+    // Optional: Protect it with a secret token query parameter so random people can't trigger it
+    $secretToken = config('services.cron.token', env('CRON_SECRET_TOKEN'));
+    
+    if ($secretToken && $request->query('token') !== $secretToken) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    // Run the scheduler
+    Artisan::call('schedule:run');
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Scheduler executed successfully.',
+        'output' => Artisan::output()
+    ]);
+});
+
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
 
 Route::get('/ping', function () {
