@@ -1,29 +1,38 @@
-export interface JobListing {
-  id: number;
-  title: string;
-  location: string;
-  company_id?: number;
-  salary: string | null;
-  employment_type?: string;
-  deadline?: string | null;
-  url: string | null;
-  match_score?: number;
-  matched_skills?: string[];
-  location_match?: boolean;
-}
-
-export interface SavedJobPivot {
-  id: number;
-  user_id: number;
-  job_listing_id: number;
-  created_at: string;
-  updated_at: string;
-  job?: JobListing;
-}
+// types/dashboard.ts
 
 export interface Stats {
   totalJobs: number;
   totalCompanies: number;
   newToday: number;
   activeJobs: number;
+}
+
+export interface SourceDistribution {
+  source: string;
+  total: number;
+  percentage: number;
+}
+
+export interface WeeklyTrendItem {
+  day: string;
+  date: string;
+  total: number;
+}
+
+export interface GraphData {
+  sources: SourceDistribution[];
+  weeklyTrend: WeeklyTrendItem[];
+}
+
+export interface CompanyModel {
+  id: number;
+  name: string;
+  logo?: string;
+  jobs_count: number;
+}
+
+export interface SkillModel {
+  id: number;
+  name: string;
+  jobs_count?: number;
 }
