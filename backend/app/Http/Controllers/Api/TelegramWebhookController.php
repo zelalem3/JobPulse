@@ -103,7 +103,7 @@ class TelegramWebhookController extends Controller
                 if ($user) {
                     $user->update([
                         'telegram_chat_id' => null,
-                        'telegram_telegram_username' => null,
+                        'telegram_username' => null, // Fixed: removed the duplicate word
                         'telegram_connected_at' => null,
                     ]);
                     $this->telegramService->sendMessage(
