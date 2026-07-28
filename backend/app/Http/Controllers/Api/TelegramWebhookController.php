@@ -16,35 +16,27 @@ class TelegramWebhookController extends Controller
     {
         $this->telegramService = $telegramService;
     }
-
-    public function handle(Request $request)
-    {
+public function handle(Request $request)
+{
+    try {
         $update = $request->all();
         Log::info('Telegram webhook received:', $update);
 
-        // Ensure it's a message update
         if (!isset($update['message'])) {
-            Log::warning('Telegram update ignored: no message key present.');
             return response()->json(['status' => 'ignored']);
         }
 
         $message = $update['message'];
         $chatId = $message['chat']['id'] ?? null;
         $text = trim($message['text'] ?? '');
-        
         $from = $message['from'] ?? [];
         $username = $from['username'] ?? null;
-        // Safely fallback if first name is blank or a single symbol like '.'
         $firstName = (!empty($from['first_name']) && trim($from['first_name']) !== '.') ? $from['first_name'] : ($username ?? 'User');
 
         if (!$chatId) {
-            Log::error('Telegram webhook error: missing chat ID.');
             return response()->json(['status' => 'no_chat_id']);
         }
 
-        Log::info("Processing message from Chat ID [{$chatId}]: '{$text}'");
-
-        // Handle commands
         if (str_starts_with($text, '/')) {
             $this->handleCommand($chatId, $text, $username, $firstName);
         } else {
@@ -55,7 +47,19 @@ class TelegramWebhookController extends Controller
         }
 
         return response()->json(['status' => 'success']);
+
+    } catch (\Throwable $e) {
+        // This will catch the exact error and log it with full details
+        Log::error('CRITICAL TELEGRAM ERROR: ' . $e->getMessage() . ' on line ' . $e->getLine() . ' of ' . $e->getFile());
+        
+        // Temporarily send the error message back to Telegram so you can see it on your phone chat
+        if (isset($chatId)) {
+            @file_get_contents("https://api.telegram.org/bot8952677967:AAHFILCuGMoWhH2zF1nx_qtzlhC1i8LCHUQ/sendMessage?chat_id={$chatId}&text=" . urlencode("ERROR: " . $e->getMessage()));
+        }
+
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
     }
+}
 
     protected function handleCommand(string $chatId, string $text, ?string $username, string $firstName)
     {
