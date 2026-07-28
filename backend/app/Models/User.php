@@ -20,12 +20,16 @@ class User extends Authenticatable
     'bio',
     'github_url', 
     'linkedin_url', 
-    'resume'
+    'resume',
+    'telegram_chat_id',
+    'telegram_username',
+    'telegram_connected_at',
 ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'telegram_connected_at' => 'datetime',
     ];
 
     /**
