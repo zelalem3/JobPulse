@@ -60,9 +60,12 @@ class TelegramWebhookController extends Controller
                 // Check if they passed a verification token/email to auto-link
                 if (isset($parts[1])) {
                     $identifier = $parts[1];
+                    \Illuminate\Support\Facades\Log::info("Attempting to link telegram chat {$chatId} to identifier: {$identifier}");
+                    
                     $user = User::where('email', $identifier)->orWhere('id', $identifier)->first();
 
                     if ($user) {
+                        \Illuminate\Support\Facades\Log::info("User found: {$user->email}. Updating telegram fields.");
                         $user->update([
                             'telegram_chat_id' => $chatId,
                             'telegram_username' => $username,
@@ -74,15 +77,10 @@ class TelegramWebhookController extends Controller
                             "✅ Success, *{$firstName}*! Your JobPulse account ({$user->email}) is now linked to this Telegram chat.\n\nYou will now receive your job alerts right here!"
                         );
                         return;
+                    } else {
+                        \Illuminate\Support\Facades\Log::warning("No user found matching identifier: {$identifier}");
                     }
                 }
-
-                $this->telegramService->sendMessage(
-                    $chatId,
-                    "👋 Welcome to *JobPulse Bot*, {$firstName}!\n\nTo link your account, use the web app to connect Telegram, or type:\n`/start YOUR_EMAIL`"
-                );
-                break;
-
             case '/status':
                 $user = User::where('telegram_chat_id', $chatId)->first();
                 if ($user) {
@@ -103,7 +101,7 @@ class TelegramWebhookController extends Controller
                 if ($user) {
                     $user->update([
                         'telegram_chat_id' => null,
-                        'telegram_username' => null, // Fixed: removed the duplicate word
+                        'telegram_username' => null, 
                         'telegram_connected_at' => null,
                     ]);
                     $this->telegramService->sendMessage(
