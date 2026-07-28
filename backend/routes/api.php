@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\TelegramWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +70,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //-- Job Search ---
     Route::get('search',[SearchController::class, '__invoke']);
+
+    // -- Telegram bot ---
+    Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
+
+    //---Telegram Notification ---
+  
+    Route::post('/telegram/connect', [TelegramController::class, 'connect']);
+    Route::delete('/telegram/disconnect', [TelegramController::class, 'disconnect']);
+    Route::get('/telegram/status', [TelegramController::class, 'status']);
+
 
 
     
