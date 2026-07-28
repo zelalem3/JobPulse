@@ -22,21 +22,19 @@ use App\Http\Controllers\Api\TelegramController;
 |--------------------------------------------------------------------------
 | Anyone can access these routes without logging in.
 */
-
 Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
-    // Optional: Protect it with a secret token query parameter so random people can't trigger it
     $secretToken = config('services.cron.token', env('CRON_SECRET_TOKEN'));
     
     if ($secretToken && $request->query('token') !== $secretToken) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    // Run the scheduler
-    Artisan::call('schedule:run');
+    // Directly run your job alerts command
+    Artisan::call('alerts:send');
 
     return response()->json([
         'status' => 'success',
-        'message' => 'Scheduler executed successfully.',
+        'message' => 'Job alerts processed successfully.',
         'output' => Artisan::output()
     ]);
 });
