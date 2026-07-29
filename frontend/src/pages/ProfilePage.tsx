@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase, MapPin, Mail, Save, Lock, Plus, X, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 import api from '../services/axios';
+import TelegramSettings from '../components/dashboard/TelegramSettings'; // Import your new Telegram component
 
 interface UserProfile {
+  id?: number;
   name: string;
   role?: string;
   email: string;
   location?: string;
   bio?: string;
   skills: string[];
+  telegram_username?: string;
+  telegram_enabled?: boolean;
 }
 
 export default function Profile() {
-  const [activeTab, setActiveTab] = useState<'info' | 'security'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'security' | 'telegram'>('info'); // Added 'telegram' tab
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,6 +29,8 @@ export default function Profile() {
     location: 'Addis Ababa',
     bio: '',
     skills: [],
+    telegram_username: undefined,
+    telegram_enabled: true,
   });
 
   // State for typing a new skill input
@@ -54,12 +60,15 @@ export default function Profile() {
         : [];
 
       setProfile({
+        id: data.id,
         name: data.name || 'Zelalem Getnet',
         role: data.role || 'Full Stack Developer',
         email: data.email || '',
         location: data.location || 'Addis Ababa',
         bio: data.bio || '',
         skills: formattedSkills,
+        telegram_username: data.telegram_username,
+        telegram_enabled: data.telegram_enabled ?? true,
       });
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -207,24 +216,26 @@ export default function Profile() {
               </div>
             </div>
 
-            <button 
-              type="button"
-              onClick={() => {
-                if (isEditing) {
-                  handleSaveProfile();
-                } else {
-                  setIsEditing(true);
-                }
-              }}
-              disabled={saving}
-              className={`px-6 py-3 rounded-2xl text-sm font-black transition-all duration-300 shadow-xl flex items-center gap-2 cursor-pointer ${
-                isEditing 
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/40 shadow-emerald-950/50' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800'
-              }`}
-            >
-              {isEditing ? <><Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}</> : 'Edit Profile'}
-            </button>
+            {activeTab === 'info' && (
+              <button 
+                type="button"
+                onClick={() => {
+                  if (isEditing) {
+                    handleSaveProfile();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
+                disabled={saving}
+                className={`px-6 py-3 rounded-2xl text-sm font-black transition-all duration-300 shadow-xl flex items-center gap-2 cursor-pointer ${
+                  isEditing 
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/40 shadow-emerald-950/50' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800'
+                }`}
+              >
+                {isEditing ? <><Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}</> : 'Edit Profile'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -240,6 +251,17 @@ export default function Profile() {
             }`}
           >
             Account Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('telegram')}
+            className={`pb-4 text-sm font-bold border-b-2 transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+              activeTab === 'telegram' 
+                ? 'border-emerald-500 text-white' 
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Telegram Alerts
           </button>
           <button
             type="button"
@@ -381,6 +403,13 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* --- TAB WINDOW: TELEGRAM ALERTS --- */}
+        {activeTab === 'telegram' && (
+          <div className="max-w-xl">
+            <TelegramSettings user={profile} onUpdate={fetchProfile} />
           </div>
         )}
 

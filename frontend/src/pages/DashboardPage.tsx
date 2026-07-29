@@ -10,8 +10,10 @@ import SourceDistributionCard from "../components/dashboard/SourceDistributionCa
 import TopCompaniesCard from "../components/dashboard/TopCompaniesCard";
 import SavedJobs from "../components/dashboard/SavedJobs";
 import RecommendedJobs from "../components/dashboard/RecommendedJobsSection";
+import TelegramBanner from "../components/dashboard/TelegramBanner"; 
 
 export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null); // Added user state
   const [stats, setStats] = useState<Stats | null>(null);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [topCompanies, setTopCompanies] = useState<CompanyModel[]>([]);
@@ -24,12 +26,14 @@ export default function DashboardPage() {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const [statsRes, graphRes, companiesRes] = await Promise.all([
+      const [userRes, statsRes, graphRes, companiesRes] = await Promise.all([
+        api.get("api/user"), // Fetch user profile to check Telegram status
         api.get("api/dashboard/stats"),
         api.get("api/dashboard/graph"),
         api.get("api/dashboard/topcompanies"),
       ]);
 
+      setUser(userRes.data);
       setStats(statsRes.data);
       setGraphData(graphRes.data);
       setTopCompanies(companiesRes.data.companies || []);
@@ -60,6 +64,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto space-y-8 w-full">
+        
+        {/* TELEGRAM NOTIFICATION BANNER (Shows only if not connected) */}
+        <TelegramBanner user={user} />
+
         {/* STATS GRID */}
         <DashboardStatsGrid stats={stats} />
 
