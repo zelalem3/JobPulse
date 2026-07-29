@@ -3,10 +3,13 @@ from EthioReporter.scraper import EthioReport
 from Ethiojob.scraper import EthioJob
 from GeezJobs.scraper import GeezJobsScraper
 from linkedin.scraper import LinkedInJobsScraper
+from Hahu.scraper import HaHuJobsScraper
+
 from telegram.EffoyJobs.scraper import TelegramChannelScraper
 from telegram.Josad.scraper import JosadTelegramScraper
 from telegram.ETcareers.scraper import EtcarrerTelegramScraper
 from telegram.jobs_in_ethio.scraper import JobsEthioTelegramScraper
+from telegram.NGOjobs.scraper import NgoJobEthiopiaTelegramScraper
 from addskill import save_cache,SKILL_CACHE
 
 
@@ -20,15 +23,18 @@ import asyncio
 from common.database import save_job
 
 SCRAPERS = [
-    # AfriworkScraper(),
-    # EthioReport(),
-    # EthioJob(),
-    # GeezJobsScraper(),
-    LinkedInJobsScraper()
-    # TelegramChannelScraper("effoyjobs"),
-    # JosadTelegramScraper("josad_software"),
-    # EtcarrerTelegramScraper("etcareersjobs"),
-    # JobsEthioTelegramScraper("jobs_in_ethio")
+    AfriworkScraper(),
+    EthioReport(),
+    EthioJob(),
+    GeezJobsScraper(),
+    LinkedInJobsScraper(),
+    TelegramChannelScraper("effoyjobs"),
+    JosadTelegramScraper("josad_software"),
+    EtcarrerTelegramScraper("etcareersjobs"),
+    JobsEthioTelegramScraper("jobs_in_ethio"),
+    HaHuJobsScraper(),
+    NgoJobEthiopiaTelegramScraper(),
+
 
 
 

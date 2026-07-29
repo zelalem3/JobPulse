@@ -348,5 +348,32 @@
     "Traffic Laws Knowledge",
     "Vehicle Maintenance",
     "Vehicle Management"
+  ],
+  "ac9a2fa7ee1920f15dcbee59d15eae50466e6b8a0facfcf947722f9d4775221b": [
+    "Accounting Software",
+    "Spreadsheet Software"
+  ],
+  "a3399650b9ba35dae64c954ddcbf74746d33f946ad65ecc8df18994dfbbe058d": [
+    "Community Awareness",
+    "Community Development",
+    "Community Mobilization",
+    "Data Collection",
+    "English",
+    "Field Supervision",
+    "Heritage Conservation",
+    "Hospitality",
+    "Livelihood Projects",
+    "Monitoring",
+    "NGO Operations",
+    "Project Support",
+    "Recruitment",
+    "Reporting",
+    "Tigrigna",
+    "Tourism",
+    "Training",
+    "WASH"
+  ],
+  "4d5e5500aff54acf339336de3fc072b667b88a74db130bca89114c71459e96ed": [
+    "Data Analysis"
   ]
 }
