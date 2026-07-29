@@ -122,7 +122,7 @@ const Register = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Zelalem Getnet"
+                  placeholder="Enter Full Name"
                   className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
                   required
                   disabled={isLoading}
