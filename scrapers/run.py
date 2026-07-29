@@ -1,11 +1,13 @@
 from Afriwork.scraper import AfriworkScraper
 from EthioReporter.scraper import EthioReport
 from Ethiojob.scraper import EthioJob
+from GeezJobs.scraper import GeezJobsScraper
 from telegram.EffoyJobs.scraper import TelegramChannelScraper
 from telegram.Josad.scraper import JosadTelegramScraper
 from telegram.ETcareers.scraper import EtcarrerTelegramScraper
 from telegram.jobs_in_ethio.scraper import JobsEthioTelegramScraper
 from addskill import save_cache,SKILL_CACHE
+
 
 
 
@@ -20,6 +22,7 @@ SCRAPERS = [
     AfriworkScraper(),
     EthioReport(),
     EthioJob(),
+    GeezJobsScraper(),
  
     TelegramChannelScraper("effoyjobs"),
     JosadTelegramScraper("josad_software"),
