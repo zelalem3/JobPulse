@@ -27,7 +27,7 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       const [userRes, statsRes, graphRes, companiesRes] = await Promise.all([
-        api.get("api/user"), // Fetch user profile to check Telegram status
+        api.get("api/profile"), 
         api.get("api/dashboard/stats"),
         api.get("api/dashboard/graph"),
         api.get("api/dashboard/topcompanies"),
