@@ -1,161 +1,293 @@
 import os
-import json
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
+import re
+import psycopg2
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    db_user = os.getenv("DB_USERNAME")
-    db_password = os.getenv("DB_PASSWORD")
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT", "5432")
-    db_name = os.getenv("DB_DATABASE")
-    db_sslmode = os.getenv("DB_SSLMODE", "require")
-    
-    if db_user and db_host and db_name:
-        DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?sslmode={db_sslmode}"
+from difflib import SequenceMatcher
 
 
-
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://user:password@postgres:5432/dbname"
 )
 
 
-SessionLocal = sessionmaker(bind=engine)
+def get_connection():
+    return psycopg2.connect(DATABASE_URL)
 
 
-def save_job(job):
-    if hasattr(job, "model_dump"):
-        job = job.model_dump()
-    session = SessionLocal()
+# ============================================================
+# Normalize company name
+# ============================================================
+
+COMPANY_SUFFIXES = {
+    "plc",
+    "p l c",
+    "inc",
+    "ltd",
+    "limited",
+    "llc",
+    "corp",
+    "corporation",
+    "co",
+    "company",
+}
+
+
+def normalize_company_name(name):
+    if not name:
+        return ""
+
+    name = str(name).lower().strip()
+
+    name = name.replace("&", " and ")
+
+    name = re.sub(
+        r"https?://\S+",
+        " ",
+        name,
+    )
+
+    name = re.sub(
+        r"[^\w\s]",
+        " ",
+        name,
+    )
+
+    name = re.sub(
+        r"\s+",
+        " ",
+        name,
+    ).strip()
+
+    words = name.split()
+
+    while words and words[-1] in COMPANY_SUFFIXES:
+        words.pop()
+
+    return " ".join(words).strip()
+
+
+# ============================================================
+# Similarity
+# ============================================================
+
+def company_similarity(name1, name2):
+
+    normalized1 = normalize_company_name(name1)
+    normalized2 = normalize_company_name(name2)
+
+    if not normalized1 or not normalized2:
+        return 0.0
+
+    return SequenceMatcher(
+        None,
+        normalized1,
+        normalized2,
+    ).ratio()
+
+
+# ============================================================
+# Find company
+# ============================================================
+
+def find_company(name):
+
+    normalized_name = normalize_company_name(name)
+
+    if not normalized_name:
+        return None
+
+    conn = get_connection()
 
     try:
-        # 1. Insert/Update the job listing and return its database ID
-        job_query = text("""
-            INSERT INTO job_listings (
-                title,
-                location,
-                requirements,
-                description,
-                employment_type,
-                experience_level,
-                salary,
-                category,
-                deadline,
-                posted_at,
-                source,
-                url,
-                is_active,
-                created_at,
-                updated_at
+
+        with conn.cursor() as cur:
+
+            cur.execute(
+                """
+                SELECT id, name
+                FROM companies
+                ORDER BY id
+                """
             )
-            VALUES (
-                :title,
-                :location,
-                :requirements,
-                :description,
-                :employment_type,
-                :experience_level,
-                :salary,
-                :category,
-                :deadline,
-                :posted_at,
-                :source,
-                :url,
-                true,
-                NOW(),
-                NOW()
-            )
-            ON CONFLICT (url)
-            DO UPDATE SET
-                title = EXCLUDED.title,
-                location = EXCLUDED.location,
-                requirements = EXCLUDED.requirements,
-                description = EXCLUDED.description,
-                employment_type = EXCLUDED.employment_type,
-                experience_level = EXCLUDED.experience_level,
-                salary = EXCLUDED.salary,
-                category = EXCLUDED.category,
-                deadline = EXCLUDED.deadline,
-                posted_at = EXCLUDED.posted_at,
-                updated_at = NOW()
-            RETURNING id;
-        """)
 
-        job_data = {
-            "title": job.get("title"),
-            "location": job.get("location"),
-            "requirements": job.get("requirements"),
-            "description": job.get("description"),
-            "employment_type": job.get("employment_type"),
-            "experience_level": job.get("experience_level"),
-            "salary": job.get("salary"),
-            "category": job.get("category"),
-            "deadline": job.get("deadline"),
-            "posted_at": job.get("posted_at"),
-            "source": job.get("source"),
-            "url": job.get("url"),
-        }
-
-        # Run the insert and grab the primary key of the job
-        result = session.execute(job_query, job_data)
-        job_id = result.fetchone()[0]
-
-        # 2. Process and map the skills
-        skills = job.get("skills", [])
-        skill_ids = []
-
-        if skills:
-            for skill_name in skills:
-                clean_name = str(skill_name).strip()
-                if not clean_name:
-                    continue
-
-                # Insert skill if missing, and grab its ID.
-                # (Postgres returning ID on conflict trick)
-                skill_query = text("""
-                    INSERT INTO skills (name, created_at, updated_at)
-                    VALUES (:name, NOW(), NOW())
-                    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-                    RETURNING id;
-                """)
-                
-                skill_result = session.execute(skill_query, {"name": clean_name})
-                skill_id = skill_result.fetchone()[0]
-                skill_ids.append(skill_id)
-
-        # 3. Clean up and update the pivot table (job_skill)
-        # Clear existing relations for this job first to prevent leftovers
-        session.execute(
-            text("DELETE FROM job_skill WHERE job_listing_id = :job_listing_id;"),
-            {"job_listing_id": job_id}
-        )
-
-        # Bulk insert the new active relationships
-        if skill_ids:
-            pivot_query = text("""
-                INSERT INTO job_skill (job_listing_id, skill_id)
-                VALUES (:job_listing_id, :skill_id)
-                ON CONFLICT DO NOTHING;
-            """)
-            
-            for skill_id in skill_ids:
-                session.execute(pivot_query, {
-                    "job_listing_id": job_id,
-                    "skill_id": skill_id
-                })
-
-        session.commit()
-
-    except Exception as e:
-        session.rollback()
-        print(f"DB Error: {e}")
+            companies = cur.fetchall()
 
     finally:
-        session.close()
+        conn.close()
+
+    # Exact normalized match
+    for company_id, company_name in companies:
+
+        if (
+            normalize_company_name(company_name)
+            == normalized_name
+        ):
+            return company_id
+
+    # Fuzzy match
+    best_id = None
+    best_score = 0.0
+
+    for company_id, company_name in companies:
+
+        score = company_similarity(
+            name,
+            company_name,
+        )
+
+        if score > best_score:
+            best_score = score
+            best_id = company_id
+
+    if best_score >= 0.92:
+        return best_id
+
+    return None
+
+
+# ============================================================
+# Create company
+# ============================================================
+
+def create_company(
+    name,
+    website=None,
+    description=None,
+    logo=None,
+):
+
+    clean_name = str(name).strip()
+
+    if not clean_name:
+        return None
+
+    conn = get_connection()
+
+    try:
+
+        with conn.cursor() as cur:
+
+            cur.execute(
+                """
+                INSERT INTO companies (
+                    name,
+                    description,
+                    website,
+                    logo,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    NOW(),
+                    NOW()
+                )
+                RETURNING id
+                """,
+                (
+                    clean_name,
+                    description,
+                    website,
+                    logo,
+                ),
+            )
+
+            company_id = cur.fetchone()[0]
+
+        conn.commit()
+
+        print(
+            f"🏢 New company created: "
+            f"{clean_name} (ID: {company_id})"
+        )
+
+        return company_id
+
+    except psycopg2.errors.UniqueViolation:
+
+        conn.rollback()
+
+        with conn.cursor() as cur:
+
+            cur.execute(
+                """
+                SELECT id
+                FROM companies
+                WHERE LOWER(name) = LOWER(%s)
+                LIMIT 1
+                """,
+                (clean_name,),
+            )
+
+            row = cur.fetchone()
+
+            if row:
+                return row[0]
+
+        return None
+
+    except Exception as e:
+
+        conn.rollback()
+
+        print(
+            f"❌ Company creation error: {e}"
+        )
+
+        return None
+
+    finally:
+        conn.close()
+
+
+# ============================================================
+# Resolve company
+# ============================================================
+
+def resolve_company(
+    name,
+    website=None,
+    description=None,
+    logo=None,
+):
+
+    if not name:
+        return None
+
+    clean_name = str(name).strip()
+
+    if not clean_name:
+        return None
+
+    invalid_names = {
+        "unknown",
+        "n/a",
+        "na",
+        "none",
+        "null",
+        "-",
+        "company",
+    }
+
+    if clean_name.lower() in invalid_names:
+        return None
+
+    # Search existing
+    company_id = find_company(
+        clean_name
+    )
+
+    if company_id:
+        return company_id
+
+    # Create new
+    return create_company(
+        name=clean_name,
+        website=website,
+        description=description,
+        logo=logo,
+    )
