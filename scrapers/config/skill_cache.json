@@ -375,5 +375,27 @@
   ],
   "4d5e5500aff54acf339336de3fc072b667b88a74db130bca89114c71459e96ed": [
     "Data Analysis"
+  ],
+  "6bbabdfd5eab90250f4da4ad6b363e9dd86ba22801f4210f7b5cad5fc50372a9": [
+    "A350 Type Rating",
+    "Aircraft Systems Knowledge (A350)",
+    "Aviation Regulations",
+    "Electronic Flight Bag (EFB) Proficiency",
+    "Flight Management System (FMS) Operation",
+    "Instrument Flight Rules (IFR)"
+  ],
+  "d16e2dfc779a996d1552c99bd7438b1751e1f64672212ebb5714c3951387e263": [
+    "A350 Operations",
+    "Airline Transport Pilot License (ATPL)",
+    "Aviation",
+    "Class 1 Medical Certificate",
+    "English",
+    "Insurance",
+    "Jet Aircraft Operations",
+    "Next.js"
+  ],
+  "792af9d132af3e389878c6e945d6589d8f6078d9be644ac0ad8978fde2a9e333": [
+    "B777",
+    "B787"
   ]
 }
