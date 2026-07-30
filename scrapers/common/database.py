@@ -1,293 +1,69 @@
 import os
-import re
-import psycopg2
-
-from difflib import SequenceMatcher
-
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://user:password@postgres:5432/dbname"
-)
-
-
-def get_connection():
-    return psycopg2.connect(DATABASE_URL)
-
-
-# ============================================================
-# Normalize company name
-# ============================================================
-
-COMPANY_SUFFIXES = {
-    "plc",
-    "p l c",
-    "inc",
-    "ltd",
-    "limited",
-    "llc",
-    "corp",
-    "corporation",
-    "co",
-    "company",
-}
-
-
-def normalize_company_name(name):
-    if not name:
-        return ""
-
-    name = str(name).lower().strip()
-
-    name = name.replace("&", " and ")
-
-    name = re.sub(
-        r"https?://\S+",
-        " ",
-        name,
-    )
-
-    name = re.sub(
-        r"[^\w\s]",
-        " ",
-        name,
-    )
-
-    name = re.sub(
-        r"\s+",
-        " ",
-        name,
-    ).strip()
-
-    words = name.split()
-
-    while words and words[-1] in COMPANY_SUFFIXES:
-        words.pop()
-
-    return " ".join(words).strip()
-
-
-# ============================================================
-# Similarity
-# ============================================================
-
-def company_similarity(name1, name2):
-
-    normalized1 = normalize_company_name(name1)
-    normalized2 = normalize_company_name(name2)
-
-    if not normalized1 or not normalized2:
-        return 0.0
-
-    return SequenceMatcher(
-        None,
-        normalized1,
-        normalized2,
-    ).ratio()
-
-
-# ============================================================
-# Find company
-# ============================================================
-
-def find_company(name):
-
-    normalized_name = normalize_company_name(name)
-
-    if not normalized_name:
-        return None
-
-    conn = get_connection()
-
-    try:
-
-        with conn.cursor() as cur:
-
-            cur.execute(
-                """
-                SELECT id, name
-                FROM companies
-                ORDER BY id
-                """
-            )
-
-            companies = cur.fetchall()
-
-    finally:
-        conn.close()
-
-    # Exact normalized match
-    for company_id, company_name in companies:
-
-        if (
-            normalize_company_name(company_name)
-            == normalized_name
-        ):
-            return company_id
-
-    # Fuzzy match
-    best_id = None
-    best_score = 0.0
-
-    for company_id, company_name in companies:
-
-        score = company_similarity(
-            name,
-            company_name,
-        )
-
-        if score > best_score:
-            best_score = score
-            best_id = company_id
-
-    if best_score >= 0.92:
-        return best_id
-
-    return None
-
-
-# ============================================================
-# Create company
-# ============================================================
-
-def create_company(
-    name,
-    website=None,
-    description=None,
-    logo=None,
-):
-
-    clean_name = str(name).strip()
-
-    if not clean_name:
-        return None
-
-    conn = get_connection()
-
-    try:
-
-        with conn.cursor() as cur:
-
-            cur.execute(
-                """
-                INSERT INTO companies (
-                    name,
-                    description,
-                    website,
-                    logo,
-                    created_at,
-                    updated_at
-                )
-                VALUES (
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    NOW(),
-                    NOW()
-                )
-                RETURNING id
-                """,
-                (
-                    clean_name,
-                    description,
-                    website,
-                    logo,
-                ),
-            )
-
-            company_id = cur.fetchone()[0]
-
-        conn.commit()
-
-        print(
-            f"🏢 New company created: "
-            f"{clean_name} (ID: {company_id})"
-        )
-
-        return company_id
-
-    except psycopg2.errors.UniqueViolation:
-
-        conn.rollback()
-
-        with conn.cursor() as cur:
-
-            cur.execute(
-                """
-                SELECT id
-                FROM companies
-                WHERE LOWER(name) = LOWER(%s)
-                LIMIT 1
-                """,
-                (clean_name,),
-            )
-
-            row = cur.fetchone()
-
-            if row:
-                return row[0]
-
-        return None
-
-    except Exception as e:
-
-        conn.rollback()
-
-        print(
-            f"❌ Company creation error: {e}"
-        )
-
-        return None
-
-    finally:
-        conn.close()
-
-
-# ============================================================
-# Resolve company
-# ============================================================
-
-def resolve_company(
-    name,
-    website=None,
-    description=None,
-    logo=None,
-):
-
-    if not name:
-        return None
-
-    clean_name = str(name).strip()
-
-    if not clean_name:
-        return None
-
-    invalid_names = {
-        "unknown",
-        "n/a",
-        "na",
-        "none",
-        "null",
-        "-",
-        "company",
+from common.db_connection import get_connection
+from common.company import resolve_company
+
+def save_job(job_data):
+    """
+    Resolves the company name to a valid database ID, then inserts the job listing 
+    into the Laravel 'job_listings' table. Ignores the insert if the URL already exists.
+    """
+    if hasattr(job_data, "dict"):
+        data = job_data.dict()
+    elif hasattr(job_data, "__dict__"):
+        data = job_data.__dict__
+    else:
+        data = job_data
+
+    raw_company_name = data.get("company") or data.get("company_name")
+    
+    company_id = None
+    if raw_company_name:
+        company_id = resolve_company(raw_company_name)
+
+    safe_data = {
+        "company_id": company_id,
+        "title": data.get("title"),
+        "location": data.get("location"),
+        "requirements": data.get("requirements"),
+        "description": data.get("description"),
+        "employment_type": data.get("employment_type"),
+        "experience_level": data.get("experience_level"),
+        "salary": data.get("salary", "Negotiable"),
+        "category": data.get("category"),
+        "deadline": data.get("deadline"),
+        "posted_at": data.get("posted_at") or data.get("posted_date"),
+        "source": data.get("source", "Ethiopian Airlines"),
+        "url": data.get("url"),
+        "responsibilities": data.get("responsibilities"),
+        "is_active": data.get("is_active", True),
+        "quality_score": data.get("quality_score", 0),
     }
 
-    if clean_name.lower() in invalid_names:
-        return None
-
-    # Search existing
-    company_id = find_company(
-        clean_name
-    )
-
-    if company_id:
-        return company_id
-
-    # Create new
-    return create_company(
-        name=clean_name,
-        website=website,
-        description=description,
-        logo=logo,
-    )
+    query = """
+        INSERT INTO job_listings (
+            company_id, title, location, requirements, description, 
+            employment_type, experience_level, salary, category, 
+            deadline, posted_at, source, url, responsibilities, 
+            is_active, quality_score, created_at, updated_at
+        ) VALUES (
+            %(company_id)s, %(title)s, %(location)s, %(requirements)s, %(description)s, 
+            %(employment_type)s, %(experience_level)s, %(salary)s, %(category)s, 
+            %(deadline)s, %(posted_at)s, %(source)s, %(url)s, %(responsibilities)s, 
+            %(is_active)s, %(quality_score)s, NOW(), NOW()
+        )
+        ON CONFLICT (url) DO NOTHING;
+    """
+    
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, safe_data)
+            inserted = cur.rowcount > 0
+        conn.commit()
+        return inserted
+    except Exception as e:
+        print(f"❌ Database insertion error: {e}")
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
