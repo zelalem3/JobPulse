@@ -11,7 +11,7 @@ from google import genai
 # Scrapers
 from Afriwork.scraper import AfriworkScraper
 from EthioReporter.scraper import EthioReport
-from EthioJob.scraper import EthioJob
+from Ethiojob.scraper import EthioJob
 from GeezJobs.scraper import GeezJobsScraper
 from linkedin.scraper import LinkedInJobsScraper
 from Hahu.scraper import HaHuJobsScraper
@@ -48,22 +48,22 @@ MIN_QUALITY_SCORE = 40
 
 SCRAPERS = [
     AfriworkScraper(),
-    EthioReport(),
-    EthioJob(),
-    GeezJobsScraper(),
-    LinkedInJobsScraper(),
-    EthiNGOJobsScraper(),
-    EthioJobsScraper(),
-    EthioJobsInfoNGOScraper(),
-    TelegramChannelScraper("effoyjobs"),
-    JosadTelegramScraper("josad_software"),
-    EtcarrerTelegramScraper("etcareersjobs"),
-    JobsEthioTelegramScraper("jobs_in_ethio"),
-    NgoJobEthiopiaTelegramScraper(),
-    HaHuJobsScraper(),
-    EthiopianAirlinesScraper(),
-    SafaricomEthiopiaScraper(),
-    EthioTelecomScraper(),
+    # EthioReport(),
+    # EthioJob(),
+    # GeezJobsScraper(),
+    # LinkedInJobsScraper(),
+    # EthiNGOJobsScraper(),
+    # EthioJobsScraper(),
+    # EthioJobsInfoNGOScraper(),
+    # TelegramChannelScraper("effoyjobs"),
+    # JosadTelegramScraper("josad_software"),
+    # EtcarrerTelegramScraper("etcareersjobs"),
+    # JobsEthioTelegramScraper("jobs_in_ethio"),
+    # NgoJobEthiopiaTelegramScraper(),
+    # HaHuJobsScraper(),
+    # EthiopianAirlinesScraper(),
+    # SafaricomEthiopiaScraper(),
+    # EthioTelecomScraper(),
 ]
 
 

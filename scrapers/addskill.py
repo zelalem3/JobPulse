@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import json
 import logging
@@ -8,197 +7,326 @@ import time
 from dotenv import load_dotenv
 from google import genai
 
-# Scrapers
-from Afriwork.scraper import AfriworkScraper
-from EthioReporter.scraper import EthioReport
-from EthioJob.scraper import EthioJob
-from GeezJobs.scraper import GeezJobsScraper
-from linkedin.scraper import LinkedInJobsScraper
-from Hahu.scraper import HaHuJobsScraper
-from EthioNgoJobs.scraper import EthiNGOJobsScraper
-from EthioJoborg.scraper import EthioJobsScraper
-from EthioJobsInfo.scraper import EthioJobsInfoNGOScraper
-from EthioAirlines.scraper import EthiopianAirlinesScraper
-
-from telegram.EffoyJobs.scraper import TelegramChannelScraper
-from telegram.Josad.scraper import JosadTelegramScraper
-from telegram.ETcareers.scraper import EtcarrerTelegramScraper
-from telegram.jobs_in_ethio.scraper import JobsEthioTelegramScraper
-from telegram.NGOjobs.scraper import NgoJobEthiopiaTelegramScraper
-
-from Safaricom.scraper import SafaricomEthiopiaScraper
-from EthioTelecom.scraper import EthioTelecomScraper
-
-# Cache & Processing
-from addskill import SKILL_CACHE, save_cache
-from common.database import save_job
-from common.deduplication import is_probable_duplicate
-from common.normalizer import normalize_job
-from common.quality import quality_score
-from common.validation import validate_job
-
 load_dotenv()
+
 logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------
-# Configuration
-# ----------------------------------------------------------
+CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
+TAXONOMY_PATH = os.path.join(CONFIG_DIR, "skills_taxonomy.json")
+ALIASES_PATH = os.path.join(CONFIG_DIR, "skill_aliases.json")
+CACHE_PATH = os.path.join(CONFIG_DIR, "skill_cache.json")
 
-MIN_QUALITY_SCORE = 40
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key) if api_key else None
 
-SCRAPERS = [
-    AfriworkScraper(),
-    EthioReport(),
-    EthioJob(),
-    GeezJobsScraper(),
-    LinkedInJobsScraper(),
-    EthiNGOJobsScraper(),
-    EthioJobsScraper(),
-    EthioJobsInfoNGOScraper(),
-    TelegramChannelScraper("effoyjobs"),
-    JosadTelegramScraper("josad_software"),
-    EtcarrerTelegramScraper("etcareersjobs"),
-    JobsEthioTelegramScraper("jobs_in_ethio"),
-    NgoJobEthiopiaTelegramScraper(),
-    HaHuJobsScraper(),
-    EthiopianAirlinesScraper(),
-    SafaricomEthiopiaScraper(),
-    EthioTelecomScraper(),
-]
+CACHE_SAVE_INTERVAL = 20
+cache_changes = 0
+
+# Global circuit breaker flag to permanently disable Gemini on the first failure/rate-limit
+GEMINI_DISABLED_GLOBALLY = False
+
+# Pull in our skill dictionaries and map out aliases
+try:
+  with open(TAXONOMY_PATH, "r", encoding="utf-8") as f:
+    SKILLS_TAXONOMY = json.load(f)
+except Exception as e:
+  logger.error(f"[Config Error] Could not load skills_taxonomy.json: {e}")
+  SKILLS_TAXONOMY = {}
+
+FLATTENED_SKILLS = sorted(
+    [
+        skill
+        for category_skills in SKILLS_TAXONOMY.values()
+        for skill in category_skills
+    ],
+    key=lambda x: len(x),
+    reverse=True,
+)
+
+try:
+  with open(ALIASES_PATH, "r", encoding="utf-8") as f:
+    SKILL_ALIASES = json.load(f)
+except Exception as e:
+  logger.warning(f"[Config Warning] Could not load skill_aliases.json: {e}")
+  SKILL_ALIASES = {}
+
+ALIASES = {k.lower(): v for k, v in SKILL_ALIASES.items()}
 
 
-async def main():
-  all_jobs = []
-
-  print("=" * 60)
-  print("Starting JobPulse Scrapers")
-  print("=" * 60)
-
-  # ------------------------------------------------------
-  # Run Scrapers
-  # ------------------------------------------------------
-
-  for scraper in SCRAPERS:
+# Load up existing cache if we've got one
+def load_cache():
+  if os.path.exists(CACHE_PATH):
     try:
-      print(f"\n[{scraper.name}] Running...")
-      jobs = await scraper.run()
-      print(f"[{scraper.name}] {len(jobs)} jobs")
-      all_jobs.extend(jobs)
-    except Exception as e:
-      print(f"[{scraper.name}] FAILED")
-      print(e)
+      with open(CACHE_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except Exception:
+      return {}
+  return {}
 
-  print("\n===================================")
-  print(f"Total scraped jobs: {len(all_jobs)}")
-  print("===================================")
 
-  save_cache(SKILL_CACHE)
+def save_cache(cache_data):
+  os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
 
-  # ------------------------------------------------------
-  # Processing
-  # ------------------------------------------------------
+  temp_path = CACHE_PATH + ".tmp"
 
-  unique_jobs = []
-  duplicate_count = 0
-  invalid_count = 0
-  low_quality_count = 0
+  with open(temp_path, "w", encoding="utf-8") as f:
+    json.dump(cache_data, f, ensure_ascii=False, indent=2)
 
-  for job in all_jobs:
-    # ----------------------------------------------
-    # Normalize
-    # ----------------------------------------------
-    job = normalize_job(job)
+  os.replace(temp_path, CACHE_PATH)
 
-    # ----------------------------------------------
-    # Validate
-    # ----------------------------------------------
-    validation = validate_job(job)
 
-    if not validation.valid:
-      invalid_count += 1
-      print(f"\n❌ Invalid Job")
-      print(f"Title : {job.title}")
-      for error in validation.errors:
-        print(f"   - {error}")
+SKILL_CACHE = load_cache()
+
+
+def job_hash(title: str, description: str) -> str:
+  # Hash the normalized payload so we don't spam Gemini for identical listings
+  normalized = re.sub(r"\s+", " ", f"{title} {description}".lower().strip())
+
+  return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def canonical_skill(skill: str) -> str:
+  return ALIASES.get(skill.lower(), skill)
+
+
+def get_variants(skill: str):
+  variants = {skill.lower()}
+  for alias, canonical in ALIASES.items():
+    if canonical.lower() == skill.lower():
+      variants.add(alias)
+  return variants
+
+
+DEFAULT_BLACKLIST = {
+    "r",
+    "c",
+    "it",
+    "is",
+    "a",
+    "hr",
+    "sales",
+    "go",
+    "to",
+    "in",
+    "on",
+    "assessment",
+    "project",
+    "client",
+    "team",
+    "leader",
+    "manager",
+    "officer",
+    "specialist",
+    "expert",
+    "and",
+    "or",
+    "tax",
+}
+
+
+def _smart_local_extraction(
+    text: str,
+    job_title: str = "",
+    boost_weights: bool = False,
+    blacklist: set[str] = DEFAULT_BLACKLIST,
+) -> list:
+  if not text:
+    return []
+
+  found_skills = set()
+  combined_text = f"{job_title} {text}".lower()
+  combined_text = re.sub(r"\s+", " ", combined_text)
+  paragraphs = text.split("\n") if boost_weights else [text]
+
+  for skill in FLATTENED_SKILLS:
+    if skill.lower() in blacklist:
       continue
 
-    # ----------------------------------------------
-    # Quality Score
-    # ----------------------------------------------
-    score, reasons = quality_score(job)
-    job.quality_score = score
-
-    print(f"⭐ {score:02d}/100 - {job.title}")
-
-    if score < MIN_QUALITY_SCORE:
-      low_quality_count += 1
-      print("   Low quality -> skipped")
-      continue
-
-    # ----------------------------------------------
-    # Current-run duplicate detection
-    # ----------------------------------------------
-    duplicate = False
-
-    for existing_job in unique_jobs:
-      if is_probable_duplicate(job, existing_job):
-        duplicate = True
-        break
-
-    if duplicate:
-      duplicate_count += 1
-      print(f"⏭️ Duplicate skipped: {job.title}")
-      continue
-
-    unique_jobs.append(job)
-
-  # ------------------------------------------------------
-  # Summary
-  # ------------------------------------------------------
-
-  print("\n===================================")
-  print("Processing Summary")
-  print("===================================")
-
-  print(f"Scraped Jobs     : {len(all_jobs)}")
-  print(f"Invalid Jobs     : {invalid_count}")
-  print(f"Low Quality      : {low_quality_count}")
-  print(f"Duplicates       : {duplicate_count}")
-  print(f"Ready To Save    : {len(unique_jobs)}")
-
-  print("===================================")
-
-  # ------------------------------------------------------
-  # Save
-  # ------------------------------------------------------
-
-  saved = 0
-  failed = 0
-
-  print("\nSaving jobs...\n")
-
-  for job in unique_jobs:
-    try:
-      result = save_job(job)
-      if result:
-        saved += 1
+    matched = False
+    for variant in get_variants(skill):
+      if any(c in variant for c in [".", "+", "#", "-"]):
+        pattern = r"(?<!\w)" + re.escape(variant) + r"(?!\w)"
       else:
-        # save_job() returns None if database duplicate was detected
-        pass
-    except Exception as e:
-      failed += 1
-      print(f"❌ Failed: {job.title}")
-      print(e)
+        pattern = r"\b" + re.escape(variant) + r"\b"
 
-  print("\n===================================")
-  print("Finished")
-  print("===================================")
+      if boost_weights:
+        for para in paragraphs:
+          if re.search(pattern, para.lower()):
+            matched = True
+            break
+        if matched:
+          break
+      else:
+        if re.search(pattern, combined_text):
+          matched = True
+          break
 
-  print(f"Saved            : {saved}")
-  print(f"Failed           : {failed}")
+    if matched:
+      found_skills.add(canonical_skill(skill))
 
-  print("===================================")
+  # Fallback to defaults based on title keywords if the text parser came up empty
+  if not found_skills:
+    title_lower = job_title.lower()
+    if "frontend" in title_lower or "front-end" in title_lower:
+      found_skills.update(["JavaScript", "HTML", "CSS", "React"])
+    elif "backend" in title_lower or "back-end" in title_lower:
+      found_skills.update(["REST API", "Node.js"])
+    elif "fullstack" in title_lower or "full stack" in title_lower:
+      found_skills.update(["JavaScript", "REST API"])
+
+  return sorted(list(found_skills))
 
 
-if __name__ == "__main__":
-  asyncio.run(main())
+def extract_skills(
+    job_description_text: str = "",
+    job_title: str = "",
+    boost_weights: bool = False,
+) -> list:
+  global cache_changes, GEMINI_DISABLED_GLOBALLY
+  raw_text = job_description_text or ""
+  clean_desc = re.sub(r"https?://\S+|www\.\S+", "", raw_text)
+  clean_desc = re.sub(r"[*_#`]", " ", clean_desc)
+
+  sanitized_description = clean_desc.strip()
+  sanitized_title = re.sub(r"[*_#`]", "", job_title or "").strip()
+
+  if not sanitized_description or len(sanitized_description) < 5:
+    return []
+
+  # First pass: try to grab everything we can locally
+  local_skills = _smart_local_extraction(
+      sanitized_description, sanitized_title, boost_weights=boost_weights
+  )
+
+  # If Gemini was already disabled due to prior failure/rate-limit, skip network entirely
+  if GEMINI_DISABLED_GLOBALLY or not client:
+    return local_skills
+
+  # Score our confidence to see if we actually need to pull in Gemini
+  score = 0
+  if len(local_skills) >= 5:
+    score += 2
+  elif len(local_skills) >= 3:
+    score += 1
+
+  is_amharic = amharic_ratio(sanitized_description) > 0.20
+
+  if is_amharic:
+    score -= 2
+
+  if len(sanitized_description) < 200:
+    score -= 1
+
+  # Skip out early on clean, high-confidence English posts
+  if score >= 2 and not is_amharic:
+    return local_skills
+
+  # Check the cache before making any network calls
+  h_id = job_hash(sanitized_title, sanitized_description)
+  if h_id in SKILL_CACHE:
+    cached_skills = SKILL_CACHE[h_id]
+    return sorted(list(set(local_skills).union(cached_skills)))
+
+  # Give Amharic posts more breathing room since they tend to be verbose
+  trimmed_description = (
+      sanitized_description[:5000] if is_amharic else sanitized_description[:2000]
+  )
+
+  # Prompt layout focusing Gemini strictly on hard technical skills
+  prompt = f"""
+    You are an expert technical and professional recruiter enhancing a job skill parsing pipeline.
+    Job Title: {sanitized_title}
+    
+    Local parser already detected these baseline skills:
+    {", ".join(local_skills) if local_skills else "None"}
+
+    Job Description:
+    {trimmed_description}
+    
+    Only return:
+    - Technical skills
+    - Software tools
+    - Programming languages
+    - Frameworks
+    - Platforms
+    - Databases
+    - Cloud technologies
+
+    Do NOT return:
+    - Communication
+    - Teamwork
+    - Leadership
+    - Problem solving
+    - Time management
+    - Interpersonal skills
+
+    Task: Analyze the description and extract ONLY additional missing industry-standard skills that are not covered in the baseline list above. Do not repeat existing skills.
+    Return the response STRICTLY as a valid JSON array of strings. If no extra skills are found, return [].
+    """
+
+  try:
+    response = call_gemini(prompt)
+
+    raw_text_ai = response.text.strip()
+
+    match = re.search(r"\[[\s\S]*\]", raw_text_ai)
+
+    if match:
+      clean_text = match.group(0)
+    else:
+      clean_text = "[]"
+
+    try:
+      ai_skills = json.loads(clean_text)
+
+    except json.JSONDecodeError:
+      logger.warning("Gemini returned invalid JSON.")
+      ai_skills = []
+
+    gemini_skills = []
+    if isinstance(ai_skills, list) and len(ai_skills) > 0:
+      gemini_skills = [canonical_skill(s) for s in ai_skills]
+
+    # Merge local findings with whatever Gemini picked up
+    final_skills = set(local_skills)
+    final_skills.update(gemini_skills)
+    sorted_final = sorted(list(final_skills))
+
+    # Update cache and batch disk writes
+    SKILL_CACHE[h_id] = sorted_final
+    cache_changes += 1
+
+    if cache_changes >= CACHE_SAVE_INTERVAL:
+      save_cache(SKILL_CACHE)
+      cache_changes = 0
+
+    return sorted_final
+
+  except Exception as e:
+    # Trip circuit breaker globally on first error/rate-limit so subsequent calls bypass Gemini instantly
+    logger.warning(
+        f"[AI Fallback Notice] Error: {e}. Tripping circuit breaker: Disabling"
+        " Gemini globally and using local parser for remaining jobs."
+    )
+    GEMINI_DISABLED_GLOBALLY = True
+    return local_skills
+
+
+def amharic_ratio(text):
+  if not text:
+    return 0
+
+  amharic = sum(1 for c in text if "\u1200" <= c <= "\u137F")
+
+  return amharic / len(text)
+
+
+def call_gemini(prompt):
+  # Fail fast on the first error/rate limit instead of internal retry loops
+  try:
+    return client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+  except Exception as e:
+    raise RuntimeError(f"Gemini call failed: {e}")

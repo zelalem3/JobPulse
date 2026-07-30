@@ -176,7 +176,6 @@ def find_company(name):
 # ============================================================
 # Create company
 # ============================================================
-
 def create_company(
     name,
     website=None,
@@ -184,20 +183,18 @@ def create_company(
     logo=None,
 ):
     """
-    Create a new company and return its ID.
+    Create a new company and return its ID safely handling race conditions.
     """
-
     clean_name = str(name).strip()
-
     if not clean_name:
         return None
 
     conn = get_connection()
-
     try:
-
         with conn.cursor() as cur:
-
+            # Use a savepoint so if the insert fails, we don't poison the whole connection transaction
+            cur.execute("SAVEPOINT before_company_insert;")
+            
             cur.execute(
                 """
                 INSERT INTO companies (
@@ -225,56 +222,50 @@ def create_company(
                     logo,
                 ),
             )
-
             company_id = cur.fetchone()[0]
-
+        
         conn.commit()
-
-        print(
-            f"🏢 New company created: "
-            f"{clean_name} (ID: {company_id})"
-        )
-
+        print(f"🏢 New company created: {clean_name} (ID: {company_id})")
         return company_id
 
     except psycopg2.errors.UniqueViolation:
+        # Roll back only to the savepoint, keeping the main connection alive and clean
+        try:
+            with conn.cursor() as cur:
+                cur.execute("ROLLBACK TO SAVEPOINT before_company_insert;")
+        except Exception:
+            conn.rollback()
 
-        # Another scraper/process may have created
-        # the same company at the same time.
-        conn.rollback()
-
-        with conn.cursor() as cur:
-
-            cur.execute(
-                """
-                SELECT id
-                FROM companies
-                WHERE LOWER(name) = LOWER(%s)
-                LIMIT 1
-                """,
-                (clean_name,),
-            )
-
-            row = cur.fetchone()
-
-            if row:
-                return row[0]
-
+        # Fetch the ID of the company that was concurrently inserted
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id
+                    FROM companies
+                    WHERE LOWER(name) = LOWER(%s)
+                    LIMIT 1
+                    """,
+                    (clean_name,),
+                )
+                row = cur.fetchone()
+                if row:
+                    return row[0]
+        except Exception as query_err:
+            print(f"❌ Failed to fetch concurrent company: {query_err}")
+            
         return None
 
     except Exception as e:
-
         conn.rollback()
-
-        print(
-            f"❌ Company creation error: {e}"
-        )
-
+        print(f"❌ Company creation error: {e}")
         return None
 
     finally:
-        conn.close()
-
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 # ============================================================
 # Resolve company
