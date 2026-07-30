@@ -4,12 +4,20 @@ from Ethiojob.scraper import EthioJob
 from GeezJobs.scraper import GeezJobsScraper
 from linkedin.scraper import LinkedInJobsScraper
 from Hahu.scraper import HaHuJobsScraper
+from EthioNgoJobs.scraper import EthiNGOJobsScraper
+from EthioJoborg.scraper import EthioJobsScraper
+from EthioJobsInfo.scraper import EthioJobsInfoNGOScraper
+from EthioAirlines.scraper import EthiopianAirlinesScraper
 
 from telegram.EffoyJobs.scraper import TelegramChannelScraper
 from telegram.Josad.scraper import JosadTelegramScraper
 from telegram.ETcareers.scraper import EtcarrerTelegramScraper
 from telegram.jobs_in_ethio.scraper import JobsEthioTelegramScraper
 from telegram.NGOjobs.scraper import NgoJobEthiopiaTelegramScraper
+
+from Safaricom.scraper import SafaricomEthiopiaScraper
+from EthioTelecom.scraper import EthioTelecomScraper
+
 
 from addskill import save_cache, SKILL_CACHE
 
@@ -20,19 +28,28 @@ from common.database import save_job
 
 
 SCRAPERS = [
-    AfriworkScraper(),
-    EthioReport(),
-    EthioJob(),
-    GeezJobsScraper(),
-    LinkedInJobsScraper(),
+    # AfriworkScraper(),
+    # EthioReport(),
+    # EthioJob(),
+    # GeezJobsScraper(),
+    # LinkedInJobsScraper(),
+    # EthiNGOJobsScraper(),
+    # EthioJobsScraper(),
+    # EthioJobsInfoNGOScraper(),
 
-    TelegramChannelScraper("effoyjobs"),
-    JosadTelegramScraper("josad_software"),
-    EtcarrerTelegramScraper("etcareersjobs"),
-    JobsEthioTelegramScraper("jobs_in_ethio"),
 
-    HaHuJobsScraper(),
-    NgoJobEthiopiaTelegramScraper(),
+    # TelegramChannelScraper("effoyjobs"),
+    # JosadTelegramScraper("josad_software"),
+    # EtcarrerTelegramScraper("etcareersjobs"),
+    # JobsEthioTelegramScraper("jobs_in_ethio"),
+
+    # HaHuJobsScraper(),
+    # NgoJobEthiopiaTelegramScraper(),
+
+
+    EthiopianAirlinesScraper(),
+    # SafaricomEthiopiaScraper(),
+    # EthioTelecomScraper()
 ]
 
 
