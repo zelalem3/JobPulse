@@ -26,5 +26,8 @@ class JobListing(BaseModel):
     url: str
 
     skills: List[str] = []
+    quality_score: int = 0
+
+    is_active: bool = True
 
     is_active: bool = True
