@@ -1,73 +1,69 @@
-import os
-import psycopg2
+<?php
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@postgres:5432/dbname")
+namespace App\Models;
 
-def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-def save_job(job_data):
-    if hasattr(job_data, "dict"):
-        data = job_data.dict()
-    elif hasattr(job_data, "__dict__"):
-        data = job_data.__dict__
-    else:
-        data = job_data
+class JobListing extends Model
+{
+    use HasFactory;
 
-    # Ensure company_id is None or an integer, not a string like "Unknown"
-    comp_id = data.get("company_id")
-    if comp_id in ["Unknown", "", None]:
-        comp_id = None
-    else:
-        try:
-            comp_id = int(comp_id)
-        except (ValueError, TypeError):
-            comp_id = None
+    protected $table = 'job_listings';
 
-    safe_data = {
-        "company_id": comp_id,
-        "title": data.get("title"),
-        "location": data.get("location"),
-        "requirements": data.get("requirements"),
-        "description": data.get("description"),
-        "employment_type": data.get("employment_type"),
-        "experience_level": data.get("experience_level"),
-        "salary": data.get("salary", "Negotiable"),
-        "category": data.get("category"),
-        "deadline": data.get("deadline"),
-        "posted_at": data.get("posted_at") or data.get("posted_date"),
-        "source": data.get("source", "Afriwork"),
-        "url": data.get("url"),
-        "responsibilities": data.get("responsibilities"),
-        "is_active": data.get("is_active", True),
-        "quality_score": data.get("quality_score", 0),
+    protected $fillable = [
+        'company_id',
+        'title',
+        'location',
+        'requirements',
+        'description',
+        'employment_type',
+        'experience_level',
+        'salary',
+        'category',
+        'deadline',
+        'posted_at',
+        'source',
+        'url',
+        'responsibilities',
+        'is_active',
+        'quality_score',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'deadline' => 'date',
+            'posted_at' => 'datetime',
+            'is_active' => 'boolean',
+        ];
     }
 
-    query = """
-        INSERT INTO job_listings (
-            company_id, title, location, requirements, description, 
-            employment_type, experience_level, salary, category, 
-            deadline, posted_at, source, url, responsibilities, 
-            is_active, quality_score, created_at, updated_at
-        ) VALUES (
-            %(company_id)s, %(title)s, %(location)s, %(requirements)s, %(description)s, 
-            %(employment_type)s, %(experience_level)s, %(salary)s, %(category)s, 
-            %(deadline)s, %(posted_at)s, %(source)s, %(url)s, %(responsibilities)s, 
-            %(is_active)s, %(quality_score)s, NOW(), NOW()
-        )
-        ON CONFLICT (url) DO NOTHING;
-    """
-    
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(query, safe_data)
-            inserted = cur.rowcount > 0
-        conn.commit()
-        return inserted
-    except Exception as e:
-        print(f"❌ Database insertion error: {e}")
-        conn.rollback()
-        raise e
-    finally:
-        conn.close()
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(
+            Skill::class,
+            'job_skill'
+        );
+    }
+
+    public function scopeHighQuality($query)
+    {
+        return $query->where('quality_score', '>=', 80);
+    }
+
+    public function scopeMediumQuality($query)
+    {
+        return $query->whereBetween('quality_score', [50, 79]);
+    }
+
+    public function scopeLowQuality($query)
+    {
+        return $query->where('quality_score', '<', 50);
+    }
+}
