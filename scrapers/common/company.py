@@ -2,7 +2,7 @@ import re
 import psycopg2
 from difflib import SequenceMatcher
 
-from common.database import get_connection
+from common.db_connection import get_connection
 
 
 # ============================================================
