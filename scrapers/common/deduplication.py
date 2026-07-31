@@ -176,29 +176,38 @@ def normalize_company(value):
     return " ".join(words)
 
 
+def load_location_config(filepath="locations.json"):
+    with open(filepath, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+CONFIG = load_location_config()
+
 def normalize_location(value):
     """
-    Normalize location strings.
+    Normalize location strings using an external configuration map.
     """
-
-    value = normalize_text(value)
-
     if not value:
         return ""
 
-    # Common Addis Ababa variations
-    replacements = {
-        "addis": "addis",
-        "addis ababa": "addis ababa",
-        "bole addis ababa": "addis ababa",
-        "bole": "addis ababa",
-    }
+    # 1. Basic text normalization
+    value = value.lower().strip()
+    value = re.sub(r'\s+', ' ', value)
 
-    if value in replacements:
-        return replacements[value]
 
+    for pattern in CONFIG["noise_patterns"]:
+        value = re.sub(pattern, ' ', value)
+    
+    value = re.sub(r'\s+', ' ', value).strip()
+
+
+    for standard_location, variations in CONFIG["mappings"].items():
+        for variant in variations:
+        
+            if re.search(r'\b' + re.escape(variant) + r'\b', value):
+                return standard_location
+
+  
     return value
-
 
 # ============================================================
 # Job field normalization
