@@ -1,6 +1,6 @@
 import hashlib
 import re
-
+import json
 from difflib import SequenceMatcher
 from urllib.parse import (
     urlparse,
@@ -8,6 +8,7 @@ from urllib.parse import (
     parse_qsl,
     urlencode,
 )
+from pathlib import Path
 
 
 # ============================================================
@@ -176,7 +177,11 @@ def normalize_company(value):
     return " ".join(words)
 
 
-def load_location_config(filepath="locations.json"):
+def load_location_config(filepath=None):
+    if filepath is None:
+        
+        filepath = Path(__file__).resolve().parent / "location.json"
+        
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 
