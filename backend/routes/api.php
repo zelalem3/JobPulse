@@ -39,6 +39,19 @@ Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
     ]);
 });
 
+
+Route::get('/prugejobs', function (Request $request) {
+    if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    Artisan::call('jobs:purge-old');
+
+    return response()->json([
+        'status' => 'Old Jobs Purged',
+        'output' => Artisan::output(),
+    ]);
+});
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
 
 Route::get('/ping', function () {
