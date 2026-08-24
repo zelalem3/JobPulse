@@ -1,77 +1,99 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import api from "../services/axios";
+import { Loader2 } from "lucide-react";
 
-export default function SavedJobs() {
-  const [jobs, setJobs] = useState<any[]>([]);
+import api from "../services/axios";
+import { Stats, GraphData, CompanyModel } from "../types/dashboard";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import DashboardStatsGrid from "../components/dashboard/DashboardStatsGrid";
+import WeeklyTrendChart from "../components/dashboard/WeeklyTrendChart";
+import SourceDistributionCard from "../components/dashboard/SourceDistributionCard";
+import TopCompaniesCard from "../components/dashboard/TopCompaniesCard";
+import SavedJobs from "../components/dashboard/SavedJobs";
+import RecommendedJobs from "../components/dashboard/RecommendedJobsSection";
+import TelegramBanner from "../components/dashboard/TelegramBanner"; 
+
+export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null); // Added user state
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
+  const [topCompanies, setTopCompanies] = useState<CompanyModel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
 
   useEffect(() => {
-    fetchJobs(currentPage);
-  }, [currentPage]);
+    fetchAll();
+  }, []);
 
-  const fetchJobs = async (page: number) => {
+  const fetchAll = async () => {
     try {
       setLoading(true);
-      // Request only 15 items for the current page
-      const response = await api.get(`/api/job-listings?page=${page}&per_page=15`);
-      
-      setJobs(response.data.data); // Laravel pagination items
-      setCurrentPage(response.data.current_page);
-      setLastPage(response.data.last_page);
+      const [userRes, statsRes, graphRes, companiesRes] = await Promise.all([
+        api.get("api/profile"), 
+        api.get("api/dashboard/stats"),
+        api.get("api/dashboard/graph"),
+        api.get("api/dashboard/topcompanies"),
+      ]);
+
+      setUser(userRes.data);
+      setStats(statsRes.data);
+      setGraphData(graphRes.data);
+      setTopCompanies(companiesRes.data.companies || []);
     } catch (err) {
-      console.error("Error fetching paginated jobs:", err);
+      console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        
+        <div className="text-center space-y-2 flex flex-col items-center">
+          <Loader2 className="animate-spin text-emerald-400" size={32} />
+          <p className="text-sm font-semibold text-slate-400">Synchronizing vibrant workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Saved Jobs</h3>
-        <span className="text-xs text-slate-400">Page {currentPage} of {lastPage}</span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8 font-sans selection:bg-emerald-900 selection:text-white space-y-10 w-full">
+      
+      {/* HEADER */}
+      <div className="max-w-6xl mx-auto w-full">
+        <DashboardHeader />
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="animate-spin text-emerald-400" size={24} />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {jobs.map((job) => (
-            <div key={job.id} className="p-4 bg-slate-950 border border-slate-800 rounded-lg flex justify-between items-center">
-              <div>
-                <h4 className="font-medium text-white">{job.title}</h4>
-                <p className="text-sm text-slate-400">{job.company} • {job.location || "N/A"}</p>
-              </div>
-              <span className="text-xs px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800/50 rounded-full">
-                {job.salary || "Negotiable"}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="max-w-6xl mx-auto space-y-8 w-full">
+        
+        {/* TELEGRAM NOTIFICATION BANNER (Shows only if not connected) */}
+        <TelegramBanner user={user} />
 
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center pt-4 border-t border-slate-800">
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-          disabled={currentPage === 1 || loading}
-          className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-sm rounded transition"
-        >
-          <ChevronLeft size={16} /> Previous
-        </button>
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, lastPage))}
-          disabled={currentPage === lastPage || loading}
-          className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-sm rounded transition"
-        >
-          Next <ChevronRight size={16} />
-        </button>
+        {/* STATS GRID */}
+        <DashboardStatsGrid stats={stats} />
+
+        {/* ANALYTICS CHARTS & INSIGHTS GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            {graphData && <WeeklyTrendChart data={graphData.weeklyTrend} />}
+          </div>
+          <div>
+            {graphData && <SourceDistributionCard sources={graphData.sources} />}
+          </div>
+        </div>
+
+        {/* TOP COMPANIES */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <TopCompaniesCard companies={topCompanies} />
+        </div>
+
+        {/* SAVED JOBS SECTION */}
+        <SavedJobs />
+
+        {/* RECOMMENDED JOBS SECTION */}
+        <RecommendedJobs />
       </div>
+
     </div>
   );
 }

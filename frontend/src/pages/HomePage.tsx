@@ -7,6 +7,7 @@ import HomeMetricsGrid from "../components/home/HomeMetricsGrid";
 import JobsSidebarFilter from "../components/home/JobsSidebarFilter";
 import JobCard from "../components/home/JobCard";
 import PaginationControls from "../components/home/PaginationControls";
+import ScrollToTopOnPageChange from "../components/ScrollToTopOnPageChange";
 
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -136,6 +137,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-slate-800 selection:text-white py-8">
+          <ScrollToTopOnPageChange dependencies={[currentPage,  selectedSources]} />
+      
       <div className="max-w-6xl mx-auto px-4 mb-6">
         <SearchBar
           onSearch={handleSearchLog}
