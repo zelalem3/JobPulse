@@ -121,13 +121,16 @@ class JosadTelegramScraper(BaseScraper):
         # Context Weighting Pre-check: Identify if requirements/tech stack sections exist
         has_tech_context = bool(re.search(r"(requirements|stack|technologies|skills|qualification)", text, re.IGNORECASE))
 
+        # Safely extract skills and guarantee it is strictly a list (never None)
         extracted_skills = []
         try:
-            extracted_skills = extract_skills(
+            result = extract_skills(
                 job_description_text=self.truncate_str(cleaned_description_for_extraction, 2500), 
                 job_title=self.truncate_str(clean_title, 250),
-                boost_weights=has_tech_context # Passing context flag if your addskill wrapper supports it
+                boost_weights=has_tech_context 
             )
+            if isinstance(result, list):
+                extracted_skills = result
         except Exception:
             extracted_skills = []
 
@@ -140,21 +143,25 @@ class JosadTelegramScraper(BaseScraper):
             posted_at=getattr(message, 'date', None),
             source=f"Telegram: {self.channel}",
             company=company,
-            skills=extracted_skills,
+            skills=extracted_skills,  # Guaranteed list, protecting downstream functions from NoneType errors
             job_type=job_type,
             deadline=deadline
         )
-
     async def run(self):
-        """The Main Orchestrator."""
-        print(f"[{self.name}] Starting...")
-        messages = await self.fetch()
-        
-        for msg in messages:
-            try:
-                job_data = self.parse(msg)
-                if job_data:
-                    save_job(job_data)
-                    print(f"Saved: {job_data.title} @ {job_data.company}")
-            except Exception as e:
-                print(f"Error parsing Telegram msg: {e}")
+            """The Main Orchestrator."""
+            print(f"[{self.name}] Starting...")
+            messages = await self.fetch()
+            
+            scraped_jobs = [] # <--- Initialize a list to collect jobs
+            for msg in messages:
+                try:
+                    job_data = self.parse(msg)
+                    if job_data:
+                        scraped_jobs.append(job_data) # <--- Collect them instead of saving immediately here
+                        print(f"Saved (queued): {job_data.title} @ {job_data.company}")
+                    else:
+                        print(f"Skipped empty or invalid message.")
+                except Exception as e:
+                    print(f"Error parsing Telegram msg: {e}")
+                    
+            return scraped_jobs # <--- Return the list so main() can process them
