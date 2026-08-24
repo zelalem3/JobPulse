@@ -397,5 +397,157 @@
   "792af9d132af3e389878c6e945d6589d8f6078d9be644ac0ad8978fde2a9e333": [
     "B777",
     "B787"
+  ],
+  "ea26075b507e9fc3af42a617652afda208db51a4c64ab3266d9f6bbe6976948c": [
+    "Backend Development",
+    "Banking",
+    "Core Banking",
+    "Database",
+    "FinTech",
+    "Next.js",
+    "SACCO Management Platform"
+  ],
+  "1d7b9e0e4705cbdc924698ad725af7ce235d413cc41e26736b15f6e973b162fc": [],
+  "ef87aac4416f3d15645ea508667edf402f53a86b74718555c77540abf2a95fb6": [
+    "Post-Tensioned Structures"
+  ],
+  "a26f945a8020b0ef0993eb5eae11214194377f5f4fbc3d045b291c31752cfff8": [
+    "Clean Code",
+    "Debugging",
+    "Software Design",
+    "Software Development",
+    "Software Development Life Cycle (SDLC)",
+    "Software Implementation",
+    "Software Maintenance",
+    "Software Testing"
+  ],
+  "e8751189f0ea4c33ecde364c14624bd8077209b7f917e0b77b9d48e7ed73d01a": [],
+  "36208feda4b56dabf44f75027342a0364c65ff7b4fa8a3b588ceee5587991613": [
+    "API Development",
+    "API Integration",
+    "Artificial Intelligence",
+    "Chatbot Development",
+    "Cloud Computing",
+    "Conversational AI",
+    "Deep Learning",
+    "Django",
+    "Full-Stack Development",
+    "Git",
+    "JavaScript",
+    "MLOps",
+    "Machine Learning",
+    "Natural Language Processing (NLP)",
+    "NoSQL",
+    "PyTorch",
+    "Python",
+    "React",
+    "SQL",
+    "Software Engineering"
+  ],
+  "64589d400fc5537adf76f399bcc2df9621f9a160bf07f6b0c99c0f9410f93248": [],
+  "53c53c875f41a42aa5601f207ad58e820614b9a0a6bda34b77de8df8a454ec50": [
+    "Dart",
+    "Flutter"
+  ],
+  "d71357c9d2bda2b1ca7959f55c50167ba34559541ca89aac8ab76f7a8d24d7b5": [
+    "Application Support",
+    "Fintech",
+    "High Availability",
+    "Mobile Financial Services",
+    "Performance Tuning",
+    "Site Reliability Engineering (SRE)",
+    "System Monitoring"
+  ],
+  "1c0f7d8f01b0e60a96c8079096d2400329be5abd51f68b3aa09eb33b112b1f3b": [
+    "JavaScript",
+    "REST API"
+  ],
+  "d0bcf1ade04bed2a84b80503d11486c671b458dfad8a610233f1b7534bf0cf91": [
+    "ERP",
+    "HCM",
+    "Oracle",
+    "Oracle Cloud"
+  ],
+  "138751e82338d1fe41bafa31473c0ac9ee0ec6b85eb55029afe448fbcb1ce0bd": [
+    "API Development",
+    "Agile",
+    "Back-end Development",
+    "M-Pesa Platform",
+    "Middleware",
+    "System Integration"
+  ],
+  "ff740c0ce5c905eadeca22051d0b68a6db5ab8b162ad8a0775f0236c31bde61e": [
+    "Communication Systems",
+    "Debugging",
+    "Security Solutions",
+    "Software Design",
+    "Software Development",
+    "Software Maintenance",
+    "Software Testing"
+  ],
+  "95bfeab3e50b942dc370d56b86b19b4de3838359751ae456abde77133553bf2d": [],
+  "af6353eb701fe7d47149a6a6c768d6239e78f846e05ad7df1e52e91eff024db0": [],
+  "c5974374c574fec6ac9be4ba9591859278551ae6968d040b310295dbaa880259": [
+    "AWS",
+    "Artificial Intelligence",
+    "Cloud Computing",
+    "Data Architecture",
+    "Data Engineering",
+    "Deep Learning",
+    "Docker",
+    "Kubernetes",
+    "MLOps",
+    "Machine Learning",
+    "Predictive Modeling",
+    "PyTorch",
+    "Python",
+    "SQL",
+    "Solution Architecture",
+    "TensorFlow"
+  ],
+  "59dc3bb7094f47664d5afc5d1ee298439834b7bef0eb0d46b36a03bb878f9897": [
+    "Research",
+    "Software Development"
+  ],
+  "3ce1b40bd7bc7ea4d0742485888f6a6cf7f860dc5437e7cf4d36aea7ee32d1e1": [],
+  "0b606b42a5010440f65177218a8dc51af32f7e357789c5f3f47870735d7046f5": [
+    "Artificial Intelligence",
+    "Cloud Computing",
+    "Data Engineering",
+    "Data Science",
+    "Machine Learning",
+    "Machine Learning Frameworks",
+    "Predictive Modeling",
+    "Python",
+    "SQL",
+    "Solution Architecture",
+    "System Design"
+  ],
+  "64dce1dd92354df91b74637c538b568dd0f5ea41a5bbe8c9824a57ce9f1197dc": [
+    "Research",
+    "Software Development"
+  ],
+  "cf898ce5f27e11cc97de3f83d9c2201435dbea5da1446dcab18e7ff6a74a798a": [],
+  "1e316fa72855c827b89529cae1fcda9c32f984a796ce0dcf99aa84e63d258466": [
+    "Banking",
+    "Core Banking",
+    "Next.js",
+    "SACCO Management"
+  ],
+  "87d9eab4efe2986d99575bd0aaf83d28837e5e517a6f8f5925ed279e20f44bfc": [],
+  "d1ed6b328e05dc977d250cd0dc2b83a8f6aa6acebb03897c489c3d50f17c5e9c": [
+    "Post-Tensioned Structures"
+  ],
+  "74e9b4896c0274aeef85e18ee906ac8617380ac592e4d2747e5546bd132fc4f6": [
+    "Coding",
+    "Debugging",
+    "Requirements Analysis",
+    "Software Design",
+    "Software Development",
+    "Software Development Life Cycle (SDLC)",
+    "Software Implementation",
+    "Software Maintenance",
+    "Software Testing",
+    "Version Control"
   ]
 }
