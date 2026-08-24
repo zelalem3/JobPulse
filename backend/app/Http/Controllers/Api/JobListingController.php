@@ -10,14 +10,32 @@ use App\Models\JobListing;
 class JobListingController extends Controller
 {
     /**
-     * Display a listing of jobs.
+     * Display a listing of jobs with search, source filters, and pagination.
      */
     public function index(Request $request)
     {
-        $perPage = $request->per_page ?? 10;
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+        $source = $request->input('source'); // e.g., "Telegram,LinkedIn"
 
-        // Eager load skills for listing as well if needed
-        $jobs = JobListing::with('skills')->latest()->paginate($perPage);
+        $query = JobListing::with('skills')->latest();
+
+        // 1. Search Filter (Title, Company, or Location)
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('company', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        // 2. Source Filter
+        if ($source) {
+            $sourcesArray = explode(',', $source);
+            $query->whereIn('source', array_map('trim', $sourcesArray));
+        }
+
+        $jobs = $query->paginate($perPage);
 
         return response()->json($jobs);
     }
@@ -53,7 +71,6 @@ class JobListingController extends Controller
      */
     public function show(string $id)
     {
-        // 👇 Eager load skills here so they return with the job details
         $job = JobListing::with('skills')->find($id);
 
         if (!$job) {
