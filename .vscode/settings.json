@@ -1,0 +1,43 @@
+{
+  "files.watcherExclude": {
+    "**/vendor/**": true,
+    "**/storage/framework/**": true,
+    "**/storage/logs/**": true,
+    "**/bootstrap/cache/**": true
+  },
+  "search.exclude": {
+    "**/vendor/**": true,
+    "**/storage/**": true,
+    "**/bootstrap/cache/**": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true
+  },
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/storage/**",
+    "**/bootstrap/cache/**",
+    "**/vendor/composer/**"
+  ],
+  "intelephense.maxMemory": 2048,
+  "intelephense.stubs": [
+    "apache",
+    "bcmath",
+    "Core",
+    "curl",
+    "date",
+    "dom",
+    "fileinfo",
+    "filter",
+    "pcre",
+    "readline",
+    "standard",
+    "tokenizer",
+    "xml",
+    "zip"
+  ],
+  "intelephense.environment.includePaths": [],
+  "intelephense.telemetry.enabled": false
+}
