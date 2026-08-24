@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Briefcase, SlidersHorizontal } from "lucide-react";
+import { Briefcase, SlidersHorizontal, Sparkles, Search } from "lucide-react";
 import SearchBar from "../components/SearchBar";
 import api from "../services/axios";
 import { Job } from "../types/job";
@@ -19,7 +19,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState<number | null>(null);
 
-  // Pagination states from Laravel
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -27,10 +26,9 @@ export default function HomePage() {
 
   const handleSearchLog = (term: string) => {
     setSearchTerm(term);
-    setCurrentPage(1); // Reset to page 1 on new search
+    setCurrentPage(1);
   };
 
-  // Fetch unique sources on initial load so checkboxes stay populated
   useEffect(() => {
     const fetchSources = async () => {
       try {
@@ -47,12 +45,10 @@ export default function HomePage() {
     fetchSources();
   }, []);
 
-  // Fetch paginated jobs whenever page, search, or filters change
   const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Build query parameters for Laravel backend
       const params = new URLSearchParams({
         page: currentPage.toString(),
         per_page: itemsPerPage.toString(),
@@ -62,7 +58,6 @@ export default function HomePage() {
         params.append("search", searchTerm);
       }
       
-      // Pass the selected sources comma-separated to match your Laravel controller backend logic
       if (selectedSources.length > 0) {
         params.append("source", selectedSources.join(","));
       }
@@ -105,7 +100,7 @@ export default function HomePage() {
         ? prev.filter((s) => s !== source)
         : [...prev, source]
     );
-    setCurrentPage(1); // Reset to page 1 on filter change
+    setCurrentPage(1);
   };
 
   const toggleSaveJob = async (id: number) => {
@@ -136,36 +131,57 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-slate-800 selection:text-white py-8">
-          <ScrollToTopOnPageChange dependencies={[currentPage,  selectedSources]} />
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white py-10 relative overflow-hidden">
       
-      <div className="max-w-6xl mx-auto px-4 mb-6">
-        <SearchBar
-          onSearch={handleSearchLog}
-          placeholder="Search jobs by title, company, or location..."
-        />
-      </div>
+      {/* Background ambient lighting accents */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 left-10 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto px-4">
+      <ScrollToTopOnPageChange dependencies={[currentPage, selectedSources]} />
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
+
+        {/* Hero Banner Intro for Job Seekers */}
+        <div className="text-center space-y-3 py-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+            <Sparkles size={13} /> Discover Your Next Career Move
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Find roles tailored to your ambition
+          </h1>
+          <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto">
+            Aggregated live positions from top tech markets, filtered and ready for your next application.
+          </p>
+        </div>
+
+        {/* Search Bar Wrapper */}
+        <div className="max-w-3xl mx-auto">
+          <SearchBar
+            onSearch={handleSearchLog}
+            placeholder="Search by job title, tech stack, company, or city..."
+          />
+        </div>
+
+        {/* Metrics Grid */}
         <HomeMetricsGrid
           totalJobsLength={totalItems}
           totalItems={totalItems}
           allSourcesCount={allSources.length}
         />
 
-        {/* Mobile Filter Toggle Button */}
-        <div className="flex justify-between items-center mb-6 md:hidden">
+        {/* Mobile Filter Toggle */}
+        <div className="flex justify-between items-center md:hidden">
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-2xl flex items-center gap-2 text-xs font-bold shadow-lg"
+            className="px-4 py-2.5 bg-slate-900 border border-slate-800 text-slate-300 rounded-2xl flex items-center gap-2 text-xs font-semibold shadow-xl active:bg-slate-800"
           >
-            <SlidersHorizontal size={14} />
-            {isFilterOpen ? "Hide Filters" : "Filter Sources"}
+            <SlidersHorizontal size={14} className="text-indigo-400" />
+            {isFilterOpen ? "Hide Sources Filter" : "Filter by Sources"}
           </button>
         </div>
 
-        {/* Main Content Grid: Sidebar + Job Listings */}
-        <div className="flex flex-col md:flex-row gap-6 items-start">
+        {/* Main Content Layout */}
+        <div className="flex flex-col md:flex-row gap-8 items-start">
           <JobsSidebarFilter
             allSources={allSources}
             selectedSources={selectedSources}
@@ -173,10 +189,11 @@ export default function HomePage() {
             isOpen={isFilterOpen}
           />
 
-          <div className="flex-1 w-full">
+          <div className="flex-1 w-full space-y-6">
             {loading ? (
-              <div className="text-center py-20 text-sm font-semibold text-slate-400">
-                Loading position indexes...
+              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-16 text-center space-y-3">
+                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-sm font-medium text-slate-400">Scanning live position indexes...</p>
               </div>
             ) : listings.length > 0 ? (
               <>
@@ -198,15 +215,16 @@ export default function HomePage() {
                 />
               </>
             ) : (
-              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl py-16 text-center border border-slate-800/80 shadow-xl">
-                <Briefcase
-                  className="mx-auto mb-4 text-slate-500"
-                  size={40}
-                />
-                <h3 className="font-bold text-white">No jobs found</h3>
-                <p className="text-slate-400 text-sm mt-1">
-                  Try changing your search term or filters.
-                </p>
+              <div className="bg-slate-900/60 backdrop-blur-2xl rounded-3xl py-20 px-6 text-center border border-slate-800/80 shadow-2xl space-y-4">
+                <div className="w-14 h-14 bg-slate-950 text-slate-500 rounded-2xl flex items-center justify-center mx-auto border border-slate-800 shadow-inner">
+                  <Briefcase size={24} className="text-indigo-400" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-white text-base">No matching positions found</h3>
+                  <p className="text-slate-400 text-sm max-w-md mx-auto">
+                    Try loosening your keyword search or unchecking active source filters to view more opportunities.
+                  </p>
+                </div>
               </div>
             )}
           </div>
