@@ -29,7 +29,6 @@ Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    // Directly run your job alerts command
     Artisan::call('alerts:send');
 
     return response()->json([
@@ -52,6 +51,7 @@ Route::get('/prugejobs', function (Request $request) {
         'output' => Artisan::output(),
     ]);
 });
+
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
 
 Route::get('/ping', function () {
@@ -64,12 +64,10 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::get('/trigger-daily-recommendations', function (Request $request) {
-    // Validate the secret token to keep it secure
     if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    // Run your existing Artisan command programmatically
     Artisan::call('recommendations:send');
 
     return response()->json([
@@ -78,15 +76,16 @@ Route::get('/trigger-daily-recommendations', function (Request $request) {
     ]);
 });
 
+// ✅ Fixed: Removed the conflicting JobSearchController route override so api/jobs works cleanly
 Route::apiResource('jobs', JobListingController::class)->only(['index', 'show']);
-Route::get('jobs/{id}', [JobSearchController::class, 'index']);
+
 Route::get('/test-mail', function () {
-        Mail::raw('Hello from JobPulse!', function ($message) {
-            $message->to('test@example.com')
-                    ->subject('Test Email');
-        });
-        return 'Email sent!';
+    Mail::raw('Hello from JobPulse!', function ($message) {
+        $message->to('test@example.com')
+                ->subject('Test Email');
     });
+    return 'Email sent!';
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -96,24 +95,17 @@ Route::get('/test-mail', function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     //--- Profile Routes---
-    Route::get('profile',[ProfileController::class, 'show']);
-    Route::put('profile',[ProfileController::class, 'update']);
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::put('profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
     //-- Job Search ---
-    Route::get('search',[SearchController::class, '__invoke']);
-
-
-
+    Route::get('search', [SearchController::class, '__invoke']);
 
     //---Telegram Notification ---
-  
     Route::post('/telegram/connect', [TelegramController::class, 'connect']);
     Route::delete('/telegram/disconnect', [TelegramController::class, 'disconnect']);
     Route::get('/telegram/status', [TelegramController::class, 'status']);
-
-
-
     
     // --- Dashboard Routes ---
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
@@ -124,14 +116,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- Saved Jobs ---
     Route::get('savedjobs', [SaveJobController::class, 'index']);
     Route::post('savejob/{id}', [SaveJobController::class, 'store']);
-    Route::delete('savejob/{id}',[SaveJobController::class, 'destroy']);
+    Route::delete('savejob/{id}', [SaveJobController::class, 'destroy']);
     
     // --- Job Scraper Alerts  ---
-    Route::middleware('auth:sanctum')->group(function () {
-    Route::get('alerts', [AlertController::class, 'index']);      // Fetches user's skills
-    Route::post('alerts', [AlertController::class, 'store']);     // Adds a skill to user
-    Route::delete('alerts/{id}', [AlertController::class, 'destroy']); // Removes a skill from user
-});
+    Route::get('alerts', [AlertController::class, 'index']);      
+    Route::post('alerts', [AlertController::class, 'store']);     
+    Route::delete('alerts/{id}', [AlertController::class, 'destroy']); 
 
     //--- Job Recommendations ---
     Route::get('/recommendations', [RecommendationController::class, 'index']);
@@ -141,10 +131,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('job-alerts', [AlertController::class, 'create']);
     Route::put('job-alerts/{id}', [AlertController::class, 'update']);
     Route::delete('job-alerts/{id}', [AlertController::class, 'destroy']);
-
-    // --- Testing Routes ---
-    
-
-   
-    
 });
