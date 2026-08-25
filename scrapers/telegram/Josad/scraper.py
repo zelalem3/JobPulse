@@ -74,17 +74,27 @@ class JosadTelegramScraper(BaseScraper):
         if not text:
             return None
 
-        # 1. Extraction Logic for URL
-        url_match = re.search(r"https?://[^\s/$.?#].[^\s]*", text)
+        # ------------------------------------------------------
+        # Extract URL
+        # ------------------------------------------------------
+
         url = None
-        if url_match:
-            urls = re.findall(r"https?://[^\s]+", text)
-            specific_urls = [u for u in urls if "t.me" not in u]
-            url = specific_urls[0].strip() if specific_urls else url_match.group(0).strip()
-        
-        # Fallback to prevent NullViolation
+
+        # First, look for an external job/application URL
+        urls = re.findall(r"https?://[^\s]+", text)
+
+        specific_urls = [
+            u.strip(".,)>]}")
+            for u in urls
+            if "t.me/" not in u
+        ]
+
+        if specific_urls:
+            url = specific_urls[0]
+
+        # If there is no external URL, use the Telegram message URL.
         if not url:
-            url = f"https://t.me/{self.channel}"
+            url = f"https://t.me/{self.channel}/{message.id}"
 
         lines = [line.strip() for line in text.split("\n") if line.strip()]
         
