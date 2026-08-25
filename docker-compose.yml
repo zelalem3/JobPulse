@@ -72,7 +72,7 @@ services:
     volumes:
       - ./scrapers:/app
     environment:
-      - DATABASE_URL=postgresql://postgres:Scooponset1@postgres:5432/jobpulse
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - postgres
