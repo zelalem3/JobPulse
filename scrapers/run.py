@@ -71,9 +71,9 @@ SCRAPERS = [
     # EthioJobsScraper(),
     # EthioJobsInfoNGOScraper(),
 
-    JosadTelegramScraper("josad_software"),
+    # JosadTelegramScraper("josad_software"),
 
-    # TelegramChannelScraper("effoyjobs"),
+    TelegramChannelScraper("effoyjobs"),
     # EtcarrerTelegramScraper("etcareersjobs"),
     # JobsEthioTelegramScraper("jobs_in_ethio"),
     # NgoJobEthiopiaTelegramScraper(),
