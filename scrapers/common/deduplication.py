@@ -9,6 +9,20 @@ from urllib.parse import (
     urlencode,
 )
 from pathlib import Path
+import psycopg2
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class DedupData:
+    url: str
+    title: str
+    company: str
+    location: str
+    deadline: str
+    description: str
+    requirements: str
+    responsibilities: str
+    dedup_hash: str
 
 
 seen_url = set()
@@ -494,6 +508,63 @@ def generate_dedup_hash(job):
         raw.encode("utf-8")
     ).hexdigest()
 
+# ------------------------------------------
+#  Normalization
+# ------------------------------------------
+def prepare_dedup_data(job):
+    """
+    Precompute all normalized fields used by deduplication.
+
+    This prevents repeatedly normalizing the same job during
+    fuzzy duplicate comparisons.
+    """
+
+    url = normalize_url(
+        get_value(job, "url")
+    )
+
+    title = normalized_title(job)
+
+    company = normalized_company(job)
+
+    location = normalized_location(job)
+
+    deadline = normalize_deadline(
+        get_deadline(job)
+    )
+
+    description = normalized_description(job)
+
+    requirements = normalized_requirements(job)
+
+    responsibilities = normalized_responsibilities(job)
+
+    raw = "|".join([
+        title,
+        company,
+        location,
+        deadline,
+        description[:2000],
+        requirements[:1000],
+        responsibilities[:1000],
+    ])
+
+    dedup_hash = hashlib.sha256(
+        raw.encode("utf-8")
+    ).hexdigest()
+
+    return DedupData(
+        url=url,
+        title=title,
+        company=company,
+        location=location,
+        deadline=deadline,
+        description=description,
+        requirements=requirements,
+        responsibilities=responsibilities,
+        dedup_hash=dedup_hash,
+    )
+
 
 # ============================================================
 # Strong identity checks
@@ -549,43 +620,41 @@ def is_probable_duplicate(job1, job2):
     Determine whether job1 and job2 probably represent
     the same vacancy.
 
-    Matching layers:
-
-        1. Exact normalized URL
-
-        2. Strong title + company + location
-
-        3. Strong title + company + description
-
-        4. Strong title + company + requirements
-
-        5. Strong title + company + responsibilities
-
-    Deadline is used as an additional safety signal.
+    Uses precomputed DedupData when available.
     """
+
+    data1 = (
+        job1
+        if isinstance(job1, DedupData)
+        else prepare_dedup_data(job1)
+    )
+
+    data2 = (
+        job2
+        if isinstance(job2, DedupData)
+        else prepare_dedup_data(job2)
+    )
 
     # --------------------------------------------------------
     # LEVEL 1
-    # Exact URL
+    # Exact normalized URL
     # --------------------------------------------------------
 
-    if same_url(job1, job2):
+    if (
+        data1.url
+        and data2.url
+        and data1.url == data2.url
+    ):
         return True
 
-    title1 = normalized_title(job1)
-    title2 = normalized_title(job2)
+    # --------------------------------------------------------
+    # We need title + company
+    # --------------------------------------------------------
 
-    company1 = normalized_company(job1)
-    company2 = normalized_company(job2)
-
-    location1 = normalized_location(job1)
-    location2 = normalized_location(job2)
-
-    # We need at least title and company.
-    if not title1 or not title2:
+    if not data1.title or not data2.title:
         return False
 
-    if not company1 or not company2:
+    if not data1.company or not data2.company:
         return False
 
     # --------------------------------------------------------
@@ -593,41 +662,29 @@ def is_probable_duplicate(job1, job2):
     # --------------------------------------------------------
 
     title_score = text_similarity(
-        title1,
-        title2,
+        data1.title,
+        data2.title,
     )
 
     company_score = text_similarity(
-        company1,
-        company2,
+        data1.company,
+        data2.company,
     )
 
     location_score = text_similarity(
-        location1,
-        location2,
+        data1.location,
+        data2.location,
     )
 
     # --------------------------------------------------------
     # Deadline
     # --------------------------------------------------------
 
-    deadline_match = same_deadline(
-        job1,
-        job2,
-    )
-
-    # If both jobs have deadlines and they are different,
-    # treat them as different vacancies.
-    #
-    # This prevents:
-    #
-    # Software Engineer - Aug 10
-    #
-    # from being considered the same as:
-    #
-    # Software Engineer - Sep 30
-    #
-    if deadline_match is False:
+    if (
+        data1.deadline
+        and data2.deadline
+        and data1.deadline != data2.deadline
+    ):
         return False
 
     # --------------------------------------------------------
@@ -647,23 +704,21 @@ def is_probable_duplicate(job1, job2):
     # Title + company + description
     # --------------------------------------------------------
 
-    description1 = normalized_description(job1)
-    description2 = normalized_description(job2)
-
     if (
         title_score >= 0.90
         and company_score >= 0.90
-        and description1
-        and description2
+        and data1.description
+        and data2.description
     ):
+
         description_score = text_similarity(
-            description1[:5000],
-            description2[:5000],
+            data1.description[:5000],
+            data2.description[:5000],
         )
 
         token_score = token_similarity(
-            description1[:5000],
-            description2[:5000],
+            data1.description[:5000],
+            data2.description[:5000],
         )
 
         if (
@@ -677,23 +732,21 @@ def is_probable_duplicate(job1, job2):
     # Title + company + requirements
     # --------------------------------------------------------
 
-    requirements1 = normalized_requirements(job1)
-    requirements2 = normalized_requirements(job2)
-
     if (
         title_score >= 0.90
         and company_score >= 0.90
-        and requirements1
-        and requirements2
+        and data1.requirements
+        and data2.requirements
     ):
+
         requirements_score = text_similarity(
-            requirements1[:5000],
-            requirements2[:5000],
+            data1.requirements[:5000],
+            data2.requirements[:5000],
         )
 
         token_score = token_similarity(
-            requirements1[:5000],
-            requirements2[:5000],
+            data1.requirements[:5000],
+            data2.requirements[:5000],
         )
 
         if (
@@ -707,28 +760,21 @@ def is_probable_duplicate(job1, job2):
     # Title + company + responsibilities
     # --------------------------------------------------------
 
-    responsibilities1 = normalized_responsibilities(
-        job1
-    )
-
-    responsibilities2 = normalized_responsibilities(
-        job2
-    )
-
     if (
         title_score >= 0.90
         and company_score >= 0.90
-        and responsibilities1
-        and responsibilities2
+        and data1.responsibilities
+        and data2.responsibilities
     ):
+
         responsibilities_score = text_similarity(
-            responsibilities1[:5000],
-            responsibilities2[:5000],
+            data1.responsibilities[:5000],
+            data2.responsibilities[:5000],
         )
 
         token_score = token_similarity(
-            responsibilities1[:5000],
-            responsibilities2[:5000],
+            data1.responsibilities[:5000],
+            data2.responsibilities[:5000],
         )
 
         if (
@@ -737,12 +783,7 @@ def is_probable_duplicate(job1, job2):
         ):
             return True
 
-    # --------------------------------------------------------
-    # Not a duplicate
-    # --------------------------------------------------------
-
     return False
-
 
 # ============================================================
 # Duplicate reason
@@ -907,7 +948,6 @@ def deduplicate_jobs(jobs):
     Deduplicate a list of jobs from the current scraper run.
 
     Returns:
-
         unique_jobs
         duplicate_jobs
     """
@@ -915,27 +955,24 @@ def deduplicate_jobs(jobs):
     unique_jobs = []
     duplicate_jobs = []
 
-    # Fast lookup for exact normalized URLs.
     seen_urls = set()
-
-    # Fast lookup for exact hashes.
     seen_hashes = set()
+
+    # Cached normalized representations.
+    prepared_jobs = []
 
     for job in jobs:
 
-        url = normalize_url(
-            get_value(job, "url")
-        )
-
-        job_hash = generate_dedup_hash(
-            job
-        )
+        dedup_data = prepare_dedup_data(job)
 
         # ----------------------------------------------------
         # Fast URL check
         # ----------------------------------------------------
 
-        if url and url in seen_urls:
+        if (
+            dedup_data.url
+            and dedup_data.url in seen_urls
+        ):
             duplicate_jobs.append(
                 (job, "same URL")
             )
@@ -945,13 +982,15 @@ def deduplicate_jobs(jobs):
         # Fast hash check
         # ----------------------------------------------------
 
-        if job_hash in seen_hashes:
+        if dedup_data.dedup_hash in seen_hashes:
+
             duplicate_jobs.append(
                 (
                     job,
                     "same deduplication hash",
                 )
             )
+
             continue
 
         # ----------------------------------------------------
@@ -961,12 +1000,13 @@ def deduplicate_jobs(jobs):
         duplicate = False
         reason = ""
 
-        for existing_job in unique_jobs:
+        for existing_job, existing_data in prepared_jobs:
 
             if is_probable_duplicate(
-                job,
-                existing_job,
+                dedup_data,
+                existing_data,
             ):
+
                 duplicate = True
 
                 reason = duplicate_reason(
@@ -977,6 +1017,7 @@ def deduplicate_jobs(jobs):
                 break
 
         if duplicate:
+
             duplicate_jobs.append(
                 (job, reason)
             )
@@ -989,9 +1030,17 @@ def deduplicate_jobs(jobs):
 
         unique_jobs.append(job)
 
-        if url:
-            seen_urls.add(url)
+        prepared_jobs.append(
+            (job, dedup_data)
+        )
 
-        seen_hashes.add(job_hash)
+        if dedup_data.url:
+            seen_urls.add(
+                dedup_data.url
+            )
+
+        seen_hashes.add(
+            dedup_data.dedup_hash
+        )
 
     return unique_jobs, duplicate_jobs
