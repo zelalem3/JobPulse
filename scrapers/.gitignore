@@ -22,3 +22,6 @@ __pycache__/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# session files
+jobpulse_session.session
