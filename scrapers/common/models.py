@@ -1,7 +1,8 @@
-from pydantic import BaseModel, HttpUrl
-from typing import List, Optional
-from datetime import datetime
 
+
+from datetime import datetime
+from typing import List, Optional
+from pydantic import BaseModel, Field
 
 class JobListing(BaseModel):
     company_id: Optional[str] = "Unknown"
@@ -25,9 +26,9 @@ class JobListing(BaseModel):
     source: str = "Afriwork"
     url: str
 
-    skills: List[str] = []
+    skills: List[str] = Field(default_factory=list)
     quality_score: int = 0
 
-    is_active: bool = True
+    
 
     is_active: bool = True

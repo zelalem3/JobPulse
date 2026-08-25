@@ -1,6 +1,8 @@
 import re
 from urllib.parse import urlparse
 
+from common.normalizer import is_promotional_title
+
 
 # ============================================================
 # Validation Result
@@ -32,7 +34,10 @@ def valid_url(url):
 
         parsed = urlparse(url)
 
-        return bool(parsed.scheme and parsed.netloc)
+        return bool(
+            parsed.scheme
+            and parsed.netloc
+        )
 
     except Exception:
 
@@ -48,7 +53,11 @@ def clean_text(text):
     if not text:
         return ""
 
-    text = re.sub(r"\s+", " ", str(text))
+    text = re.sub(
+        r"\s+",
+        " ",
+        str(text),
+    )
 
     return text.strip()
 
@@ -65,11 +74,17 @@ def validate_job(job):
 
     company = clean_text(job.company)
 
-    description = clean_text(job.description)
+    description = clean_text(
+        job.description
+    )
 
-    requirements = clean_text(job.requirements)
+    requirements = clean_text(
+        job.requirements
+    )
 
-    responsibilities = clean_text(job.responsibilities)
+    responsibilities = clean_text(
+        job.responsibilities
+    )
 
     # --------------------------------------------------------
     # Required fields
@@ -77,33 +92,53 @@ def validate_job(job):
 
     if not title:
 
-        result.add("Missing title")
+        result.add(
+            "Missing title"
+        )
 
     if len(title) < 3:
 
-        result.add("Title too short")
+        result.add(
+            "Title too short"
+        )
 
     if not company:
 
-        result.add("Missing company")
+        result.add(
+            "Missing company"
+        )
 
     if not valid_url(job.url):
 
-        result.add("Invalid URL")
+        result.add(
+            "Invalid URL"
+        )
+
+    # --------------------------------------------------------
+    # Promotional content
+    # --------------------------------------------------------
+
+    if is_promotional_title(title):
+
+        result.add(
+            "Promotional title"
+        )
 
     # --------------------------------------------------------
     # Content
     # --------------------------------------------------------
 
     total_content = len(
-        description +
-        requirements +
-        responsibilities
+        description
+        + requirements
+        + responsibilities
     )
 
     if total_content < 100:
 
-        result.add("Very little content")
+        result.add(
+            "Very little content"
+        )
 
     # --------------------------------------------------------
     # Garbage detection
@@ -114,10 +149,27 @@ def validate_job(job):
         "vacancy",
         "apply now",
         "career",
+        "ad",
     }
 
     if title.lower() in bad_titles:
 
-        result.add("Generic title")
+        result.add(
+            "Generic title"
+        )
+
+    # --------------------------------------------------------
+    # Promotional / advertisement title
+    # --------------------------------------------------------
+
+    if title.lower() in {
+        "ad",
+        "advertisement",
+        "advert",
+    }:
+
+        result.add(
+            "Advertisement"
+        )
 
     return result
