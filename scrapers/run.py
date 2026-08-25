@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from dotenv import load_dotenv
+import psycopg2
 
 # Scrapers
 from Afriwork.scraper import AfriworkScraper
@@ -22,6 +23,10 @@ from telegram.NGOjobs.scraper import NgoJobEthiopiaTelegramScraper
 
 from Safaricom.scraper import SafaricomEthiopiaScraper
 from EthioTelecom.scraper import EthioTelecomScraper
+from common.deduplication import (
+    is_probable_duplicate,
+    prepare_dedup_data,
+)
 
 # Processing
 from addskill import (
@@ -80,6 +85,37 @@ SCRAPERS = [
 ]
 
 
+
+
+
+def get_candidate_jobs(
+    job_dedup_data,
+    jobs_by_company,
+    prepared_unique_jobs,
+):
+    """
+    Return a reduced set of jobs that are worth running
+    through the expensive fuzzy duplicate detector.
+
+    Company is the primary candidate key.
+
+    If the company is unavailable, fall back to all jobs
+    because the existing duplicate detector owns the final
+    decision.
+    """
+
+    company = job_dedup_data.company
+
+    if not company:
+        return prepared_unique_jobs
+
+    candidates = jobs_by_company.get(
+        company,
+        []
+    )
+
+    return candidates
+
 # ==========================================================
 # Main
 # ==========================================================
@@ -135,6 +171,9 @@ async def main():
     # ------------------------------------------------------
 
     unique_jobs = []
+    prepared_unique_jobs = []
+
+    jobs_by_company = {}
 
     duplicate_count = 0
     database_duplicate_count = 0
@@ -319,46 +358,90 @@ async def main():
 
             continue
 
+
         # --------------------------------------------------
         # Current-run fuzzy duplicate detection
         #
-        # Level 1/2 URL/hash checks are handled here
-        # in-memory by the existing deduplication system.
+        # Database URL/hash duplicates were already checked
+        # before skill extraction using job_exists().
         #
-        # We are keeping this logic centralized in the
-        # existing is_probable_duplicate() implementation
-        # for now.
+        # Here we only compare jobs that survived the
+        # database existence check.
         # --------------------------------------------------
-
         duplicate = False
 
-        for existing_job in unique_jobs:
+        job_dedup_data = prepare_dedup_data(job)
+
+        company_key = job_dedup_data.company
+
+        candidate_jobs = get_candidate_jobs(
+            job_dedup_data,
+            jobs_by_company,
+            prepared_unique_jobs,
+        )
+
+        for existing_job, existing_dedup_data in candidate_jobs:
 
             if is_probable_duplicate(
-                job,
-                existing_job,
+                job_dedup_data,
+                existing_dedup_data,
             ):
-
                 duplicate = True
-
                 break
 
-        if duplicate:
+        # --------------------------------------------------
+        # Index non-duplicate jobs
+        # --------------------------------------------------
 
+        if duplicate:
             duplicate_count += 1
 
             print(
-                f"⏭️ Duplicate skipped: "
-                f"{job.title}"
+                f"⏭️ Duplicate skipped: {job.title}"
             )
 
             continue
 
+        unique_jobs.append(job)
+
+        prepared_unique_jobs.append(
+            (
+                job,
+                job_dedup_data,
+            )
+        )
+
+        if company_key:
+            jobs_by_company.setdefault(
+                company_key,
+                []
+            ).append(
+                (
+                    job,
+                    job_dedup_data,
+                )
+            )
         # --------------------------------------------------
         # Unique job for this run
         # --------------------------------------------------
 
         unique_jobs.append(job)
+        prepared_unique_jobs.append(
+        (
+            job,
+            job_dedup_data,
+        )
+        )
+        if job_dedup_data.company:
+            jobs_by_company.setdefault(
+                job_dedup_data.company,
+                []
+            ).append(
+                (
+                    job,
+                    job_dedup_data,
+                )
+    )
 
     # ======================================================
     # Processing Summary
@@ -468,3 +551,4 @@ async def main():
 if __name__ == "__main__":
 
     asyncio.run(main())
+
