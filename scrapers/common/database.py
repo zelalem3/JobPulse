@@ -1,6 +1,7 @@
 import json
 from common.company import resolve_company
 from common.db_connection import get_connection
+from common.deduplication import normalize_url,generate_dedup_hash
 
 def save_job(job_data):
     """
@@ -136,28 +137,60 @@ def save_job_skills(conn, job_id, skills_list):
         conn.rollback()
 
 def job_exists(job) -> bool:
-  """
-    Fast existence check using indexed URL and dedup_hash.
-    Returns True if the job already exists in PostgreSQL.
-  """
-  url = normalize_url(job.url)
-  dedup_hash = generate_dedup_hash(job)
-
-  conn = get_connection()
-  cur = conn.cursor()
-  cur.execute(
     """
-    SELECT EXISTS (
-        SELECT 1
-        FROM job_listings
-        WHERE url = %s
-           OR dedup_hash = %s
-    )
-    """,
-    (url, dedup_hash),
-)
+    Fast existence check using indexed URL and dedup_hash.
 
-  exists = cur.fetchone()[0]
-  cur.close()
-  conn.close()
-  return exists
+    Retries once when a transient PostgreSQL connection
+    failure occurs.
+    """
+
+    url = normalize_url(job.url)
+    dedup_hash = generate_dedup_hash(job)
+
+    for attempt in range(2):
+
+        conn = None
+
+        try:
+            conn = get_connection()
+
+            with conn.cursor() as cur:
+
+                cur.execute(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM job_listings
+                        WHERE url = %s
+                           OR dedup_hash = %s
+                    )
+                    """,
+                    (url, dedup_hash),
+                )
+
+                return cur.fetchone()[0]
+
+        except psycopg2.OperationalError as e:
+
+            if attempt == 0:
+
+                print(
+                    "⚠️ Temporary database connection "
+                    "failure during duplicate check. "
+                    "Retrying..."
+                )
+
+                continue
+
+            raise
+
+        finally:
+
+            if conn is not None:
+
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    return False
