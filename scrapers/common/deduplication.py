@@ -11,6 +11,10 @@ from urllib.parse import (
 from pathlib import Path
 
 
+seen_url = set()
+seen_hashes = set()
+
+
 # ============================================================
 # Configuration
 # ============================================================

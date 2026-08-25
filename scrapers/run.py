@@ -1,14 +1,6 @@
 import asyncio
-import hashlib
-import json
 import logging
-import os
-import re
-import time
 from dotenv import load_dotenv
-from google import genai
-from common.deduplication import generate_dedup_hash, normalize_url
-from common.database import job_exists
 
 # Scrapers
 from Afriwork.scraper import AfriworkScraper
@@ -31,22 +23,38 @@ from telegram.NGOjobs.scraper import NgoJobEthiopiaTelegramScraper
 from Safaricom.scraper import SafaricomEthiopiaScraper
 from EthioTelecom.scraper import EthioTelecomScraper
 
-# Cache, Skill Extractor & Processing
-from addskill import SKILL_CACHE, _smart_local_extraction, extract_skills, save_cache
-from common.database import save_job
+# Processing
+from addskill import (
+    SKILL_CACHE,
+    _smart_local_extraction,
+    extract_skills,
+    save_cache,
+)
+
+from common.database import save_job, job_exists
 from common.deduplication import is_probable_duplicate
 from common.normalizer import normalize_job
 from common.quality import quality_score
 from common.validation import validate_job
 
+
 load_dotenv()
+
 logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------
+
+# ==========================================================
 # Configuration
-# ----------------------------------------------------------
+# ==========================================================
 
 MIN_QUALITY_SCORE = 40
+
+GEMINI_FAILURE_THRESHOLD = 3
+
+
+# ==========================================================
+# Scrapers
+# ==========================================================
 
 SCRAPERS = [
     # AfriworkScraper(),
@@ -57,11 +65,14 @@ SCRAPERS = [
     # EthiNGOJobsScraper(),
     # EthioJobsScraper(),
     # EthioJobsInfoNGOScraper(),
-    # TelegramChannelScraper("effoyjobs"),
+
     JosadTelegramScraper("josad_software"),
+
+    # TelegramChannelScraper("effoyjobs"),
     # EtcarrerTelegramScraper("etcareersjobs"),
     # JobsEthioTelegramScraper("jobs_in_ethio"),
     # NgoJobEthiopiaTelegramScraper(),
+
     # HaHuJobsScraper(),
     # EthiopianAirlinesScraper(),
     # SafaricomEthiopiaScraper(),
@@ -69,200 +80,391 @@ SCRAPERS = [
 ]
 
 
+# ==========================================================
+# Main
+# ==========================================================
+
 async def main():
-  all_jobs = []
 
-  print("=" * 60)
-  print("Starting JobPulse Scrapers")
-  print("=" * 60)
+    all_jobs = []
 
-  # ------------------------------------------------------
-  # Run Scrapers
-  # ------------------------------------------------------
+    print("=" * 60)
+    print("Starting JobPulse Scrapers")
+    print("=" * 60)
 
-  for scraper in SCRAPERS:
-    try:
-      print(f"\n[{scraper.name}] Running...")
-      jobs = await scraper.run()
-      print(f"[{scraper.name}] {len(jobs)} jobs")
-      all_jobs.extend(jobs)
-    except Exception as e:
-      print(f"[{scraper.name}] FAILED")
-      print(e)
+    # ------------------------------------------------------
+    # Run Scrapers
+    # ------------------------------------------------------
 
-  print("\n===================================")
-  print(f"Total scraped jobs: {len(all_jobs)}")
-  print("===================================")
+    for scraper in SCRAPERS:
 
-  save_cache(SKILL_CACHE)
-
-  # ------------------------------------------------------
-  # Processing
-  # ------------------------------------------------------
-
-  unique_jobs = []
-  duplicate_count = 0
-  invalid_count = 0
-  low_quality_count = 0
-
-  # Circuit breaker state variables for Gemini API
-  gemini_failure_count = 0
-  GEMINI_FAILURE_THRESHOLD = 3
-  gemini_disabled = False
-
-  for job in all_jobs:
-    # ----------------------------------------------
-    # Normalize
-    # ----------------------------------------------
-    job = normalize_job(job)
-
-    # ----------------------------------------------
-    # Validate
-    # ----------------------------------------------
-    validation = validate_job(job)
-
-    if not validation.valid:
-      invalid_count += 1
-      print(f"\n❌ Invalid Job")
-      print(f"Title : {job.title}")
-      for error in validation.errors:
-        print(f"   - {error}")
-      continue
-
-
-
-    # ----------------------------------------------
-    # First duplication check
-    # URL/HASH Database Check 
-    # ----------------------------------------------
-    if job_exists(job):
-      duplicate_count += 1
-      print(f"⏭️ Already exists in DB: {job.title}")
-      continue
-
-
-
-    # ----------------------------------------------
-    # Extract Skills (Smart Local + Safe Gemini Fallback)
-    # ----------------------------------------------
-    try:
-      desc = getattr(job, "description", "")
-      title = getattr(job, "title", "")
-
-      if gemini_disabled:
-        # Bypass Gemini completely if threshold was reached
-        job.skills = _smart_local_extraction(
-            desc, title, boost_weights=True
-        )
-      else:
         try:
-          job.skills = extract_skills(
-              job_description_text=desc, job_title=title, boost_weights=True
-          )
-        except Exception as api_err:
-          gemini_failure_count += 1
-          print(
-              f"⚠️ Gemini API issue detected ({gemini_failure_count}/{GEMINI_FAILURE_THRESHOLD}): {api_err}"
-          )
 
-          if gemini_failure_count >= GEMINI_FAILURE_THRESHOLD:
+            print(f"\n[{scraper.name}] Running...")
+
+            jobs = await scraper.run()
+
             print(
-                "🚨 Gemini API appears down or unresponsive. Switching to local"
-                " skill extraction fallback for remaining jobs."
+                f"[{scraper.name}] {len(jobs)} jobs"
             )
-            gemini_disabled = True
 
-          # Fallback immediately for this job
-          job.skills = _smart_local_extraction(
-              desc, title, boost_weights=True
-          )
+            all_jobs.extend(jobs)
 
-    except Exception as e:
-      print(f"⚠️ Critical skill extraction error for {job.title}: {e}")
-      job.skills = []
+        except Exception as e:
 
-    # ----------------------------------------------
-    # Quality Score
-    # ----------------------------------------------
-    score, reasons = quality_score(job)
-    job.quality_score = score
+            print(
+                f"[{scraper.name}] FAILED"
+            )
+
+            logger.exception(e)
+
+    print("\n===================================")
+    print(
+        f"Total scraped jobs: {len(all_jobs)}"
+    )
+    print("===================================")
+
+    # ------------------------------------------------------
+    # Cache checkpoint
+    # ------------------------------------------------------
+
+    save_cache(SKILL_CACHE)
+
+    # ------------------------------------------------------
+    # Processing
+    # ------------------------------------------------------
+
+    unique_jobs = []
+
+    duplicate_count = 0
+    database_duplicate_count = 0
+    invalid_count = 0
+    low_quality_count = 0
+
+    # Gemini circuit breaker
+
+    gemini_failure_count = 0
+    gemini_disabled = False
+
+    # ------------------------------------------------------
+    # Process jobs
+    # ------------------------------------------------------
+
+    for job in all_jobs:
+
+        # --------------------------------------------------
+        # Normalize
+        # --------------------------------------------------
+
+        job = normalize_job(job)
+
+        # --------------------------------------------------
+        # Validate
+        # --------------------------------------------------
+
+        validation = validate_job(job)
+
+        if not validation.valid:
+
+            invalid_count += 1
+
+            print("\n❌ Invalid Job")
+            print(f"Title : {job.title}")
+
+            for error in validation.errors:
+
+                print(
+                    f"   - {error}"
+                )
+
+            continue
+
+        # --------------------------------------------------
+        # Early database duplicate check
+        #
+        # This happens BEFORE Gemini.
+        #
+        # URL/hash lookup is cheap compared with
+        # skill extraction.
+        # --------------------------------------------------
+
+        try:
+
+            if job_exists(job):
+
+                database_duplicate_count += 1
+
+                print(
+                    f"⏭️ Already exists in DB: "
+                    f"{job.title}"
+                )
+
+                continue
+
+        except Exception as e:
+
+            # Do not silently discard a job if the
+            # duplicate check itself fails.
+            #
+            # save_job() still performs the final
+            # database duplicate protection.
+
+            print(
+                f"⚠️ Database duplicate check failed "
+                f"for {job.title}: {e}"
+            )
+
+        # --------------------------------------------------
+        # Skill extraction
+        #
+        # Only jobs that survived the cheap DB check
+        # reach this point.
+        # --------------------------------------------------
+
+        try:
+
+            desc = getattr(
+                job,
+                "description",
+                "",
+            )
+
+            title = getattr(
+                job,
+                "title",
+                "",
+            )
+
+            if gemini_disabled:
+
+                job.skills = _smart_local_extraction(
+                    desc,
+                    title,
+                    boost_weights=True,
+                )
+
+            else:
+
+                try:
+
+                    job.skills = extract_skills(
+                        job_description_text=desc,
+                        job_title=title,
+                        boost_weights=True,
+                    )
+
+                except Exception as api_err:
+
+                    gemini_failure_count += 1
+
+                    print(
+                        f"⚠️ Gemini API issue detected "
+                        f"({gemini_failure_count}/"
+                        f"{GEMINI_FAILURE_THRESHOLD}): "
+                        f"{api_err}"
+                    )
+
+                    if (
+                        gemini_failure_count
+                        >= GEMINI_FAILURE_THRESHOLD
+                    ):
+
+                        print(
+                            "🚨 Gemini API appears down "
+                            "or unresponsive. Switching "
+                            "to local skill extraction "
+                            "for remaining jobs."
+                        )
+
+                        gemini_disabled = True
+
+                    # Immediate fallback
+
+                    job.skills = _smart_local_extraction(
+                        desc,
+                        title,
+                        boost_weights=True,
+                    )
+
+        except Exception as e:
+
+            print(
+                f"⚠️ Critical skill extraction error "
+                f"for {job.title}: {e}"
+            )
+
+            job.skills = []
+
+        # --------------------------------------------------
+        # Quality score
+        # --------------------------------------------------
+
+        score, reasons = quality_score(job)
+
+        job.quality_score = score
+
+        print(
+            f"⭐ {score:02d}/100 - "
+            f"{job.title} | "
+            f"Skills: {len(job.skills)} detected"
+        )
+
+        if score < MIN_QUALITY_SCORE:
+
+            low_quality_count += 1
+
+            print(
+                "   Low quality -> skipped"
+            )
+
+            continue
+
+        # --------------------------------------------------
+        # Current-run fuzzy duplicate detection
+        #
+        # Level 1/2 URL/hash checks are handled here
+        # in-memory by the existing deduplication system.
+        #
+        # We are keeping this logic centralized in the
+        # existing is_probable_duplicate() implementation
+        # for now.
+        # --------------------------------------------------
+
+        duplicate = False
+
+        for existing_job in unique_jobs:
+
+            if is_probable_duplicate(
+                job,
+                existing_job,
+            ):
+
+                duplicate = True
+
+                break
+
+        if duplicate:
+
+            duplicate_count += 1
+
+            print(
+                f"⏭️ Duplicate skipped: "
+                f"{job.title}"
+            )
+
+            continue
+
+        # --------------------------------------------------
+        # Unique job for this run
+        # --------------------------------------------------
+
+        unique_jobs.append(job)
+
+    # ======================================================
+    # Processing Summary
+    # ======================================================
+
+    print("\n===================================")
+    print("Processing Summary")
+    print("===================================")
 
     print(
-        f"⭐ {score:02d}/100 - {job.title} | Skills: {len(job.skills)} detected"
+        f"Scraped Jobs          : "
+        f"{len(all_jobs)}"
     )
 
-    if score < MIN_QUALITY_SCORE:
-      low_quality_count += 1
-      print("   Low quality -> skipped")
-      continue
+    print(
+        f"Invalid Jobs          : "
+        f"{invalid_count}"
+    )
 
-    # ----------------------------------------------
-    # Current-run duplicate detection
-    # ----------------------------------------------
-    duplicate = False
+    print(
+        f"DB Duplicates         : "
+        f"{database_duplicate_count}"
+    )
 
-    for existing_job in unique_jobs:
-      if is_probable_duplicate(job, existing_job):
-        duplicate = True
-        break
+    print(
+        f"Low Quality           : "
+        f"{low_quality_count}"
+    )
 
-    if duplicate:
-      duplicate_count += 1
-      print(f"⏭️ Duplicate skipped: {job.title}")
-      continue
+    print(
+        f"Current-run Duplicates: "
+        f"{duplicate_count}"
+    )
 
-    unique_jobs.append(job)
+    print(
+        f"Ready To Save         : "
+        f"{len(unique_jobs)}"
+    )
 
-  # ------------------------------------------------------
-  # Summary
-  # ------------------------------------------------------
+    print("===================================")
 
-  print("\n===================================")
-  print("Processing Summary")
-  print("===================================")
+    # ======================================================
+    # Save
+    # ======================================================
 
-  print(f"Scraped Jobs     : {len(all_jobs)}")
-  print(f"Invalid Jobs     : {invalid_count}")
-  print(f"Low Quality      : {low_quality_count}")
-  print(f"Duplicates       : {duplicate_count}")
-  print(f"Ready To Save    : {len(unique_jobs)}")
+    saved = 0
+    failed = 0
 
-  print("===================================")
+    print("\nSaving jobs...\n")
 
-  # ------------------------------------------------------
-  # Save
-  # ------------------------------------------------------
+    for job in unique_jobs:
 
-  saved = 0
-  failed = 0
+        try:
 
-  print("\nSaving jobs...\n")
+            result = save_job(job)
 
-  for job in unique_jobs:
-    try:
-      result = save_job(job)
-      if result:
-        saved += 1
-      else:
-        # save_job() returns None if database duplicate was detected
-        pass
-    except Exception as e:
-      failed += 1
-      print(f"❌ Failed: {job.title}")
-      print(e)
+            if result:
 
-  # Final cache checkpoint save
-  save_cache(SKILL_CACHE)
+                saved += 1
 
-  print("\n===================================")
-  print("Finished")
-  print("===================================")
+            else:
 
-  print(f"Saved            : {saved}")
-  print(f"Failed           : {failed}")
+                # save_job() returns None when the database
+                # duplicate protection detects an existing job.
 
-  print("===================================")
+                duplicate_count += 1
 
+        except Exception as e:
+
+            failed += 1
+
+            print(
+                f"❌ Failed: {job.title}"
+            )
+
+            logger.exception(e)
+
+    # ------------------------------------------------------
+    # Final cache checkpoint
+    # ------------------------------------------------------
+
+    save_cache(SKILL_CACHE)
+
+    # ======================================================
+    # Finished
+    # ======================================================
+
+    print("\n===================================")
+    print("Finished")
+    print("===================================")
+
+    print(
+        f"Saved            : {saved}"
+    )
+
+    print(
+        f"Failed           : {failed}"
+    )
+
+    print("===================================")
+
+
+# ==========================================================
+# Entry point
+# ==========================================================
 
 if __name__ == "__main__":
-  asyncio.run(main())
+
+    asyncio.run(main())
