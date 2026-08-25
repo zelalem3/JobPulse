@@ -549,5 +549,54 @@
     "Software Maintenance",
     "Software Testing",
     "Version Control"
+  ],
+  "37e1e022da803998c7a161d43433c5edf19f1ff178f5132f1c0a68812dcb03a8": [
+    "Collaboration"
+  ],
+  "e3814e715e7273b8a400a0c0f9bba013494dcaaabf06a1af2edebd4c12dd0b9c": [
+    "Attention to Detail",
+    "Communication",
+    "Interpersonal Skills",
+    "Office Productivity Software",
+    "Project Coordination",
+    "Scheduling Software",
+    "Task Management Software"
+  ],
+  "23a2c6ae7d0aa1a3f9de939f3d28a8afadb73739d97c476925d15bb026f6155c": [
+    "API Development",
+    "Background Job Processing",
+    "Concurrency",
+    "Containers",
+    "Database Design",
+    "Frontend Development",
+    "Linux",
+    "Responsive Design",
+    "Scalability"
+  ],
+  "4c733325f1099934eeab0088333fca391501ab54cb9798d78eff47e439910c7b": [
+    "API Integration",
+    "Backend Development",
+    "Electronic Invoicing",
+    "Fiscal Systems",
+    "Invoicing Systems",
+    "Multi-tenancy",
+    "System Integration"
+  ],
+  "a6c01ab0b3a63894aa4e2936de2e618a71e2c6227ef1f8f2abeaa5881c537e11": [],
+  "33b7a421957655581a9b33e78e93cc172bfb6ea4fe8b9829daef3f243bb92a56": [
+    "AI Model Deployment",
+    "API Development",
+    "Artificial Intelligence",
+    "Backend Development",
+    "Chatbot Development",
+    "Cloud Computing",
+    "Conversational AI",
+    "Database Management",
+    "Frontend Development",
+    "JavaScript",
+    "Machine Learning",
+    "Messaging Platform Integration",
+    "Natural Language Processing (NLP)",
+    "Python"
   ]
 }
