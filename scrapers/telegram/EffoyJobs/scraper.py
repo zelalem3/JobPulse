@@ -57,7 +57,7 @@ class TelegramChannelScraper(BaseScraper):
         urls = re.findall(r"https?://[^\s]+", text)
         if urls:
             url = next((u for u in urls if "t.me" not in u), urls[0])
-        final_url = url or f"https://t.me/{self.channel}"
+        final_url = url or f"https://t.me/{self.channel}/{message.id}"
 
         # --- Skill Extraction via addskill ---
         extracted_skills = extract_skills(
@@ -80,16 +80,34 @@ class TelegramChannelScraper(BaseScraper):
             source=f"Telegram: {self.channel}",
             url=str(final_url)
         )
-
     async def run(self):
-        """The Main Orchestrator."""
+        """Fetch and return jobs for centralized processing."""
+
         print(f"[{self.name}] Starting...")
+
         messages = await self.fetch()
-        
+
+        scraped_jobs = []
+
         for msg in messages:
             try:
                 job_data = self.parse(msg)
-                save_job(job_data)
-                print(f"Saved: {job_data.title}")
+
+                if job_data:
+                    scraped_jobs.append(job_data)
+
+                    print(
+                        f"Saved (queued): "
+                        f"{job_data.title}"
+                    )
+                else:
+                    print(
+                        "Skipped empty or invalid message."
+                    )
+
             except Exception as e:
-                print(f"Error parsing Telegram msg: {e}")
+                print(
+                    f"Error parsing Telegram msg: {e}"
+                )
+
+        return scraped_jobs

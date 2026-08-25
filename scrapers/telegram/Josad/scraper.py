@@ -146,7 +146,7 @@ class JosadTelegramScraper(BaseScraper):
 
         return JobListing(
             title=clean_title,
-            location="N/A",
+            location="Addis Ababa",
             description=text[:2000],  
             url=url, 
             salary=salary, 
