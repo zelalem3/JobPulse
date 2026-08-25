@@ -7,6 +7,8 @@ import re
 import time
 from dotenv import load_dotenv
 from google import genai
+from common.deduplication import generate_dedup_hash, normalize_url
+from common.database import job_exists
 
 # Scrapers
 from Afriwork.scraper import AfriworkScraper
@@ -126,6 +128,19 @@ async def main():
       for error in validation.errors:
         print(f"   - {error}")
       continue
+
+
+
+    # ----------------------------------------------
+    # First duplication check
+    # URL/HASH Database Check 
+    # ----------------------------------------------
+    if job_exists(job):
+      duplicate_count += 1
+      print(f"⏭️ Already exists in DB: {job.title}")
+      continue
+
+
 
     # ----------------------------------------------
     # Extract Skills (Smart Local + Safe Gemini Fallback)

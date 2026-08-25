@@ -134,3 +134,30 @@ def save_job_skills(conn, job_id, skills_list):
     except Exception as skill_err:
         print(f"\n⚠️ Warning: Failed to save skills for job ID {job_id}: {skill_err}")
         conn.rollback()
+
+def job_exists(job) -> bool:
+  """
+    Fast existence check using indexed URL and dedup_hash.
+    Returns True if the job already exists in PostgreSQL.
+  """
+  url = normalize_url(job.url)
+  dedup_hash = generate_dedup_hash(job)
+
+  conn = get_connection()
+  cur = conn.cursor()
+  cur.execute(
+    """
+    SELECT EXISTS (
+        SELECT 1
+        FROM job_listings
+        WHERE url = %s
+           OR dedup_hash = %s
+    )
+    """,
+    (url, dedup_hash),
+)
+
+  exists = cur.fetchone()[0]
+  cur.close()
+  conn.close()
+  return exists
