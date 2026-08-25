@@ -2,6 +2,7 @@ import json
 from common.company import resolve_company
 from common.db_connection import get_connection
 from common.deduplication import normalize_url,generate_dedup_hash
+import psycopg2
 
 def save_job(job_data):
     """
@@ -24,6 +25,8 @@ def save_job(job_data):
         except Exception as ce:
             print(f"\n⚠️ Company resolution warning for '{raw_company_name}': {ce}")
 
+    dedup_hash = generate_dedup_hash(job_data)
+
     safe_data = {
         "company_id": company_id,
         "title": data.get("title"),
@@ -38,25 +41,56 @@ def save_job(job_data):
         "posted_at": data.get("posted_at") or data.get("posted_date"),
         "source": data.get("source", "Ethiopian Airlines"),
         "url": data.get("url"),
+        "dedup_hash": dedup_hash,
         "responsibilities": data.get("responsibilities"),
         "is_active": data.get("is_active", True),
         "quality_score": data.get("quality_score", 0),
     }
-
     # Query without 'skills' column
     query = """
         INSERT INTO job_listings (
-            company_id, title, location, requirements, description, 
-            employment_type, experience_level, salary, category, 
-            deadline, posted_at, source, url, responsibilities, 
-            is_active, quality_score, created_at, updated_at
-        ) VALUES (
-            %(company_id)s, %(title)s, %(location)s, %(requirements)s, %(description)s, 
-            %(employment_type)s, %(experience_level)s, %(salary)s, %(category)s, 
-            %(deadline)s, %(posted_at)s, %(source)s, %(url)s, %(responsibilities)s, 
-            %(is_active)s, %(quality_score)s, NOW(), NOW()
+            company_id,
+            title,
+            location,
+            requirements,
+            description,
+            employment_type,
+            experience_level,
+            salary,
+            category,
+            deadline,
+            posted_at,
+            source,
+            url,
+            dedup_hash,
+            responsibilities,
+            is_active,
+            quality_score,
+            created_at,
+            updated_at
         )
-        ON CONFLICT (url) DO UPDATE 
+        VALUES (
+            %(company_id)s,
+            %(title)s,
+            %(location)s,
+            %(requirements)s,
+            %(description)s,
+            %(employment_type)s,
+            %(experience_level)s,
+            %(salary)s,
+            %(category)s,
+            %(deadline)s,
+            %(posted_at)s,
+            %(source)s,
+            %(url)s,
+            %(dedup_hash)s,
+            %(responsibilities)s,
+            %(is_active)s,
+            %(quality_score)s,
+            NOW(),
+            NOW()
+        )
+        ON CONFLICT (url) DO UPDATE
         SET updated_at = NOW()
         RETURNING id;
     """
@@ -136,61 +170,59 @@ def save_job_skills(conn, job_id, skills_list):
         print(f"\n⚠️ Warning: Failed to save skills for job ID {job_id}: {skill_err}")
         conn.rollback()
 
+
 def job_exists(job) -> bool:
     """
-    Fast existence check using indexed URL and dedup_hash.
-
-    Retries once when a transient PostgreSQL connection
-    failure occurs.
+    Debug version of database existence check.
     """
 
     url = normalize_url(job.url)
     dedup_hash = generate_dedup_hash(job)
 
-    for attempt in range(2):
+    conn = get_connection()
 
-        conn = None
+    try:
+        with conn.cursor() as cur:
 
-        try:
-            conn = get_connection()
+            cur.execute(
+                """
+                SELECT id, title, url, dedup_hash
+                FROM job_listings
+                WHERE url = %s
+                """,
+                (url,),
+            )
 
-            with conn.cursor() as cur:
+            url_match = cur.fetchone()
 
-                cur.execute(
-                    """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM job_listings
-                        WHERE url = %s
-                           OR dedup_hash = %s
-                    )
-                    """,
-                    (url, dedup_hash),
-                )
+            cur.execute(
+                """
+                SELECT id, title, url, dedup_hash
+                FROM job_listings
+                WHERE dedup_hash = %s
+                """,
+                (dedup_hash,),
+            )
 
-                return cur.fetchone()[0]
+            hash_match = cur.fetchone()
 
-        except psycopg2.OperationalError as e:
+            print(
+                f"\n🔎 DUP CHECK: {job.title}"
+            )
+            print(
+                f"   URL:  {url}"
+            )
+            print(
+                f"   HASH: {dedup_hash}"
+            )
+            print(
+                f"   URL MATCH:  {url_match}"
+            )
+            print(
+                f"   HASH MATCH: {hash_match}"
+            )
 
-            if attempt == 0:
+            return bool(url_match or hash_match)
 
-                print(
-                    "⚠️ Temporary database connection "
-                    "failure during duplicate check. "
-                    "Retrying..."
-                )
-
-                continue
-
-            raise
-
-        finally:
-
-            if conn is not None:
-
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-
-    return False
+    finally:
+        conn.close()
