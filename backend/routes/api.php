@@ -64,15 +64,15 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::get('/trigger-daily-recommendations', function (Request $request) {
-    if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
+    if ($request->query('token') !== config('services.cron.token')) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    Artisan::call('recommendations:send');
+    // Run the command asynchronously or push it to a background process
+    Artisan::queue('recommendations:send');
 
     return response()->json([
-        'status' => 'Recommendation emails triggered successfully!',
-        'output' => Artisan::output()
+        'status' => 'Recommendation dispatch process started successfully in the background!'
     ]);
 });
 
