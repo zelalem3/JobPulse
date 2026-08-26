@@ -63,20 +63,31 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [LoginController::class, 'login']); 
 });
 
-Route::get('/trigger-daily-recommendations', function (Request $request) {
-    if ($request->query('token') !== config('services.cron.token')) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+
+Route::get(
+    '/trigger-daily-recommendations',
+    function (Request $request) {
+
+        if (
+            $request->query('token')
+            !== config('services.cron.token')
+        ) {
+            return response()->json([
+                'error' => 'Unauthorized',
+            ], 401);
+        }
+
+        Artisan::queue(
+            'recommendations:send'
+        );
+
+        return response()->json([
+            'status' =>
+                'Recommendation dispatch process started successfully in the background.',
+        ]);
     }
+);
 
-    // Run the command asynchronously or push it to a background process
-    Artisan::queue('recommendations:send');
-
-    return response()->json([
-        'status' => 'Recommendation dispatch process started successfully in the background!'
-    ]);
-});
-
-// ✅ Fixed: Removed the conflicting JobSearchController route override so api/jobs works cleanly
 Route::apiResource('jobs', JobListingController::class)->only(['index', 'show']);
 
 Route::get('/test-mail', function () {
