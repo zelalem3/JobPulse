@@ -25,3 +25,4 @@ Thumbs.db
 
 # session files
 jobpulse_session.session
+*.session
