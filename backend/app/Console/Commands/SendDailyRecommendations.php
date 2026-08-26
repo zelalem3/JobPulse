@@ -1,26 +1,44 @@
 <?php
- 
+
 namespace App\Console\Commands;
 
-use App\Models\User;
 use App\Jobs\SendUserRecommendationJob;
+use App\Models\User;
 use Illuminate\Console\Command;
 
 class SendDailyRecommendations extends Command
 {
     protected $signature = 'recommendations:send';
-    protected $description = 'Dispatch recommendation emails for all users';
 
-    public function handle()
+    protected $description = 'Dispatch daily recommendation jobs for all users';
+
+    public function handle(): int
     {
         $this->info('Dispatching recommendation jobs...');
 
-        User::query()->select(['id', 'email', 'location'])->chunkById(500, function ($users) {
-            foreach ($users as $user) {
-                SendUserRecommendationJob::dispatch($user);
-            }
-        });
+        $dispatched = 0;
 
-        $this->info('All recommendation jobs have been dispatched to the queue!');
+        User::query()
+            ->select(['id'])
+            ->whereNotNull('email')
+            ->chunkById(500, function ($users) use (&$dispatched) {
+                foreach ($users as $user) {
+                    SendUserRecommendationJob::dispatch($user->id);
+
+                    $dispatched++;
+                }
+
+                $this->info(
+                    "Dispatched {$dispatched} recommendation jobs..."
+                );
+            });
+
+        $this->newLine();
+
+        $this->info(
+            "All recommendation jobs have been dispatched: {$dispatched}"
+        );
+
+        return self::SUCCESS;
     }
 }
