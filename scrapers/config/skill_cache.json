@@ -605,5 +605,28 @@
   "9df6f51234322153a17f3bef1b9d9db43cd0ceb6473b765cb0bf0fe7a1e0bc72": [
     "Business Development"
   ],
-  "75f3548d8ffba66c8489d0219036ccaf332aa2bb76098c2e985bbde541d9fc42": []
+  "75f3548d8ffba66c8489d0219036ccaf332aa2bb76098c2e985bbde541d9fc42": [],
+  "4b117b96608cc2ddaeb1b2a3f049c76232a5ed822f855ceabfe69af6a166f4af": [
+    "Fineract",
+    "Java",
+    "REST APIs",
+    "SQL",
+    "Spring"
+  ],
+  "3637910756d9f34c4023dc9190100b8ba61fbf3e5cb81ef4aa80b0306525e9b8": [
+    "5G",
+    "Ericsson products",
+    "LTE",
+    "RAN"
+  ],
+  "845ed849d18c35edaaa3caf2b81b42590f245746fd7a06bdb7bc4812e3b45c7f": [
+    "Apache Fineract"
+  ],
+  "54238a0d9d89202e6371be156a09ae679193a791924250df652bd9b733d42264": [
+    "4G",
+    "5G",
+    "Ericsson products",
+    "LTE",
+    "RAN"
+  ]
 }

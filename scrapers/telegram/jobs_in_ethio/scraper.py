@@ -20,9 +20,10 @@ class JobsEthioTelegramScraper(BaseScraper):
         # Convert API_ID to an integer
         raw_api_id = os.getenv("API_ID")
         self.api_id = int(raw_api_id) if raw_api_id else 0
+        session_name = f"jobpulse_{channel_username}"
         
         self.api_hash = os.getenv("API_HASH")
-        self.client = TelegramClient("jobpulse_session", self.api_id, self.api_hash)
+        self.client = TelegramClient(channel_username, self.api_id, self.api_hash)
 
     async def fetch(self) -> list:
         """Connects and fetches messages."""

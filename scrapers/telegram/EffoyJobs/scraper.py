@@ -1,87 +1,201 @@
-import re
 import os
-from telethon import TelegramClient
-from common.base_scraper import BaseScraper
-from common.models import JobListing
-from common.database import save_job
-from addskill import extract_skills  
+import re
 
 from dotenv import load_dotenv
+from telethon import TelegramClient
+
+from common.base_scraper import BaseScraper
+from common.models import JobListing
+
 load_dotenv()
 
 
-def safe_str(text: any, length: int = 250) -> str:
-    if text is None: return ""
+def safe_str(text, length: int = 250) -> str:
+    if text is None:
+        return ""
+
     return str(text).strip()[:length]
 
 
 class TelegramChannelScraper(BaseScraper):
-    def __init__(self, channel_username):
+
+    def __init__(self, channel_username: str):
         super().__init__(f"Telegram:{channel_username}")
+
         self.channel = channel_username
+
         self.api_id = os.getenv("API_ID")
         self.api_hash = os.getenv("API_HASH")
-        self.client = TelegramClient("jobpulse_session", self.api_id, self.api_hash)
 
-    def _clean_text(self, text):
-        return re.sub(r"^[★📌✨♦✅\s•\-\s]+", "", text).strip()
+        if not self.api_id or not self.api_hash:
+            raise RuntimeError(
+                "API_ID and API_HASH must be configured in the environment."
+            )
+
+        # IMPORTANT:
+        # Every Telegram channel gets its own Telethon session.
+        #
+        # This prevents multiple async scrapers from trying to
+        # write to the same SQLite session database.
+        session_name = f"jobpulse_{channel_username}"
+
+        self.client = TelegramClient(
+            session_name,
+            int(self.api_id),
+            self.api_hash,
+        )
+
+    def _clean_text(self, text: str) -> str:
+        if not text:
+            return ""
+
+        return re.sub(
+            r"^[★📌✨♦✅\s•*\-]+",
+            "",
+            text,
+        ).strip()
 
     async def fetch(self) -> list:
-        """Connects and fetches messages."""
+        """
+        Connect to Telegram and fetch recent messages.
+        """
+
         jobs_list = []
+
         async with self.client:
-            # Iterating messages
-            async for message in self.client.iter_messages(self.channel, limit=20):
+
+            async for message in self.client.iter_messages(
+                self.channel,
+                limit=20,
+            ):
                 if message.text:
                     jobs_list.append(message)
+
         return jobs_list
 
     def parse(self, message) -> JobListing:
-        """Parses a Telethon message object into a JobListing with addskill integration."""
-        text = message.text
-        
-        # --- Logic ---
-        lines = [line.strip() for line in text.split("\n") if line.strip()]
-        title = self._clean_text(lines[0]) if lines else "Untitled Job"
+        """
+        Convert a Telegram message into a JobListing.
 
-        # Regex Helpers
-        def get_match(pattern, text):
-            match = re.search(pattern, text, re.IGNORECASE)
-            return match.group(1).strip() if match else None
+        Skill extraction is intentionally NOT performed here.
+        Centralized processing in run.py handles that.
+        """
 
-        deadline = get_match(r"(?:Deadline|የማመልከቻ ማብቂያ ቀን):\s*([^\n]+)", text)
-        salary = get_match(r"(?:ደመወዝ|Salary):\s*([^\n]+)", text) or "Negotiable"
+        text = message.text or ""
 
-        # URL Extraction
-        url = None
-        urls = re.findall(r"https?://[^\s]+", text)
-        if urls:
-            url = next((u for u in urls if "t.me" not in u), urls[0])
-        final_url = url or f"https://t.me/{self.channel}/{message.id}"
+        lines = [
+            line.strip()
+            for line in text.split("\n")
+            if line.strip()
+        ]
 
-        # --- Skill Extraction via addskill ---
-        extracted_skills = extract_skills(
-            job_description_text=safe_str(text, 2500),
-            job_title=safe_str(title, 250)
+        title = (
+            self._clean_text(lines[0])
+            if lines
+            else "Untitled Job"
         )
+
+        def get_match(pattern, value):
+            match = re.search(
+                pattern,
+                value,
+                re.IGNORECASE,
+            )
+
+            return (
+                match.group(1).strip()
+                if match
+                else None
+            )
+
+        deadline = get_match(
+            r"(?:Deadline|የማመልከቻ ማብቂያ ቀን):\s*([^\n]+)",
+            text,
+        )
+
+        salary = (
+            get_match(
+                r"(?:ደመወዝ|Salary):\s*([^\n]+)",
+                text,
+            )
+            or "Negotiable"
+        )
+
+        # --------------------------------------------------
+        # URL extraction
+        # --------------------------------------------------
+
+        urls = re.findall(
+            r"https?://[^\s]+",
+            text,
+        )
+
+        url = None
+
+        if urls:
+            url = next(
+                (
+                    u
+                    for u in urls
+                    if "t.me" not in u
+                ),
+                urls[0],
+            )
+
+        final_url = (
+            url
+            or f"https://t.me/{self.channel}/{message.id}"
+        )
+
+        # --------------------------------------------------
+        # Job
+        # --------------------------------------------------
 
         return JobListing(
-            title=safe_str(title, 250) or "Untitled Job",
+            title=safe_str(
+                title,
+                250,
+            ) or "Untitled Job",
+
             company="Telegram Channel",
-            location=safe_str("Addis Ababa", 250), 
-            description=safe_str(text, 2000),
-            requirements=None, 
+
+            location=safe_str(
+                "Addis Ababa",
+                250,
+            ),
+
+            description=safe_str(
+                text,
+                2000,
+            ),
+
+            requirements=None,
+
             employment_type="Full Time",
+
             experience_level=None,
-            salary=safe_str(salary, 250),
-            skills=extracted_skills,
-            deadline=None,
+
+            salary=safe_str(
+                salary,
+                250,
+            ),
+
+            # Centralized run.py will populate this.
+            skills=[],
+
+            deadline=deadline,
+
             posted_at=message.date,
+
             source=f"Telegram: {self.channel}",
-            url=str(final_url)
+
+            url=str(final_url),
         )
+
     async def run(self):
-        """Fetch and return jobs for centralized processing."""
+        """
+        Fetch and parse Telegram jobs asynchronously.
+        """
 
         print(f"[{self.name}] Starting...")
 
@@ -89,25 +203,35 @@ class TelegramChannelScraper(BaseScraper):
 
         scraped_jobs = []
 
-        for msg in messages:
-            try:
-                job_data = self.parse(msg)
+        for message in messages:
 
-                if job_data:
-                    scraped_jobs.append(job_data)
+            try:
+                job = self.parse(message)
+
+                if job:
+                    scraped_jobs.append(job)
 
                     print(
-                        f"Saved (queued): "
-                        f"{job_data.title}"
+                        f"[{self.name}] "
+                        f"Queued: {job.title}"
                     )
+
                 else:
                     print(
-                        "Skipped empty or invalid message."
+                        f"[{self.name}] "
+                        f"Skipped empty message."
                     )
 
             except Exception as e:
+
                 print(
-                    f"Error parsing Telegram msg: {e}"
+                    f"[{self.name}] "
+                    f"Error parsing Telegram message: {e}"
                 )
+
+        print(
+            f"[{self.name}] "
+            f"Finished: {len(scraped_jobs)} jobs"
+        )
 
         return scraped_jobs

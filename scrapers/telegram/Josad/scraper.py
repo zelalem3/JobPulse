@@ -17,7 +17,8 @@ class JosadTelegramScraper(BaseScraper):
         self.channel = channel_username
         self.api_id = os.getenv("API_ID")
         self.api_hash = os.getenv("API_HASH")
-        self.client = TelegramClient("jobpulse_session", self.api_id, self.api_hash)
+        session_name = f"jobpulse_{channel_username}"
+        self.client = TelegramClient(session_name, self.api_id, self.api_hash)
 
     def _clean_text(self, text):
         if not text:
