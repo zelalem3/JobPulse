@@ -31,20 +31,17 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: jobpulse-queue-worker
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
-    volumes:
-      - ./backend:/var/www
-    env_file:
-      - ./backend/.env
-    environment:
-      - QUEUE_CONNECTION=redis
-      - REDIS_HOST=redis
+    restart: unless-stopped
+    command: >
+      php artisan queue:work redis
+      --queue=recommendations,default
+      --sleep=3
+      --tries=3
+      --timeout=120
+      --verbose
     depends_on:
-      - backend
       - redis
       - postgres
-    networks:
-      - app-network
 
   # --- FRONTEND (React + TS + Tailwind) ---
   frontend:
