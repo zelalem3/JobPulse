@@ -1,5 +1,3 @@
-
-
 networks:
   app-network:
     driver: bridge
@@ -20,7 +18,6 @@ services:
     env_file:
       - ./backend/.env
     environment:
-     
       - REDIS_HOST=redis
     depends_on:
       - postgres
@@ -33,18 +30,19 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: jobpulse-queue-worker-1
-    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    container_name: jobpulse-queue-worker
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
     volumes:
       - ./backend:/var/www
     env_file:
       - ./backend/.env
     environment:
-  
+      - QUEUE_CONNECTION=redis
       - REDIS_HOST=redis
     depends_on:
       - backend
       - redis
+      - postgres
     networks:
       - app-network
 
@@ -79,7 +77,6 @@ services:
       - redis
     networks:
       - app-network
-  
 
   mailpit:
     image: axllent/mailpit
