@@ -92,7 +92,7 @@ SCRAPERS = [
     JosadTelegramScraper("josad_software"),
     EtcarrerTelegramScraper("etcareersjobs"),
     JobsEthioTelegramScraper("jobs_in_ethio"),
-    NgoJobEthiopiaTelegramScraper(),
+    NgoJobEthiopiaTelegramScraper("ngojobethiopia"),
 
     HaHuJobsScraper(),
     EthiopianAirlinesScraper(),
