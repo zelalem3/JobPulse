@@ -6,6 +6,7 @@ from telethon import TelegramClient
 
 from common.base_scraper import BaseScraper
 from common.models import JobListing
+from telethon.sessions import StringSession
 
 load_dotenv()
 
@@ -24,23 +25,24 @@ class TelegramChannelScraper(BaseScraper):
 
         self.channel = channel_username
 
-        self.api_id = os.getenv("API_ID")
-        self.api_hash = os.getenv("API_HASH")
+        # Support both naming conventions so it works locally and in GitHub Actions
+        self.api_id = os.getenv("TELEGRAM_API_ID") or os.getenv("API_ID")
+        self.api_hash = os.getenv("TELEGRAM_API_HASH") or os.getenv("API_HASH")
+        self.string_session = os.getenv("TELEGRAM_STRING_SESSION")
 
         if not self.api_id or not self.api_hash:
             raise RuntimeError(
-                "API_ID and API_HASH must be configured in the environment."
+                "TELEGRAM_API_ID and TELEGRAM_API_HASH must be configured in the environment."
             )
 
-        # IMPORTANT:
-        # Every Telegram channel gets its own Telethon session.
-        #
-        # This prevents multiple async scrapers from trying to
-        # write to the same SQLite session database.
-        session_name = f"jobpulse_{channel_username}"
+        if not self.string_session:
+            raise RuntimeError(
+                "TELEGRAM_STRING_SESSION must be configured in the environment."
+            )
 
+        
         self.client = TelegramClient(
-            session_name,
+            StringSession(self.string_session),
             int(self.api_id),
             self.api_hash,
         )

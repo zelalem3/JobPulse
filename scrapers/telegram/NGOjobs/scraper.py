@@ -12,12 +12,12 @@ load_dotenv()
 
 
 class NgoJobEthiopiaTelegramScraper(BaseScraper):
-    def __init__(self):
-        super().__init__("Telegram:ngojobethiopia")
-        self.channel = "ngojobethiopia"
+    def __init__(self, channel_username):
+        super().__init__(f"Telegram:{channel_username}")
+        self.channel = channel_username
         self.api_id = os.getenv("API_ID")
         self.api_hash = os.getenv("API_HASH")
-        session_name = f"jobpulse_Telegram:ngojobethiopia"
+        session_name = f"jobpulse_{channel_username}"
         self.client = TelegramClient(session_name, self.api_id, self.api_hash)
 
     def _clean_text(self, text):

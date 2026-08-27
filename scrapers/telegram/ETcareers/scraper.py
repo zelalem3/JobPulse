@@ -7,7 +7,7 @@ from common.database import save_job
 from dotenv import load_dotenv
 from datetime import timedelta
 from addskill import extract_skills  
-
+from telethon.sessions import StringSession
 load_dotenv()
 
 
@@ -20,10 +20,25 @@ class EtcarrerTelegramScraper(BaseScraper):
     def __init__(self, channel_username):
         super().__init__(f"Telegram:{channel_username}")
         self.channel = channel_username
-        self.api_id = os.getenv("API_ID")
-        self.api_hash = os.getenv("API_HASH")
-        session_name = f"jobpulse_{channel_username}"
-        self.client = TelegramClient(session_name, self.api_id, self.api_hash)
+        
+        # Support both API_ID/API_HASH and TELEGRAM_API_ID/TELEGRAM_API_HASH
+        self.api_id = os.getenv("TELEGRAM_API_ID") or os.getenv("API_ID")
+        self.api_hash = os.getenv("TELEGRAM_API_HASH") or os.getenv("API_HASH")
+        self.string_session = os.getenv("TELEGRAM_STRING_SESSION")
+
+        if not self.api_id or not self.api_hash:
+            raise RuntimeError(
+                "API_ID/TELEGRAM_API_ID and API_HASH/TELEGRAM_API_HASH must be configured in the environment."
+            )
+
+        session_target = StringSession(self.string_session) if self.string_session else f"jobpulse_{channel_username}"
+
+        # Correct argument order: (session, api_id, api_hash)
+        self.client = TelegramClient(
+            session_target, 
+            int(self.api_id), 
+            self.api_hash
+        )
 
     async def fetch(self) -> list:
         """Connects and fetches messages."""
