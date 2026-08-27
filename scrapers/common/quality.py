@@ -142,15 +142,18 @@ def quality_score(job):
     # ========================================================
 
     if job.posted_at:
+        from datetime import timezone
+        
+        now = datetime.now(timezone.utc)
+        posted_at = job.posted_at
 
-        now = datetime.now(
-            job.posted_at.tzinfo
-            or timezone.utc
-        )
+        # Force both to be timezone-aware UTC datetimes
+        if posted_at.tzinfo is None:
+            posted_at = posted_at.replace(tzinfo=timezone.utc)
+        else:
+            posted_at = posted_at.astimezone(timezone.utc)
 
-        age = (
-            now - job.posted_at
-        ).days
+        age = (now - posted_at).days
 
         if age <= 3:
             score += 5
@@ -163,7 +166,6 @@ def quality_score(job):
 
     else:
         reasons.append("No posting date")
-
     # ========================================================
     # Normalize score
     # ========================================================
