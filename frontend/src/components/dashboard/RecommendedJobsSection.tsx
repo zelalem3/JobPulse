@@ -12,7 +12,7 @@ interface JobListing {
   deadline?: string | null;
   url: string | null;
   match_score?: number;
-  matched_skills?: string[];
+  matched_skills?: Array<{ id?: number; name: string; [key: string]: any } | string>;
   location_match?: boolean;
 }
 
@@ -97,14 +97,19 @@ export default function RecommendedJobs() {
                 )}
 
                 <div className="flex gap-1.5 flex-wrap pt-1">
-                  {job.matched_skills?.map((s) => (
-                    <span
-                      key={s}
-                      className="text-[11px] bg-emerald-950/60 text-emerald-300 border border-emerald-800/50 px-2.5 py-0.5 rounded-lg font-medium shadow-inner"
-                    >
-                      {s}
-                    </span>
-                  ))}
+                  {job.matched_skills?.map((s, idx) => {
+                    const skillName = typeof s === 'object' && s !== null ? s.name : s;
+                    const skillKey = typeof s === 'object' && s !== null && s.id ? s.id : idx;
+
+                    return (
+                      <span
+                        key={skillKey}
+                        className="text-[11px] bg-emerald-950/60 text-emerald-300 border border-emerald-800/50 px-2.5 py-0.5 rounded-lg font-medium shadow-inner"
+                      >
+                        {skillName}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
