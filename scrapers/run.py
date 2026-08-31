@@ -78,26 +78,26 @@ MAX_CONCURRENT_SCRAPERS = 5
 # ==========================================================
 
 SCRAPERS = [
-    AfriworkScraper(),
-    EthioReport(),
-    EthioJob(),
-    GeezJobsScraper(),
+    # AfriworkScraper(),
+    # EthioReport(),
+    # EthioJob(),
+    # GeezJobsScraper(),
     LinkedInJobsScraper(),
-    EthiNGOJobsScraper(),
-    EthioJobsScraper(),
-    EthioJobsInfoNGOScraper(),
+    # EthiNGOJobsScraper(),
+    # EthioJobsScraper(),
+    # EthioJobsInfoNGOScraper(),
 
-    TelegramChannelScraper("effoyjobs"),
+    # TelegramChannelScraper("effoyjobs"),
 
-    JosadTelegramScraper("josad_software"),
-    EtcarrerTelegramScraper("etcareersjobs"),
-    JobsEthioTelegramScraper("jobs_in_ethio"),
-    NgoJobEthiopiaTelegramScraper("ngojobethiopia"),
+    # JosadTelegramScraper("josad_software"),
+    # EtcarrerTelegramScraper("etcareersjobs"),
+    # JobsEthioTelegramScraper("jobs_in_ethio"),
+    # NgoJobEthiopiaTelegramScraper("ngojobethiopia"),
 
-    HaHuJobsScraper(),
-    EthiopianAirlinesScraper(),
-    SafaricomEthiopiaScraper(),
-    EthioTelecomScraper(),
+    # HaHuJobsScraper(),
+    # EthiopianAirlinesScraper(),
+    # SafaricomEthiopiaScraper(),
+    # EthioTelecomScraper(),
 ]
 
 

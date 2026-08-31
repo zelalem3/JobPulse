@@ -1,7 +1,8 @@
 import re
 import asyncio
 import time
-from datetime import datetime
+import random
+from datetime import datetime, timezone
 from urllib.parse import quote
 from bs4 import BeautifulSoup
 from curl_cffi import requests
@@ -37,15 +38,16 @@ class LinkedInJobsScraper(BaseScraper):
         return re.sub(r"\s+", " ", text).strip()
 
     def fetch(self) -> list:
-        """Loops through the keyword array and compiles unique job listings from LinkedIn guest search."""
+        """Loops through keywords and compiles unique job listings posted within the last 24 hours (f_TPR=r86400)."""
         unique_jobs = {}
 
         for kw in self.keywords:
             encoded_kw = quote(kw)
-            url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded_kw}&location={self.location}&start=0"
+            # f_TPR=r86400 filters jobs posted in the last 24 hours (86400 seconds)
+            url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded_kw}&location={self.location}&f_TPR=r86400&start=0"
             
             try:
-                print(f"[LinkedIn] Fetching jobs for keyword: '{kw}'...")
+                print(f"[LinkedIn] Fetching last-24h jobs for keyword: '{kw}'...")
                 response = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
                 
                 if response.status_code != 200:
@@ -61,6 +63,10 @@ class LinkedInJobsScraper(BaseScraper):
                     company_tag = card.find("h4", class_="base-search-card__subtitle")
                     location_tag = card.find("span", class_="job-search-card__location")
                     link_tag = card.find("a", class_="base-card__full-link")
+                    
+                    # Extract card-level datetime attribute if available (Format: YYYY-MM-DD)
+                    time_tag = card.find("time", class_="job-search-card__listdate")
+                    card_date = time_tag.get("datetime") if time_tag and time_tag.has_attr("datetime") else None
 
                     if title_tag and link_tag:
                         job_url = link_tag.get("href").split("?")[0]
@@ -70,19 +76,20 @@ class LinkedInJobsScraper(BaseScraper):
                                 "title": self._clean(title_tag.get_text()),
                                 "company": self._clean(company_tag.get_text()) if company_tag else "Not Specified",
                                 "location": self._clean(location_tag.get_text()) if location_tag else "Ethiopia",
-                                "url": job_url
+                                "url": job_url,
+                                "card_date": card_date
                             }
                             count += 1
 
                 print(f"[LinkedIn] Found {count} new unique jobs for '{kw}'.")
                 
-                # Fixed: Use standard time.sleep instead of asyncio.run inside background thread
-                time.sleep(1)
+                # Randomized jitter sleep to look human and avoid bans
+                time.sleep(random.uniform(2.5, 5.0))
 
             except Exception as e:
                 print(f"[LinkedIn] Error fetching keyword '{kw}': {e}")
 
-        print(f"[LinkedIn] Total unique jobs compiled across all keywords: {len(unique_jobs)}")
+        print(f"[LinkedIn] Total unique fresh jobs compiled across all keywords: {len(unique_jobs)}")
         return list(unique_jobs.values())
 
     def parse(self, job_info: dict) -> JobListing | None:
@@ -94,6 +101,18 @@ class LinkedInJobsScraper(BaseScraper):
 
             soup = BeautifulSoup(response.text, "lxml")
             
+            # Secondary check: Verify posted date text or metadata inside the job view if present
+            # If the card date is explicitly older than today's date, drop it.
+            if job_info.get("card_date"):
+                try:
+                    job_date_obj = datetime.strptime(job_info["card_date"], "%Y-%m-%d").date()
+                    today = datetime.now(timezone.utc).date()
+                    if job_date_obj < today:
+                        print(f"[LinkedIn] Skipping stale job (Posted {job_date_obj}): {url}")
+                        return None
+                except ValueError:
+                    pass
+
             desc_tag = soup.find("div", class_="show-more-less-html__markup")
             description = self._clean(desc_tag.get_text("\n", strip=True)) if desc_tag else ""
 
@@ -113,7 +132,7 @@ class LinkedInJobsScraper(BaseScraper):
                 salary="Negotiable",
                 category="IT & Software",
                 deadline=None,
-                posted_at=datetime.utcnow(),
+                posted_at=datetime.now(timezone.utc),
                 source="LinkedIn",
                 url=str(url),
                 skills=extracted_skills,
@@ -129,5 +148,6 @@ class LinkedInJobsScraper(BaseScraper):
             job = await asyncio.to_thread(self.parse, item)
             if job:
                 jobs.append(job)
-            await asyncio.sleep(1)
+            # Randomized async jitter sleep between parsing pages
+            await asyncio.sleep(random.uniform(1.5, 3.5))
         return jobs
