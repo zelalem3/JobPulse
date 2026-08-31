@@ -1,5 +1,9 @@
 import React from "react";
-import { MapPin, DollarSign, Briefcase } from "lucide-react";
+import {
+  MapPin,
+  DollarSign,
+  Briefcase,
+} from "lucide-react";
 
 interface PositionSpecsPanelProps {
   location: string;
@@ -13,48 +17,133 @@ export default function PositionSpecsPanel({
   type,
 }: PositionSpecsPanelProps) {
   return (
-    <div className="bg-slate-900/70 backdrop-blur-2xl rounded-3xl p-6 border border-slate-800/90 shadow-2xl space-y-4">
-      <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">
+    <div
+      className="
+        bg-slate-900/70
+        backdrop-blur-2xl
+        rounded-3xl
+        p-6
+        border border-slate-800/90
+        shadow-2xl
+      "
+    >
+      <h4
+        className="
+          text-xs
+          font-black
+          text-slate-300
+          uppercase
+          tracking-wider
+          mb-5
+        "
+      >
         Position Specs
       </h4>
 
-      <div className="space-y-4">
-        <div className="flex items-center gap-3.5 p-3 bg-slate-950/40 rounded-2xl border border-slate-800/60">
-          <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400 shrink-0">
-            <MapPin size={16} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+        {/* Location */}
+        <div
+          className="
+            p-3.5
+            bg-slate-950/40
+            rounded-2xl
+            border border-slate-800/60
+            hover:border-emerald-500/20
+            transition-colors
+          "
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin
+              size={14}
+              className="text-emerald-400"
+            />
+
+            <span
+              className="
+                text-[10px]
+                text-slate-500
+                font-black
+                uppercase
+                tracking-wider
+              "
+            >
               Location
-            </p>
-            <p className="text-xs font-bold text-white mt-0.5">{location}</p>
+            </span>
           </div>
+
+          <p className="text-sm font-bold text-white">
+            {location || "Not specified"}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3.5 p-3 bg-slate-950/40 rounded-2xl border border-slate-800/60">
-          <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400 shrink-0">
-            <DollarSign size={16} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+        {/* Compensation */}
+        <div
+          className="
+            p-3.5
+            bg-slate-950/40
+            rounded-2xl
+            border border-slate-800/60
+            hover:border-indigo-500/20
+            transition-colors
+          "
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign
+              size={14}
+              className="text-indigo-400"
+            />
+
+            <span
+              className="
+                text-[10px]
+                text-slate-500
+                font-black
+                uppercase
+                tracking-wider
+              "
+            >
               Compensation
-            </p>
-            <p className="text-xs font-bold text-white mt-0.5">
-              {salary || "Not Specified"}
-            </p>
+            </span>
           </div>
+
+          <p className="text-sm font-bold text-white">
+            {salary || "Not specified"}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3.5 p-3 bg-slate-950/40 rounded-2xl border border-slate-800/60">
-          <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400 shrink-0">
-            <Briefcase size={16} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+        {/* Employment */}
+        <div
+          className="
+            p-3.5
+            bg-slate-950/40
+            rounded-2xl
+            border border-slate-800/60
+            hover:border-blue-500/20
+            transition-colors
+          "
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Briefcase
+              size={14}
+              className="text-blue-400"
+            />
+
+            <span
+              className="
+                text-[10px]
+                text-slate-500
+                font-black
+                uppercase
+                tracking-wider
+              "
+            >
               Employment Type
-            </p>
-            <p className="text-xs font-bold text-white mt-0.5">{type}</p>
+            </span>
           </div>
+
+          <p className="text-sm font-bold text-white">
+            {type || "Not specified"}
+          </p>
         </div>
       </div>
     </div>
