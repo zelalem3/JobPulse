@@ -142,4 +142,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('job-alerts', [AlertController::class, 'create']);
     Route::put('job-alerts/{id}', [AlertController::class, 'update']);
     Route::delete('job-alerts/{id}', [AlertController::class, 'destroy']);
+
+
+    // ---- Job Recommendation -------
+    Route::get(
+    '/job/recommendation/{job}',
+    [RecommendationController::class, 'getRecommendation']
+);
 });

@@ -19,6 +19,22 @@ class RecommendationController extends Controller
         );
     }
 
+
+    /**
+     * Display a matching query to a user
+     */
+    public function getRecommendation(
+    Request $request,
+    RecommendationService $service,
+    $id
+) {
+    $job = JobListing::findOrFail($id);
+
+    return response()->json(
+        $service->calculateMatch($request->user(), $job)
+    );
+}
+
     /**
      * Store a newly created resource in storage.
      */

@@ -372,4 +372,30 @@ class RecommendationService
             trim($location)
         );
     }
+
+    public function calculateMatch(User $user, JobListing $job): array
+{
+    $userSkills = $user->skills()->get();
+    $jobSkills = $job->skills()->get();
+
+    $userSkillIds = $userSkills->pluck('id');
+    $jobSkillIds = $jobSkills->pluck('id');
+
+    $matchingSkillIds = $userSkillIds->intersect($jobSkillIds);
+
+    $matchedSkills = $jobSkills->whereIn('id', $matchingSkillIds);
+
+    $missingSkills = $jobSkills->whereNotIn('id', $matchingSkillIds);
+
+    $score = $jobSkills->count() > 0
+        ? round(($matchedSkills->count() / $jobSkills->count()) * 100)
+        : 0;
+
+    return [
+        'match_score' => $score,
+        'matched_skills' => $matchedSkills->values(),
+        'missing_skills' => $missingSkills->values(),
+    ];
+}
+
 }
