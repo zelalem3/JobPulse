@@ -308,13 +308,7 @@ def is_invalid_company(company):
 # ============================================================
 
 def clean_company_text(company):
-
-
-
     if not company:
-        return ""
-    
-    if is_invalid_company(company):
         return ""
 
     company = str(company).strip()
@@ -322,13 +316,11 @@ def clean_company_text(company):
     # --------------------------------------------------------
     # Remove Markdown / Telegram formatting
     # --------------------------------------------------------
-
     company = re.sub(r"[*_~`]+", "", company)
 
     # --------------------------------------------------------
     # Remove decorative symbols
     # --------------------------------------------------------
-
     company = re.sub(
         r"[★☆⭐✨📌♦️♦✅☑️✔️🔹🔸▪️▫️]",
         " ",
@@ -338,248 +330,9 @@ def clean_company_text(company):
     # --------------------------------------------------------
     # Normalize whitespace
     # --------------------------------------------------------
-
     company = re.sub(r"\s+", " ", company)
 
     return company.strip()
-
-
-# ============================================================
-# NORMALIZE BASIC FORM
-# ============================================================
-
-def normalize_company_text(company):
-
-    company = clean_company_text(company)
-
-    if not company:
-        return ""
-
-    # Lowercase for matching
-    company = company.lower()
-
-    # Normalize ampersand
-    company = company.replace("&", " and ")
-
-    # Remove punctuation except useful characters
-    company = re.sub(
-        r"[^\w\s]",
-        " ",
-        company,
-    )
-
-    # Normalize whitespace
-    company = re.sub(
-        r"\s+",
-        " ",
-        company,
-    ).strip()
-
-    return company
-
-
-# ============================================================
-# REMOVE COMPANY PREFIX
-# ============================================================
-
-def remove_company_prefix(company):
-
-    for pattern in COMPANY_PREFIX_PATTERNS:
-
-        company = re.sub(
-            pattern,
-            "",
-            company,
-            flags=re.IGNORECASE,
-        )
-
-    return company.strip()
-
-
-# ============================================================
-# REMOVE COMPANY NOISE
-# ============================================================
-
-def remove_company_noise(company):
-
-    for pattern in COMPANY_NOISE_PATTERNS:
-
-        company = re.sub(
-            pattern,
-            "",
-            company,
-            flags=re.IGNORECASE,
-        )
-
-    return company.strip()
-
-
-# ============================================================
-# REMOVE LEGAL SUFFIX
-# ============================================================
-
-def remove_company_suffix(company):
-
-    words = company.split()
-
-    while words:
-
-        # Check last 3-word suffix
-        if len(words) >= 3:
-
-            suffix = " ".join(words[-3:])
-
-            if suffix in COMPANY_SUFFIXES:
-
-                words = words[:-3]
-                continue
-
-        # Check last 2-word suffix
-        if len(words) >= 2:
-
-            suffix = " ".join(words[-2:])
-
-            if suffix in COMPANY_SUFFIXES:
-
-                words = words[:-2]
-                continue
-
-        # Check one-word suffix
-        if words[-1] in COMPANY_SUFFIXES:
-
-            words.pop()
-            continue
-
-        break
-
-    return " ".join(words)
-
-
-# ============================================================
-# ALIAS MATCHING
-# ============================================================
-
-def match_company_alias(company):
-
-    normalized = normalize_company_text(company)
-
-    if not normalized:
-        return ""
-
-    # Exact match first
-    if normalized in COMPANY_ALIAS_MAP:
-
-        return COMPANY_ALIAS_MAP[normalized]
-
-    # Longest alias first
-    aliases = sorted(
-        COMPANY_ALIAS_MAP.items(),
-        key=lambda item: len(item[0]),
-        reverse=True,
-    )
-
-    for alias, canonical in aliases:
-
-        pattern = rf"\b{re.escape(alias)}\b"
-
-        if re.search(pattern, normalized):
-
-            return canonical
-
-    return ""
-
-
-# ============================================================
-# MAIN NORMALIZER
-# ============================================================
-
-def normalize_company(company):
-
-    if not company:
-        return ""
-
-    original = str(company).strip()
-
-    if not original:
-        return ""
-
-    # --------------------------------------------------------
-    # Try alias matching on original text first.
-    #
-    # This is important because:
-    #
-    # "Job Vacancies At Dashen Bank Ethiopia"
-    #
-    # should become:
-    #
-    # "Dashen Bank"
-    # --------------------------------------------------------
-
-    alias = match_company_alias(original)
-
-    if alias:
-        return alias
-
-    # --------------------------------------------------------
-    # Clean
-    # --------------------------------------------------------
-
-    company = clean_company_text(original)
-
-    # --------------------------------------------------------
-    # Remove common prefixes
-    # --------------------------------------------------------
-
-    company = remove_company_prefix(company)
-
-    # --------------------------------------------------------
-    # Normalize text
-    # --------------------------------------------------------
-
-    company = normalize_company_text(company)
-
-    # --------------------------------------------------------
-    # Remove noise after normalization
-    # --------------------------------------------------------
-
-    company = remove_company_noise(company)
-
-    # --------------------------------------------------------
-    # Remove legal suffixes
-    # --------------------------------------------------------
-
-    company = remove_company_suffix(company)
-
-    # --------------------------------------------------------
-    # Final whitespace cleanup
-    # --------------------------------------------------------
-
-    company = re.sub(
-        r"\s+",
-        " ",
-        company,
-    ).strip()
-
-    if not company:
-        return ""
-
-    # --------------------------------------------------------
-    # Try alias matching again after cleaning.
-    # --------------------------------------------------------
-
-    alias = match_company_alias(company)
-
-    if alias:
-        return alias
-
-    # --------------------------------------------------------
-    # Fallback formatting
-    #
-    # Don't blindly title-case everything.
-    # --------------------------------------------------------
-
-    return company.title()
-
 
 
 # ============================================================
