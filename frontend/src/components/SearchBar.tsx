@@ -4,11 +4,13 @@ import { Search, X } from 'lucide-react';
 interface SearchBarProps {
   onSearch?: (query: string) => void;
   placeholder?: string;
+  className?: string;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
   onSearch, 
-  placeholder = "Search for anything..." 
+  placeholder = "Search for anything...",
+  className = "max-w-md mx-auto" 
 }) => {
   const [query, setQuery] = useState('');
 
@@ -29,8 +31,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
-      <div className="relative flex items-center w-full h-12 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 shadow-xl overflow-hidden focus-within:border-slate-700 transition-all duration-300">
+    <form onSubmit={handleSubmit} className={`w-full ${className}`}>
+      <div className="relative flex items-center w-full h-12 rounded-full bg-transparent overflow-hidden transition-all duration-300">
         
         {/* Search Icon */}
         <div className="grid place-items-center h-full w-12 text-slate-400 shrink-0">
@@ -47,7 +49,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onChange={handleChange}
         />
 
-        {/* Clear Button (Only shows when there is text) */}
+        {/* Clear Button */}
         {query && (
           <button
             type="button"
