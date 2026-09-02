@@ -1,14 +1,32 @@
 export interface Job {
   id: number;
   title: string;
-  company: string;
-  location: string;
-  source: string;
-  url: string;
-  scraped_at: string;
-  tags?: string[];
-  type?: string;
-  salary?: string;
+  company: string | null;
+  location: string | null;
+
+  description?: string | null;
+
+  salary: string | null;
+
+  job_type?: string | null;
+  type?: string | null;
+
+  source: string | null;
+
+  apply_link?: string | null;
+  deadline?: string | null;
+
+  scraped_at?: string | null;
+  created_at?: string | null;
+
+  skills: Array<
+    | string
+    | {
+        id?: number;
+        name?: string;
+        title?: string;
+      }
+  >;
+
   isSaved?: boolean;
-  skills?: any[];
 }
