@@ -29,6 +29,7 @@ export default function HomePage() {
     setCurrentPage(1);
   };
 
+  // Fetch unique sources for filter sidebar
   useEffect(() => {
     const fetchSources = async () => {
       try {
@@ -45,6 +46,7 @@ export default function HomePage() {
     fetchSources();
   }, []);
 
+  // Fetch jobs based on search, pagination, and selected sources
   const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
@@ -165,7 +167,7 @@ export default function HomePage() {
               <SearchBar
                 onSearch={handleSearchLog}
                 placeholder="Search by job title, tech stack, company, or city..."
-                className="" // overrides the default max-w-md constraint
+                className="" // overrides max-w-md constraint to fill capsule width
               />
             </div>
           </div>

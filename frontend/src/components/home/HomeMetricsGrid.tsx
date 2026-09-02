@@ -22,7 +22,7 @@ export default function HomeMetricsGrid({
           </div>
           <div>
             <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-              Total Database
+              Jobs Available
             </p>
             <h3 className="font-black text-xl text-white tracking-tight">
               {totalJobsLength.toLocaleString()}
