@@ -2,6 +2,7 @@ import re
 import os
 from dateutil import parser as date_parser
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 from common.base_scraper import BaseScraper
 from common.models import JobListing
 from common.database import save_job
@@ -15,57 +16,58 @@ class JosadTelegramScraper(BaseScraper):
     def __init__(self, channel_username):
         super().__init__(f"Telegram:{channel_username}")
         self.channel = channel_username
-        self.api_id = os.getenv("API_ID")
-        self.api_hash = os.getenv("API_HASH")
-        session_name = f"jobpulse_{channel_username}"
-        self.client = TelegramClient(session_name, self.api_id, self.api_hash)
+        self.api_id = os.getenv("TELEGRAM_API_ID") or os.getenv("API_ID")
+        self.api_hash = os.getenv("TELEGRAM_API_HASH") or os.getenv("API_HASH")
+        self.string_session = os.getenv("TELEGRAM_STRING_SESSION")
+        self.bot_token = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("BOT_TOKEN")
+
+        if not self.api_id or not self.api_hash:
+            raise RuntimeError(
+                "API_ID/TELEGRAM_API_ID and API_HASH/TELEGRAM_API_HASH must be configured in the environment."
+            )
+
+        session_target = StringSession(self.string_session) if self.string_session else f"jobpulse_{channel_username}"
+        self.client = TelegramClient(session_target, int(self.api_id), self.api_hash)
 
     def _clean_text(self, text):
         if not text:
             return ""
-        # Strip leading bullet/symbol markers and markdown bold/italic syntax
         cleaned = re.sub(r"^[★📌✨♦✅\s•\-\s]+", "", text).strip()
-        cleaned = re.sub(r"\*\*|\*", "", cleaned) # Remove markdown asterisks
+        cleaned = re.sub(r"\*\*|\*", "", cleaned)
         return cleaned.strip()
 
     def _sanitize_description(self, text: str) -> str:
-        """Strips noise like URLs, handles, hashtags, and boilerplate footers."""
         if not text:
             return ""
-
-        # Remove URLs
         text = re.sub(r'https?://[^\s]+', '', text)
-
-        # Strip Telegram / Social handles and hashtags
         text = re.sub(r'@[a-zA-Z0-9_]+', '', text)
         text = re.sub(r'#[a-zA-Z0-9_]+', '', text)
 
-        # Remove common boilerplate phrases
-        boilerplate = [
-            'view detail',
-            'view details',
-            'View on source',
-            'EOS',
-        ]
+        boilerplate = ['view detail', 'view details', 'View on source', 'EOS']
         for phrase in boilerplate:
             text = re.sub(re.escape(phrase), '', text, flags=re.IGNORECASE)
 
-        # Normalize excessive whitespace and newlines
         text = re.sub(r'\s+', ' ', text)
-
         return text.strip()
     
     async def fetch(self) -> list:
-        """Connects and fetches messages"""
+        """Connects and fetches messages safely without interactive CLI prompts."""
         jobs_list = []
-        async with self.client:
+        try:
+            if self.bot_token and not self.client.is_connected():
+                await self.client.start(bot_token=self.bot_token)
+            else:
+                await self.client.start()
+
             async for message in self.client.iter_messages(self.channel, limit=20):
                 if message.text:
                     jobs_list.append(message)
+        except Exception as e:
+            print(f"[{self.name}] Fetch failed: {e}")
+            return []
         return jobs_list
 
     def truncate_str(self, text: str, length: int = 250) -> str:
-        """Helper to ensure text doesn't overflow DB columns."""
         if not text:
             return ""
         return str(text)[:length]
@@ -75,37 +77,22 @@ class JosadTelegramScraper(BaseScraper):
         if not text:
             return None
 
-        # ------------------------------------------------------
-        # Extract URL
-        # ------------------------------------------------------
-
         url = None
-
-        # First, look for an external job/application URL
         urls = re.findall(r"https?://[^\s]+", text)
-
-        specific_urls = [
-            u.strip(".,)>]}")
-            for u in urls
-            if "t.me/" not in u
-        ]
+        specific_urls = [u.strip(".,)>]}") for u in urls if "t.me/" not in u]
 
         if specific_urls:
             url = specific_urls[0]
-
-        # If there is no external URL, use the Telegram message URL.
         if not url:
             url = f"https://t.me/{self.channel}/{message.id}"
 
         lines = [line.strip() for line in text.split("\n") if line.strip()]
         
-        # Title Extraction & Sanitization
         raw_title = lines[0] if lines else "Untitled Job"
         if "Josad Software Jobs:" in raw_title:
             raw_title = raw_title.split("Josad Software Jobs:")[-1].strip()
         clean_title = self._clean_text(raw_title)[:250]
 
-        # 2. Extract Structured Metadata Fields
         company = self.channel
         company_match = re.search(r"(?:Company|Employer):\s*(.*)", text, re.IGNORECASE)
         if company_match:
@@ -128,11 +115,8 @@ class JosadTelegramScraper(BaseScraper):
                     deadline = None
 
         cleaned_description_for_extraction = self._sanitize_description(text)
-
-        # Context Weighting Pre-check: Identify if requirements/tech stack sections exist
         has_tech_context = bool(re.search(r"(requirements|stack|technologies|skills|qualification)", text, re.IGNORECASE))
 
-        # Safely extract skills and guarantee it is strictly a list (never None)
         extracted_skills = []
         try:
             result = extract_skills(
@@ -154,25 +138,26 @@ class JosadTelegramScraper(BaseScraper):
             posted_at=getattr(message, 'date', None),
             source=f"Telegram: {self.channel}",
             company=company,
-            skills=extracted_skills,  # Guaranteed list, protecting downstream functions from NoneType errors
+            skills=extracted_skills,
             job_type=job_type,
             deadline=deadline
         )
+
     async def run(self):
-            """The Main Orchestrator."""
-            print(f"[{self.name}] Starting...")
-            messages = await self.fetch()
-            
-            scraped_jobs = [] # <--- Initialize a list to collect jobs
-            for msg in messages:
-                try:
-                    job_data = self.parse(msg)
-                    if job_data:
-                        scraped_jobs.append(job_data) # <--- Collect them instead of saving immediately here
-                        print(f"Saved (queued): {job_data.title} @ {job_data.company}")
-                    else:
-                        print(f"Skipped empty or invalid message.")
-                except Exception as e:
-                    print(f"Error parsing Telegram msg: {e}")
-                    
-            return scraped_jobs # <--- Return the list so main() can process them
+        """The Main Orchestrator."""
+        print(f"[{self.name}] Starting...")
+        messages = await self.fetch()
+        
+        scraped_jobs = []
+        for msg in messages:
+            try:
+                job_data = self.parse(msg)
+                if job_data:
+                    scraped_jobs.append(job_data)
+                    print(f"Parsed: {job_data.title} @ {job_data.company}")
+                else:
+                    print(f"Skipped empty or invalid message.")
+            except Exception as e:
+                print(f"Error parsing Telegram msg: {e}")
+                
+        return scraped_jobs
