@@ -1,1 +1,6 @@
-{}
+{
+  "mappings": {
+    "Addis Ababa": ["Addis", "Addis Ababa", "አዲስ አበባ"],
+    "Adama": ["Adama", "Nazreth", "ናዝሬት"]
+  }
+}
