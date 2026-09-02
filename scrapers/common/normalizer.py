@@ -298,7 +298,7 @@ COMPANY_NOISE_PATTERNS = [
 # =====================================================
 def is_invalid_company(company):
 
-    normalized = normalize_company_text(company)
+    normalized = normalize_company(company)
 
     return normalized in INVALID_COMPANY_NAMES
 
@@ -334,6 +334,65 @@ def clean_company_text(company):
 
     return company.strip()
 
+# ============================================================
+# MAIN COMPANY NORMALIZER
+# ============================================================
+
+def normalize_company(company, default="Unknown"):
+    """
+    Clean, strip noise, match aliases, and normalize company names.
+    """
+    if not company:
+        return default
+
+    original = str(company)
+
+    # --------------------------------------------------------
+    # 1. Basic text cleanup (symbols, markdown, extra spaces)
+    # --------------------------------------------------------
+    cleaned = clean_company_text(original)
+    if not cleaned:
+        return default
+
+    text_lower = cleaned.lower()
+
+    # --------------------------------------------------------
+    # 2. Check exact or alias map match first
+    # --------------------------------------------------------
+    if text_lower in COMPANY_ALIAS_MAP:
+        return COMPANY_ALIAS_MAP[text_lower]
+
+    # --------------------------------------------------------
+    # 3. Strip prefix noise patterns (e.g., "Job vacancy at...")
+    # --------------------------------------------------------
+    for pattern in COMPANY_PREFIX_PATTERNS:
+        text_lower = re.sub(pattern, "", text_lower, flags=re.IGNORECASE)
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+
+    # --------------------------------------------------------
+    # 4. Strip suffix noise patterns (e.g., "...is hiring")
+    # --------------------------------------------------------
+    for pattern in COMPANY_NOISE_PATTERNS:
+        text_lower = re.sub(pattern, "", text_lower, flags=re.IGNORECASE)
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+
+    cleaned = cleaned.strip()
+    text_lower = cleaned.lower()
+
+    # Check alias map again after stripping prefix/suffix noise
+    if text_lower in COMPANY_ALIAS_MAP:
+        return COMPANY_ALIAS_MAP[text_lower]
+
+    # --------------------------------------------------------
+    # 5. Clean and format legal suffixes if present
+    # --------------------------------------------------------
+    words = cleaned.split()
+    if words:
+        # Title case standard company names
+        formatted = " ".join(w.capitalize() for w in words)
+        return formatted
+
+    return default
 
 # ============================================================
 # LOCATION NORMALIZATION
