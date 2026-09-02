@@ -587,7 +587,7 @@ def normalize_company(company):
 # ============================================================
 
 LOCATION_CONFIG_PATH = (
-    Path(__file__).resolve().parent / "location.json"
+    Path(__file__).resolve().parent / "location_alias.json"
 )
 
 
