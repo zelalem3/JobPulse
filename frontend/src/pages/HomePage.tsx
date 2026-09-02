@@ -21,7 +21,10 @@ export default function HomePage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  
+
+  const [totalDatabaseCount, setTotalDatabaseCount] = useState(0); // Permanent total
+  const [filteredTotalItems, setFilteredTotalItems] = useState(0); // Changes with filters
   const itemsPerPage = 10;
 
   const handleSearchLog = (term: string) => {
@@ -29,7 +32,6 @@ export default function HomePage() {
     setCurrentPage(1);
   };
 
-  // Fetch unique sources for filter sidebar
   useEffect(() => {
     const fetchSources = async () => {
       try {
@@ -46,7 +48,7 @@ export default function HomePage() {
     fetchSources();
   }, []);
 
-  // Fetch jobs based on search, pagination, and selected sources
+
   const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
@@ -70,8 +72,12 @@ export default function HomePage() {
       ]);
 
       const jobsData = jobsResponse.data.data || [];
+      const currentTotal = jobsResponse.data.total || 0;
+      
       setLastPage(jobsResponse.data.last_page || 1);
-      setTotalItems(jobsResponse.data.total || 0);
+      setFilteredTotalItems(currentTotal);
+
+      setTotalDatabaseCount((prev) => (prev === 0 ? currentTotal : prev));
 
       const rawSavedJobs = savedResponse.data.savedjobs || savedResponse.data || [];
       const savedJobIds = new Set(
@@ -135,7 +141,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white py-10 relative overflow-hidden">
       
-      {/* Background ambient lighting */}
+    
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute top-1/4 left-10 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -143,7 +149,6 @@ export default function HomePage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
 
-        {/* Hero Banner Intro */}
         <div className="text-center space-y-3 max-w-2xl mx-auto pt-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
             <Sparkles size={13} /> Discover Your Next Career Move
@@ -156,10 +161,10 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Fully Expanded Glowing Pill Search Bar Wrapper */}
+     
         <div className="max-w-2xl mx-auto w-full px-2">
           <div className="relative group w-full">
-            {/* Outer blur gradient ring */}
+          
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
             
             {/* Inner pill container */}
@@ -167,16 +172,16 @@ export default function HomePage() {
               <SearchBar
                 onSearch={handleSearchLog}
                 placeholder="Search by job title, tech stack, company, or city..."
-                className="" // overrides max-w-md constraint to fill capsule width
+                className="" 
               />
             </div>
           </div>
         </div>
 
-        {/* Metrics Grid */}
+    
         <HomeMetricsGrid
-          totalJobsLength={totalItems}
-          totalItems={totalItems}
+          totalJobsLength={totalDatabaseCount}
+          totalItems={filteredTotalItems}
           allSourcesCount={allSources.length}
         />
 
