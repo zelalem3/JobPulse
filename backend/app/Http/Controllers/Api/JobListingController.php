@@ -5,48 +5,62 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\JobListing;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class JobListingController extends Controller
 {
     /**
-     * Display jobs with search, filters, sorting and pagination.
+     * Display jobs with search, filtering, sorting and pagination.
      */
     public function index(Request $request)
     {
         $perPage = min((int) $request->input('per_page', 10), 100);
 
-        $query = JobListing::with('skills');
+        $search = trim((string) $request->input('search', ''));
+        $source = $request->input('source');
+        $location = $request->input('location');
+        $employmentType = $request->input('employment_type');
+        $experienceLevel = $request->input('experience_level');
+        $category = $request->input('category');
+        $sort = $request->input('sort', 'newest');
+
+        $query = JobListing::with([
+            'skills',
+            'company',
+        ]);
 
         /*
         |--------------------------------------------------------------------------
-        | SEARCH
+        | Search
         |--------------------------------------------------------------------------
         */
-        if ($search = trim((string) $request->input('search', ''))) {
+
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('company', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('source', 'like', "%{$search}%");
+                $q->where('title', 'ILIKE', "%{$search}%")
+                    ->orWhere('location', 'ILIKE', "%{$search}%")
+                    ->orWhere('description', 'ILIKE', "%{$search}%")
+                    ->orWhere('requirements', 'ILIKE', "%{$search}%")
+                    ->orWhere('responsibilities', 'ILIKE', "%{$search}%")
+                    ->orWhere('category', 'ILIKE', "%{$search}%")
+                    ->orWhereHas('company', function ($companyQuery) use ($search) {
+                        $companyQuery->where(
+                            'name',
+                            'ILIKE',
+                            "%{$search}%"
+                        );
+                    });
             });
         }
 
         /*
         |--------------------------------------------------------------------------
-        | SOURCE FILTER
+        | Source
         |--------------------------------------------------------------------------
         */
-        if ($request->filled('source')) {
-            $sources = is_array($request->source)
-                ? $request->source
-                : explode(',', $request->source);
 
-            $sources = array_values(
-                array_filter(
-                    array_map('trim', $sources)
-                )
+        if ($source) {
+            $sources = array_filter(
+                array_map('trim', explode(',', $source))
             );
 
             if (!empty($sources)) {
@@ -56,18 +70,13 @@ class JobListingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | LOCATION FILTER
+        | Location
         |--------------------------------------------------------------------------
         */
-        if ($request->filled('location')) {
-            $locations = is_array($request->location)
-                ? $request->location
-                : explode(',', $request->location);
 
-            $locations = array_values(
-                array_filter(
-                    array_map('trim', $locations)
-                )
+        if ($location) {
+            $locations = array_filter(
+                array_map('trim', explode(',', $location))
             );
 
             if (!empty($locations)) {
@@ -77,79 +86,82 @@ class JobListingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | JOB TYPE FILTER
+        | Employment Type
         |--------------------------------------------------------------------------
-        |
-        | Your database appears to use job_type while the frontend previously
-        | used job.type. We normalize this on the frontend later.
-        |
         */
-        if ($request->filled('job_type')) {
-            $jobTypes = is_array($request->job_type)
-                ? $request->job_type
-                : explode(',', $request->job_type);
 
-            $jobTypes = array_values(
-                array_filter(
-                    array_map('trim', $jobTypes)
-                )
+        if ($employmentType) {
+            $types = array_filter(
+                array_map('trim', explode(',', $employmentType))
             );
 
-            if (!empty($jobTypes)) {
-                $query->whereIn('job_type', $jobTypes);
+            if (!empty($types)) {
+                $query->whereIn('employment_type', $types);
             }
         }
 
         /*
         |--------------------------------------------------------------------------
-        | ACTIVE JOBS ONLY
+        | Experience Level
         |--------------------------------------------------------------------------
-        |
-        | A job is considered active when it has no deadline OR its deadline
-        | hasn't passed.
-        |
         */
-        if ($request->boolean('active_only')) {
-            $query->where(function ($q) {
-                $q->whereNull('deadline')
-                    ->orWhereDate('deadline', '>=', now()->toDateString());
-            });
+
+        if ($experienceLevel) {
+            $levels = array_filter(
+                array_map('trim', explode(',', $experienceLevel))
+            );
+
+            if (!empty($levels)) {
+                $query->whereIn('experience_level', $levels);
+            }
         }
 
         /*
         |--------------------------------------------------------------------------
-        | SORTING
+        | Category
         |--------------------------------------------------------------------------
         */
-        switch ($request->input('sort', 'newest')) {
+
+        if ($category) {
+            $categories = array_filter(
+                array_map('trim', explode(',', $category))
+            );
+
+            if (!empty($categories)) {
+                $query->whereIn('category', $categories);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting
+        |--------------------------------------------------------------------------
+        */
+
+        switch ($sort) {
             case 'oldest':
-                $query->oldest('scraped_at');
+                $query->orderBy('posted_at', 'asc');
+                break;
+
+            case 'quality':
+                $query->orderByDesc('quality_score');
                 break;
 
             case 'deadline':
                 $query->orderByRaw(
-                    'CASE WHEN deadline IS NULL THEN 1 ELSE 0 END'
-                )
-                ->orderBy('deadline', 'asc');
-                break;
-
-            case 'title':
-                $query->orderBy('title', 'asc');
-                break;
-
-            case 'company':
-                $query->orderBy('company', 'asc');
+                    'deadline IS NULL, deadline ASC'
+                );
                 break;
 
             case 'newest':
             default:
-                $query->latest('scraped_at');
+                $query->orderByDesc('posted_at');
                 break;
         }
 
-        $jobs = $query->paginate($perPage);
-
-        return response()->json($jobs);
+        return response()->json(
+            $query->paginate($perPage)
+        );
     }
 
     /**
@@ -157,128 +169,65 @@ class JobListingController extends Controller
      */
     public function filters()
     {
-        $sources = JobListing::query()
-            ->whereNotNull('source')
-            ->where('source', '!=', '')
-            ->distinct()
-            ->orderBy('source')
-            ->pluck('source')
-            ->values();
-
-        $locations = JobListing::query()
-            ->whereNotNull('location')
-            ->where('location', '!=', '')
-            ->distinct()
-            ->orderBy('location')
-            ->pluck('location')
-            ->values();
-
-        $jobTypes = JobListing::query()
-            ->whereNotNull('job_type')
-            ->where('job_type', '!=', '')
-            ->distinct()
-            ->orderBy('job_type')
-            ->pluck('job_type')
-            ->values();
-
         return response()->json([
-            'sources' => $sources,
-            'locations' => $locations,
-            'job_types' => $jobTypes,
+            'sources' => JobListing::query()
+                ->whereNotNull('source')
+                ->where('source', '!=', '')
+                ->distinct()
+                ->orderBy('source')
+                ->pluck('source')
+                ->values(),
+
+            'locations' => JobListing::query()
+                ->whereNotNull('location')
+                ->where('location', '!=', '')
+                ->distinct()
+                ->orderBy('location')
+                ->pluck('location')
+                ->values(),
+
+            'employment_types' => JobListing::query()
+                ->whereNotNull('employment_type')
+                ->where('employment_type', '!=', '')
+                ->distinct()
+                ->orderBy('employment_type')
+                ->pluck('employment_type')
+                ->values(),
+
+            'experience_levels' => JobListing::query()
+                ->whereNotNull('experience_level')
+                ->where('experience_level', '!=', '')
+                ->distinct()
+                ->orderBy('experience_level')
+                ->pluck('experience_level')
+                ->values(),
+
+            'categories' => JobListing::query()
+                ->whereNotNull('category')
+                ->where('category', '!=', '')
+                ->distinct()
+                ->orderBy('category')
+                ->pluck('category')
+                ->values(),
         ]);
     }
 
     /**
-     * Store a newly created job.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'company' => 'required|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'description' => 'required|string',
-            'salary' => 'nullable|string|max:255',
-            'job_type' => 'nullable|string|max:100',
-            'apply_link' => 'required|url',
-            'deadline' => 'nullable|date',
-        ]);
-
-        $validated['user_id'] = Auth::id();
-
-        $job = JobListing::create($validated);
-
-        return response()->json([
-            'message' => 'Job created successfully.',
-            'job' => $job,
-        ], 201);
-    }
-
-    /**
-     * Display a single job.
+     * Display the specified job.
      */
     public function show(string $id)
     {
-        $job = JobListing::with('skills')->find($id);
+        $job = JobListing::with([
+            'skills',
+            'company',
+        ])->find($id);
 
         if (!$job) {
             return response()->json([
-                'message' => 'Job not found.',
+                'message' => 'Job not found.'
             ], 404);
         }
 
         return response()->json($job);
-    }
-
-    /**
-     * Update a job.
-     */
-    public function update(Request $request, string $id)
-    {
-        $job = JobListing::find($id);
-
-        if (!$job) {
-            return response()->json([
-                'message' => 'Job not found.',
-            ], 404);
-        }
-
-        $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'company' => 'sometimes|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'description' => 'sometimes|string',
-            'salary' => 'nullable|string|max:255',
-            'job_type' => 'nullable|string|max:100',
-            'apply_link' => 'sometimes|url',
-            'deadline' => 'nullable|date',
-        ]);
-
-        $job->update($validated);
-
-        return response()->json([
-            'message' => 'Job updated successfully.',
-            'job' => $job->load('skills'),
-        ]);
-    }
-
-    /**
-     * Delete a job.
-     */
-    public function destroy(string $id)
-    {
-        $job = JobListing::find($id);
-
-        if (!$job) {
-            return response()->json([
-                'message' => 'Job not found.',
-            ], 404);
-        }
-
-        $job->delete();
-
-        return response()->json([
-            'message' => 'Job deleted successfully.',
-        ]);
     }
 }
