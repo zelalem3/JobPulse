@@ -231,59 +231,252 @@ def normalize_company(company):
     return company.title()
 
 
+
+
+
 # ============================================================
 # LOCATION NORMALIZATION
 # ============================================================
 
 LOCATION_MAP = {
+    "addis ababa": "Addis Ababa",
     "aa": "Addis Ababa",
     "addis": "Addis Ababa",
-    "addis ababa": "Addis Ababa",
-    "addis ababa ethiopia": "Addis Ababa",
+    "bole": "Addis Ababa",
+    "finfine": "Addis Ababa",
+    "addis ababa city administration": "Addis Ababa",
 
     "adama": "Adama",
-    "adama ethiopia": "Adama",
+    "nazreth": "Adama",
+    "nazret": "Adama",
 
     "hawassa": "Hawassa",
-    "hawassa ethiopia": "Hawassa",
+    "awasa": "Hawassa",
+    "hawasa": "Hawassa",
 
     "dire dawa": "Dire Dawa",
-    "dire dawa ethiopia": "Dire Dawa",
+    "diredawa": "Dire Dawa",
+    "dire": "Dire Dawa",
 
     "bahir dar": "Bahir Dar",
-    "bahir dar ethiopia": "Bahir Dar",
+    "bahirdar": "Bahir Dar",
+    "bahr dar": "Bahir Dar",
 
     "mekelle": "Mekelle",
-    "mekelle ethiopia": "Mekelle",
+    "mekel": "Mekelle",
+    "mekele": "Mekelle",
+
+    "gondar": "Gondar",
+    "gonder": "Gondar",
+
+    "jimma": "Jimma",
+    "jima": "Jimma",
+
+    "dessie": "Dessie",
+    "desi": "Dessie",
+    "kombolcha and dessie": "Dessie",
+
+    "harar": "Harar",
+    "harari": "Harar",
+
+    "jijiga": "Jijiga",
+    "jigjiga": "Jijiga",
+
+    "gambella": "Gambella",
+    "gambela": "Gambella",
+
+    "assosa": "Assosa",
+    "asosa": "Assosa",
+
+    "semera": "Semera",
+    "logia": "Semera",
+    "semera logia": "Semera",
+
+    "arba minch": "Arbaminch",
+    "arbaminch": "Arbaminch",
+    "arba minch": "Arbaminch",
+
+    "hosanna": "Hosanna",
+    "hossana": "Hosanna",
+    "hosaena": "Hosanna",
+
+    "nekemte": "Nekemte",
+    "nekempti": "Nekemte",
+
+    "sodo": "Sodo",
+    "wolaita sodo": "Sodo",
 
     "ethiopia": "Ethiopia",
 }
 
 
-def normalize_location(location):
+# ============================================================
+# TEXT CLEANING
+# ============================================================
+
+def clean_location(location: str) -> str:
+    """
+    Clean location text without deciding what city it is.
+    """
 
     if not location:
         return ""
 
     location = str(location).strip().lower()
 
-    location = re.sub(
-        r"[^\w\s]",
-        " ",
-        location,
-    )
+    # Replace punctuation with spaces
+    location = re.sub(r"[^\w\s]", " ", location)
+
+    # Collapse whitespace
+    location = re.sub(r"\s+", " ", location).strip()
+
+    return location
+
+
+# ============================================================
+# REMOVE LOCATION NOISE
+# ============================================================
+
+NOISE_PATTERNS = [
+    r"\bduty stations?\b",
+    r"\bwork location\b",
+    r"\blocation\b",
+    r"\bregion\b",
+    r"\bzone\b",
+    r"\btown\b",
+    r"\bcity\b",
+]
+
+
+def remove_location_noise(location: str) -> str:
+
+    for pattern in NOISE_PATTERNS:
+        location = re.sub(pattern, " ", location)
+
+    location = re.sub(r"\s+", " ", location).strip()
+
+    return location
+
+
+# ============================================================
+# REMOVE COUNTRY
+# ============================================================
+
+def remove_country(location: str) -> str:
 
     location = re.sub(
-        r"\s+",
+        r"\beth{i}opia\b",
         " ",
         location,
-    ).strip()
-
-    return LOCATION_MAP.get(
-        location,
-        location.title(),
+        flags=re.IGNORECASE,
     )
 
+    location = re.sub(r"\s+", " ", location).strip()
+
+    return location
+
+
+# ============================================================
+# NORMALIZE DUPLICATES
+# ============================================================
+
+def collapse_repeated_words(location: str) -> str:
+    """
+    Example:
+
+        addis ababa addis ababa
+            ↓
+        addis ababa
+
+        bole bole
+            ↓
+        bole
+    """
+
+    words = location.split()
+
+    if not words:
+        return ""
+
+    # Repeated complete phrase
+    for size in range(len(words) // 2, 0, -1):
+
+        first = words[:size]
+        second = words[size:size * 2]
+
+        if first == second:
+            return " ".join(first)
+
+    return " ".join(words)
+
+
+# ============================================================
+# MAIN NORMALIZER
+# ============================================================
+
+def normalize_location(location, default="Addis Ababa"):
+
+    if not location:
+        return default
+
+    location = clean_location(location)
+
+    if not location:
+        return default
+
+    # Remove common noise
+    location = remove_location_noise(location)
+
+    # Remove Ethiopia
+    location = remove_country(location)
+
+    # Remove repeated phrases
+    location = collapse_repeated_words(location)
+
+    if not location:
+        return default
+
+    # --------------------------------------------------------
+    # 1. Exact match
+    # --------------------------------------------------------
+
+    if location in LOCATION_MAP:
+        return LOCATION_MAP[location]
+
+    # --------------------------------------------------------
+    # 2. Check if the location contains a known location
+    # --------------------------------------------------------
+    #
+    # Examples:
+    #
+    # "bole addis ababa"
+    # "addis ababa bole"
+    # "bole ethiopia"
+    # "office bole"
+    #
+    # --------------------------------------------------------
+
+    matches = []
+
+    for alias, city in LOCATION_MAP.items():
+
+        pattern = rf"\b{re.escape(alias)}\b"
+
+        if re.search(pattern, location):
+            matches.append((len(alias), city))
+
+    if matches:
+
+        # Prefer the longest / most specific match
+        matches.sort(reverse=True)
+
+        return matches[0][1]
+
+    # --------------------------------------------------------
+    # 3. If nothing matches, use default
+    # --------------------------------------------------------
+
+    return default
 
 # ============================================================
 # EMPLOYMENT TYPE
