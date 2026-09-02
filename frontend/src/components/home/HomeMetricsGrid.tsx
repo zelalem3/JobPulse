@@ -38,11 +38,11 @@ export default function HomeMetricsGrid({
           </div>
           <div>
             <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-              Scraper Status
+              Live Updates
             </p>
             <h3 className="font-black text-xl text-emerald-400 tracking-tight flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Live
+              Updated continuously
             </h3>
           </div>
         </div>
