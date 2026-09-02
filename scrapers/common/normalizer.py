@@ -1,5 +1,6 @@
 import re
 from urllib.parse import urlparse
+import json
 
 
 # ============================================================
@@ -177,50 +178,381 @@ def normalize_title(title):
 # COMPANY NORMALIZATION
 # ============================================================
 
-COMPANY_SUFFIXES = [
+INVALID_COMPANY_NAMES = {
+    "position",
+    "positions",
+    "available positions",
+    "vacancies",
+    "full time",
+    "part time",
+    "employment type",
+    "employment type full time",
+    "experience",
+    "management",
+    "education",
+    "engineering",
+    "customer service",
+    "sales",
+    "sales and marketing",
+    "human resource and recruitment",
+    "private company",
+    "private client",
+    "not specified",
+    "all",
+}
+
+COMPANY_ALIAS_PATH = (
+    Path(__file__).resolve().parent / "company_aliases.json"
+)
+
+with open(COMPANY_ALIAS_PATH, "r", encoding="utf-8") as f:
+    COMPANY_ALIASES = json.load(f)
+
+
+# Build alias -> canonical name
+COMPANY_ALIAS_MAP = {}
+
+for canonical, aliases in COMPANY_ALIASES.items():
+
+    COMPANY_ALIAS_MAP[canonical.lower()] = canonical
+
+    for alias in aliases:
+        COMPANY_ALIAS_MAP[alias.lower()] = canonical
+
+
+# ============================================================
+# LEGAL SUFFIXES
+# ============================================================
+
+COMPANY_SUFFIXES = {
     "plc",
+    "p.l.c",
+    "p l c",
     "ltd",
     "limited",
     "inc",
+    "incorporated",
     "llc",
     "corp",
     "corporation",
+    "s c",
+    "s.c",
+    "share company",
+}
+
+
+# ============================================================
+# COMPANY NOISE
+# ============================================================
+
+COMPANY_PREFIX_PATTERNS = [
+
+    r"^\s*job\s+vacanc(?:y|ies)\s+(?:at|for)\s+",
+
+    r"^\s*job\s+opportunities\s+(?:at|with|for)\s+",
+
+    r"^\s*jobs?\s+(?:at|with|for)\s+",
+
+    r"^\s*careers?\s+(?:at|with|for)\s+",
+
+    r"^\s*employment\s+(?:opportunit(?:y|ies))?\s*(?:at|with|for)\s+",
+
+    r"^\s*vacanc(?:y|ies)\s+(?:at|for)\s+",
+
+    r"^\s*position\s+(?:at|with|for)\s+",
+
+    r"^\s*hiring\s+(?:at|with|for)\s+",
+
+    r"^\s*company\s*:\s*",
+
+    r"^\s*organization\s*:\s*",
+
 ]
 
 
-def normalize_company(company):
+COMPANY_NOISE_PATTERNS = [
+
+    r"\s+job\s+vacanc(?:y|ies).*$",
+
+    r"\s+job\s+opportunit(?:y|ies).*$",
+
+    r"\s+career\s+opportunit(?:y|ies).*$",
+
+    r"\s+is\s+hiring.*$",
+
+    r"\s+is\s+inviting.*$",
+
+    r"\s+invites?\s+qualified.*$",
+
+    r"\s+is\s+looking\s+for.*$",
+
+    r"\s+announces?.*$",
+
+    r"\s+recruiting.*$",
+
+]
+
+
+# ====================================================
+# CHECK IF JOB IS INVALID
+# =====================================================
+def is_invalid_company(company):
+
+    normalized = normalize_company_text(company)
+
+    return normalized in INVALID_COMPANY_NAMES
+
+
+# ============================================================
+# CLEAN COMPANY TEXT
+# ============================================================
+
+def clean_company_text(company):
+
+
 
     if not company:
+        return ""
+    
+    if is_invalid_company(company):
         return ""
 
     company = str(company).strip()
 
+    # --------------------------------------------------------
     # Remove Markdown / Telegram formatting
-    company = re.sub(r"\*+", "", company)
+    # --------------------------------------------------------
 
+    company = re.sub(r"[*_~`]+", "", company)
+
+    # --------------------------------------------------------
     # Remove decorative symbols
+    # --------------------------------------------------------
+
     company = re.sub(
         r"[★☆⭐✨📌♦️♦✅☑️✔️🔹🔸▪️▫️]",
         " ",
         company,
     )
 
-    # Remove punctuation
+    # --------------------------------------------------------
+    # Normalize whitespace
+    # --------------------------------------------------------
+
+    company = re.sub(r"\s+", " ", company)
+
+    return company.strip()
+
+
+# ============================================================
+# NORMALIZE BASIC FORM
+# ============================================================
+
+def normalize_company_text(company):
+
+    company = clean_company_text(company)
+
+    if not company:
+        return ""
+
+    # Lowercase for matching
+    company = company.lower()
+
+    # Normalize ampersand
+    company = company.replace("&", " and ")
+
+    # Remove punctuation except useful characters
     company = re.sub(
         r"[^\w\s]",
         " ",
         company,
     )
 
-    company = company.lower()
+    # Normalize whitespace
+    company = re.sub(
+        r"\s+",
+        " ",
+        company,
+    ).strip()
+
+    return company
+
+
+# ============================================================
+# REMOVE COMPANY PREFIX
+# ============================================================
+
+def remove_company_prefix(company):
+
+    for pattern in COMPANY_PREFIX_PATTERNS:
+
+        company = re.sub(
+            pattern,
+            "",
+            company,
+            flags=re.IGNORECASE,
+        )
+
+    return company.strip()
+
+
+# ============================================================
+# REMOVE COMPANY NOISE
+# ============================================================
+
+def remove_company_noise(company):
+
+    for pattern in COMPANY_NOISE_PATTERNS:
+
+        company = re.sub(
+            pattern,
+            "",
+            company,
+            flags=re.IGNORECASE,
+        )
+
+    return company.strip()
+
+
+# ============================================================
+# REMOVE LEGAL SUFFIX
+# ============================================================
+
+def remove_company_suffix(company):
 
     words = company.split()
 
-    # Remove legal suffixes
-    while words and words[-1] in COMPANY_SUFFIXES:
-        words.pop()
+    while words:
 
-    company = " ".join(words)
+        # Check last 3-word suffix
+        if len(words) >= 3:
+
+            suffix = " ".join(words[-3:])
+
+            if suffix in COMPANY_SUFFIXES:
+
+                words = words[:-3]
+                continue
+
+        # Check last 2-word suffix
+        if len(words) >= 2:
+
+            suffix = " ".join(words[-2:])
+
+            if suffix in COMPANY_SUFFIXES:
+
+                words = words[:-2]
+                continue
+
+        # Check one-word suffix
+        if words[-1] in COMPANY_SUFFIXES:
+
+            words.pop()
+            continue
+
+        break
+
+    return " ".join(words)
+
+
+# ============================================================
+# ALIAS MATCHING
+# ============================================================
+
+def match_company_alias(company):
+
+    normalized = normalize_company_text(company)
+
+    if not normalized:
+        return ""
+
+    # Exact match first
+    if normalized in COMPANY_ALIAS_MAP:
+
+        return COMPANY_ALIAS_MAP[normalized]
+
+    # Longest alias first
+    aliases = sorted(
+        COMPANY_ALIAS_MAP.items(),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
+
+    for alias, canonical in aliases:
+
+        pattern = rf"\b{re.escape(alias)}\b"
+
+        if re.search(pattern, normalized):
+
+            return canonical
+
+    return ""
+
+
+# ============================================================
+# MAIN NORMALIZER
+# ============================================================
+
+def normalize_company(company):
+
+    if not company:
+        return ""
+
+    original = str(company).strip()
+
+    if not original:
+        return ""
+
+    # --------------------------------------------------------
+    # Try alias matching on original text first.
+    #
+    # This is important because:
+    #
+    # "Job Vacancies At Dashen Bank Ethiopia"
+    #
+    # should become:
+    #
+    # "Dashen Bank"
+    # --------------------------------------------------------
+
+    alias = match_company_alias(original)
+
+    if alias:
+        return alias
+
+    # --------------------------------------------------------
+    # Clean
+    # --------------------------------------------------------
+
+    company = clean_company_text(original)
+
+    # --------------------------------------------------------
+    # Remove common prefixes
+    # --------------------------------------------------------
+
+    company = remove_company_prefix(company)
+
+    # --------------------------------------------------------
+    # Normalize text
+    # --------------------------------------------------------
+
+    company = normalize_company_text(company)
+
+    # --------------------------------------------------------
+    # Remove noise after normalization
+    # --------------------------------------------------------
+
+    company = remove_company_noise(company)
+
+    # --------------------------------------------------------
+    # Remove legal suffixes
+    # --------------------------------------------------------
+
+    company = remove_company_suffix(company)
+
+    # --------------------------------------------------------
+    # Final whitespace cleanup
+    # --------------------------------------------------------
 
     company = re.sub(
         r"\s+",
@@ -228,9 +560,25 @@ def normalize_company(company):
         company,
     ).strip()
 
+    if not company:
+        return ""
+
+    # --------------------------------------------------------
+    # Try alias matching again after cleaning.
+    # --------------------------------------------------------
+
+    alias = match_company_alias(company)
+
+    if alias:
+        return alias
+
+    # --------------------------------------------------------
+    # Fallback formatting
+    #
+    # Don't blindly title-case everything.
+    # --------------------------------------------------------
+
     return company.title()
-
-
 
 
 
@@ -238,85 +586,42 @@ def normalize_company(company):
 # LOCATION NORMALIZATION
 # ============================================================
 
-LOCATION_MAP = {
-    "addis ababa": "Addis Ababa",
-    "aa": "Addis Ababa",
-    "addis": "Addis Ababa",
-    "bole": "Addis Ababa",
-    "finfine": "Addis Ababa",
-    "addis ababa city administration": "Addis Ababa",
+LOCATION_CONFIG_PATH = (
+    Path(__file__).resolve().parent / "location.json"
+)
 
-    "adama": "Adama",
-    "nazreth": "Adama",
-    "nazret": "Adama",
 
-    "hawassa": "Hawassa",
-    "awasa": "Hawassa",
-    "hawasa": "Hawassa",
+with open(LOCATION_CONFIG_PATH, "r", encoding="utf-8") as f:
+    LOCATION_CONFIG = json.load(f)
 
-    "dire dawa": "Dire Dawa",
-    "diredawa": "Dire Dawa",
-    "dire": "Dire Dawa",
 
-    "bahir dar": "Bahir Dar",
-    "bahirdar": "Bahir Dar",
-    "bahr dar": "Bahir Dar",
 
-    "mekelle": "Mekelle",
-    "mekel": "Mekelle",
-    "mekele": "Mekelle",
 
-    "gondar": "Gondar",
-    "gonder": "Gondar",
+LOCATION_MAP = {}
 
-    "jimma": "Jimma",
-    "jima": "Jimma",
+for city, aliases in LOCATION_CONFIG["mappings"].items():
+    for alias in aliases:
+        LOCATION_MAP[alias.lower()] = city
 
-    "dessie": "Dessie",
-    "desi": "Dessie",
-    "kombolcha and dessie": "Dessie",
 
-    "harar": "Harar",
-    "harari": "Harar",
 
-    "jijiga": "Jijiga",
-    "jigjiga": "Jijiga",
 
-    "gambella": "Gambella",
-    "gambela": "Gambella",
-
-    "assosa": "Assosa",
-    "asosa": "Assosa",
-
-    "semera": "Semera",
-    "logia": "Semera",
-    "semera logia": "Semera",
-
-    "arba minch": "Arbaminch",
-    "arbaminch": "Arbaminch",
-    "arba minch": "Arbaminch",
-
-    "hosanna": "Hosanna",
-    "hossana": "Hosanna",
-    "hosaena": "Hosanna",
-
-    "nekemte": "Nekemte",
-    "nekempti": "Nekemte",
-
-    "sodo": "Sodo",
-    "wolaita sodo": "Sodo",
-
-    "ethiopia": "Ethiopia",
-}
+for city in LOCATION_CONFIG["mappings"]:
+    LOCATION_MAP[city.lower()] = city
 
 
 # ============================================================
-# TEXT CLEANING
+# NORMALIZATION HELPERS
 # ============================================================
 
-def clean_location(location: str) -> str:
+def clean_location(location):
     """
-    Clean location text without deciding what city it is.
+    Basic text normalization.
+
+    Example:
+        "Bole, Addis-Ababa, Ethiopia"
+        ->
+        "bole addis ababa ethiopia"
     """
 
     if not location:
@@ -328,41 +633,43 @@ def clean_location(location: str) -> str:
     location = re.sub(r"[^\w\s]", " ", location)
 
     # Collapse whitespace
-    location = re.sub(r"\s+", " ", location).strip()
+    location = re.sub(r"\s+", " ", location)
 
-    return location
-
-
-# ============================================================
-# REMOVE LOCATION NOISE
-# ============================================================
-
-NOISE_PATTERNS = [
-    r"\bduty stations?\b",
-    r"\bwork location\b",
-    r"\blocation\b",
-    r"\bregion\b",
-    r"\bzone\b",
-    r"\btown\b",
-    r"\bcity\b",
-]
+    return location.strip()
 
 
-def remove_location_noise(location: str) -> str:
+def remove_noise(location):
+    """
+    Remove generic location labels.
 
-    for pattern in NOISE_PATTERNS:
-        location = re.sub(pattern, " ", location)
+    Example:
+        "Work Location: Bole"
+        ->
+        "bole"
+    """
 
-    location = re.sub(r"\s+", " ", location).strip()
+    for pattern in LOCATION_CONFIG.get("noise_patterns", []):
+        location = re.sub(
+            pattern,
+            " ",
+            location,
+            flags=re.IGNORECASE,
+        )
 
-    return location
+    location = re.sub(r"\s+", " ", location)
+
+    return location.strip()
 
 
-# ============================================================
-# REMOVE COUNTRY
-# ============================================================
+def remove_country(location):
+    """
+    Ethiopia is not useful once we know the city.
 
-def remove_country(location: str) -> str:
+    Example:
+        "bole ethiopia"
+        ->
+        "bole"
+    """
 
     location = re.sub(
         r"\beth{i}opia\b",
@@ -371,26 +678,24 @@ def remove_country(location: str) -> str:
         flags=re.IGNORECASE,
     )
 
-    location = re.sub(r"\s+", " ", location).strip()
+    location = re.sub(r"\s+", " ", location)
 
-    return location
+    return location.strip()
 
 
-# ============================================================
-# NORMALIZE DUPLICATES
-# ============================================================
-
-def collapse_repeated_words(location: str) -> str:
+def collapse_duplicate_phrases(location):
     """
-    Example:
+    Removes repeated location phrases.
 
-        addis ababa addis ababa
-            ↓
-        addis ababa
+    Examples:
 
-        bole bole
-            ↓
-        bole
+        "addis ababa addis ababa"
+            ->
+        "addis ababa"
+
+        "bole bole"
+            ->
+        "bole"
     """
 
     words = location.split()
@@ -398,63 +703,37 @@ def collapse_repeated_words(location: str) -> str:
     if not words:
         return ""
 
-    # Repeated complete phrase
+    # Look for repeated halves/phrases.
     for size in range(len(words) // 2, 0, -1):
 
         first = words[:size]
         second = words[size:size * 2]
 
         if first == second:
-            return " ".join(first)
+            remaining = words[size * 2:]
+
+            location = first + remaining
+            words = location
 
     return " ".join(words)
 
 
 # ============================================================
-# MAIN NORMALIZER
+# FIND LOCATION ALIASES
 # ============================================================
 
-def normalize_location(location, default="Addis Ababa"):
+def find_location_aliases(location):
+    """
+    Find known cities/neighborhoods inside the text.
 
-    if not location:
-        return default
+    Returns:
+        [
+            ("addis ababa", "Addis Ababa"),
+            ("bole", "Addis Ababa"),
+        ]
 
-    location = clean_location(location)
-
-    if not location:
-        return default
-
-    # Remove common noise
-    location = remove_location_noise(location)
-
-    # Remove Ethiopia
-    location = remove_country(location)
-
-    # Remove repeated phrases
-    location = collapse_repeated_words(location)
-
-    if not location:
-        return default
-
-    # --------------------------------------------------------
-    # 1. Exact match
-    # --------------------------------------------------------
-
-    if location in LOCATION_MAP:
-        return LOCATION_MAP[location]
-
-    # --------------------------------------------------------
-    # 2. Check if the location contains a known location
-    # --------------------------------------------------------
-    #
-    # Examples:
-    #
-    # "bole addis ababa"
-    # "addis ababa bole"
-    # "bole ethiopia"
-    # "office bole"
-    #
-    # --------------------------------------------------------
+    Longer aliases are preferred.
+    """
 
     matches = []
 
@@ -463,20 +742,143 @@ def normalize_location(location, default="Addis Ababa"):
         pattern = rf"\b{re.escape(alias)}\b"
 
         if re.search(pattern, location):
-            matches.append((len(alias), city))
+            matches.append(
+                (alias, city)
+            )
 
-    if matches:
+    # Longest aliases first.
+    matches.sort(
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
 
-        # Prefer the longest / most specific match
-        matches.sort(reverse=True)
+    return matches
 
-        return matches[0][1]
+
+# ============================================================
+# MAIN NORMALIZER
+# ============================================================
+
+def normalize_location(location, default="Addis Ababa"):
+    """
+    Normalize a scraped job location while preserving
+    useful neighborhood information.
+
+    Examples:
+
+        Bole
+            -> Bole, Addis Ababa
+
+
+        Bole, Addis Ababa
+            -> Bole, Addis Ababa
+
+        Addis Ababa Ethiopia
+            -> Addis Ababa
+
+        addis ababa addis ababa
+            -> Addis Ababa
+
+        Nazret
+            -> Adama
+
+        Awasa
+            -> Hawassa
+    """
+
+    if not location:
+        return default
+
+    original = str(location)
 
     # --------------------------------------------------------
-    # 3. If nothing matches, use default
+    # Clean
     # --------------------------------------------------------
 
-    return default
+    location = clean_location(original)
+
+    if not location:
+        return default
+
+    # --------------------------------------------------------
+    # Remove noise
+    # --------------------------------------------------------
+
+    location = remove_noise(location)
+
+    # --------------------------------------------------------
+    # Remove Ethiopia
+    # --------------------------------------------------------
+
+    location = remove_country(location)
+
+    # --------------------------------------------------------
+    # Collapse duplicated phrases
+    # --------------------------------------------------------
+
+    location = collapse_duplicate_phrases(location)
+
+    if not location:
+        return default
+
+    # --------------------------------------------------------
+    # Find known aliases
+    # --------------------------------------------------------
+
+    matches = find_location_aliases(location)
+
+    if not matches:
+        return default
+
+    # --------------------------------------------------------
+    # Determine city
+    # --------------------------------------------------------
+
+    cities = []
+
+    for alias, city in matches:
+        if city not in cities:
+            cities.append(city)
+
+    # Prefer the first/longest recognized city.
+    city = cities[0]
+
+    # --------------------------------------------------------
+    # Determine whether a neighborhood exists
+    # --------------------------------------------------------
+
+    neighborhoods = []
+
+    for alias, alias_city in matches:
+
+        # If the alias itself is the city,
+        # it isn't a neighborhood.
+        if alias == alias_city.lower():
+            continue
+
+        # Only preserve aliases belonging to the
+        # detected city.
+        if alias_city != city:
+            continue
+
+        neighborhoods.append(alias)
+
+    # --------------------------------------------------------
+    # If neighborhood exists, preserve it.
+    # --------------------------------------------------------
+
+    if neighborhoods:
+
+        # Longest/specific neighborhood first.
+        neighborhood = neighborhoods[0]
+
+        return f"{neighborhood.title()}, {city}"
+
+    # --------------------------------------------------------
+    # Otherwise return city only.
+    # --------------------------------------------------------
+
+    return city
 
 # ============================================================
 # EMPLOYMENT TYPE
