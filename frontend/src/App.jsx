@@ -13,6 +13,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PageNotFound from './pages/404';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import AboutUs from './pages/AboutUsPage';
 
 function App() {
   return (
@@ -25,7 +26,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+        <Route path="/about" element={<AboutUs />} />
       
         <Route path="/jobs" element={<Jobs />} />
         
