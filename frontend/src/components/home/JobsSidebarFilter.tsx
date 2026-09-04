@@ -1,5 +1,5 @@
 import React from "react";
-import { Filter, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw, Loader2 } from "lucide-react";
 
 interface JobsSidebarFilterProps {
   allSources: string[];
@@ -23,6 +23,7 @@ interface JobsSidebarFilterProps {
   onClearFilters: () => void;
 
   isOpen: boolean;
+  isLoading?: boolean;
 }
 
 export default function JobsSidebarFilter({
@@ -47,6 +48,7 @@ export default function JobsSidebarFilter({
   onClearFilters,
 
   isOpen,
+  isLoading = false,
 }: JobsSidebarFilterProps) {
   const hasFilters =
     selectedSources.length > 0 ||
@@ -126,6 +128,7 @@ export default function JobsSidebarFilter({
           items={allSources}
           selected={selectedSources}
           onToggle={onSourceToggle}
+          isLoading={isLoading}
         />
 
         {/* Locations */}
@@ -134,6 +137,7 @@ export default function JobsSidebarFilter({
           items={allLocations}
           selected={selectedLocations}
           onToggle={onLocationToggle}
+          isLoading={isLoading}
         />
 
         {/* Job Types */}
@@ -142,6 +146,7 @@ export default function JobsSidebarFilter({
           items={allJobTypes}
           selected={selectedJobTypes}
           onToggle={onJobTypeToggle}
+          isLoading={isLoading}
         />
       </div>
     </aside>
@@ -153,6 +158,7 @@ interface FilterSectionProps {
   items: string[];
   selected: string[];
   onToggle: (value: string) => void;
+  isLoading: boolean;
 }
 
 function FilterSection({
@@ -160,6 +166,7 @@ function FilterSection({
   items,
   selected,
   onToggle,
+  isLoading,
 }: FilterSectionProps) {
   return (
     <div className="space-y-2.5">
@@ -168,7 +175,12 @@ function FilterSection({
       </h3>
 
       <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-        {items.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4 text-slate-500 gap-2">
+            <Loader2 size={14} className="animate-spin text-indigo-400" />
+            <span className="text-[11px]">Loading {title.toLowerCase()}...</span>
+          </div>
+        ) : items.length > 0 ? (
           items.map((item) => {
             const checked = selected.includes(item);
 

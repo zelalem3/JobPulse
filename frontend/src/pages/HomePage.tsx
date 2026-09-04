@@ -68,6 +68,9 @@ export default function HomePage() {
   const [allJobTypes, setAllJobTypes] =
     useState<string[]>([]);
 
+  const [filtersLoading, setFiltersLoading] =
+    useState(true);
+
   /*
   |--------------------------------------------------------------------------
   | Jobs
@@ -135,8 +138,9 @@ export default function HomePage() {
   |--------------------------------------------------------------------------
   */
 
-  useEffect(() => {
+     useEffect(() => {
     const fetchFilters = async () => {
+      setFiltersLoading(true); // ⬅️ Set loading to true
       try {
         const response = await api.get(
           "/api/jobs/filters"
@@ -159,6 +163,8 @@ export default function HomePage() {
           "Error loading job filters:",
           error
         );
+      } finally {
+        setFiltersLoading(false); // ⬅️ Turn off loading when done
       }
     };
 
@@ -707,52 +713,19 @@ export default function HomePage() {
             allSources={allSources}
             allLocations={allLocations}
             allJobTypes={allJobTypes}
-
-            selectedSources={
-              selectedSources
-            }
-
-            selectedLocations={
-              selectedLocations
-            }
-
-            selectedJobTypes={
-              selectedJobTypes
-            }
-
-            activeOnly={
-              activeOnly
-            }
-
+            selectedSources={selectedSources}
+            selectedLocations={selectedLocations}
+            selectedJobTypes={selectedJobTypes}
+            activeOnly={activeOnly}
             sort={sort}
-
-            onSourceToggle={
-              handleSourceToggle
-            }
-
-            onLocationToggle={
-              handleLocationToggle
-            }
-
-            onJobTypeToggle={
-              handleJobTypeToggle
-            }
-
-            onActiveOnlyChange={
-              handleActiveOnlyChange
-            }
-
-            onSortChange={
-              handleSortChange
-            }
-
-            onClearFilters={
-              clearFilters
-            }
-
-            isOpen={
-              isFilterOpen
-            }
+            onSourceToggle={handleSourceToggle}
+            onLocationToggle={handleLocationToggle}
+            onJobTypeToggle={handleJobTypeToggle}
+            onActiveOnlyChange={handleActiveOnlyChange}
+            onSortChange={handleSortChange}
+            onClearFilters={clearFilters}
+            isOpen={isFilterOpen}
+            isLoading={filtersLoading}
           />
 
           {/* Results */}
