@@ -78,17 +78,17 @@ export default function JobCard({
               <span className="text-[11px] font-semibold bg-slate-800 border border-slate-700/60 px-3 py-1 rounded-full text-slate-300">
                 {job.employment_type}
               </span>
-            )}
+            )} 
 
-            {job.experience_level && (
+             {job.experience_level && (
               <span className="text-[11px] font-semibold bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-violet-300">
                 {job.experience_level}
               </span>
-            )}
+            )} 
 
             <span className="text-xs text-slate-400 flex items-center gap-1.5 font-medium ml-1">
               <Calendar size={13} className="text-slate-500" />
-              {formatDate(job.posted_at)}
+              {formatDate(job.created_at)}
             </span>
           </div>
 
@@ -116,12 +116,7 @@ export default function JobCard({
               <span>{job.location || "Remote / Worldwide"}</span>
             </span>
 
-            {job.category && (
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <Briefcase size={14} className="text-slate-500 shrink-0" />
-                <span>{job.category}</span>
-              </span>
-            )}
+           
           </div>
 
           {/* Skills */}
