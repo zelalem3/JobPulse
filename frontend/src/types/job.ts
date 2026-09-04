@@ -29,4 +29,7 @@ export interface Job {
   >;
 
   isSaved?: boolean;
+  employment_type: string | null
+  experience_level: string | null
+  
 }
