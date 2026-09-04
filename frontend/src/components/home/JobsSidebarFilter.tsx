@@ -140,14 +140,7 @@ export default function JobsSidebarFilter({
           isLoading={isLoading}
         />
 
-        {/* Job Types */}
-        <FilterSection
-          title="Job Type"
-          items={allJobTypes}
-          selected={selectedJobTypes}
-          onToggle={onJobTypeToggle}
-          isLoading={isLoading}
-        />
+        
       </div>
     </aside>
   );
