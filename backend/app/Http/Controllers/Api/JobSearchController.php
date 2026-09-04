@@ -21,14 +21,21 @@ class JobSearchController extends Controller
         $query = JobListing::with(['company', 'skills']);
 
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'ILIKE', "%{$search}%")
-                    ->orWhere('location', 'ILIKE', "%{$search}%")
-                    ->orWhere('description', 'ILIKE', "%{$search}%")
-                    ->orWhere('source', 'ILIKE', "%{$search}%")
-                    ->orWhereHas('company', function ($companyQuery) use ($search) {
-                        $companyQuery->where('name', 'ILIKE', "%{$search}%");
-                    });
+            // Convert search terms into a PostgreSQL tsquery format (e.g., "front end" becomes "front & end")
+            $searchTerms = collect(explode(' ', $search))
+                ->filter()
+                ->map(fn($term) => trim($term) . ':*')
+                ->implode(' & ');
+
+            $query->where(function ($q) use ($search, $searchTerms) {
+                // Use PostgreSQL full-text search matching the GIN index
+                $q->whereRaw("to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'')) @@ to_tsquery('english', ?)", [$searchTerms])
+                  // Fallback regular ILIKE lookups for location, source, and company name
+                  ->orWhere('location', 'ILIKE', "%{$search}%")
+                  ->orWhere('source', 'ILIKE', "%{$search}%")
+                  ->orWhereHas('company', function ($companyQuery) use ($search) {
+                      $companyQuery->where('name', 'ILIKE', "%{$search}%");
+                  });
             });
         }
 
