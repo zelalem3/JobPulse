@@ -13,6 +13,7 @@ import {
 import SearchBar from "../components/SearchBar";
 import api from "../services/axios";
 import { Job } from "../types/job";
+import { useDebounce } from '../hooks/useDebounce';
 
 import HomeMetricsGrid from "../components/home/HomeMetricsGrid";
 import JobsSidebarFilter from "../components/home/JobsSidebarFilter";
@@ -29,6 +30,7 @@ export default function HomePage() {
   */
 
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   /*
   |--------------------------------------------------------------------------
@@ -118,7 +120,7 @@ export default function HomePage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Search
+  | Search Handler
   |--------------------------------------------------------------------------
   */
 
@@ -220,8 +222,8 @@ export default function HomePage() {
       |--------------------------------------------------------------------------
       */
 
-      if (searchTerm) {
-        params.set("q", searchTerm);
+      if (debouncedSearchTerm) {
+        params.set("q", debouncedSearchTerm);
 
         if (selectedSources.length > 0) {
           params.set(
@@ -298,7 +300,7 @@ export default function HomePage() {
       |--------------------------------------------------------------------------
       */
 
-      const endpoint = searchTerm
+      const endpoint = debouncedSearchTerm
         ? `/api/jobs/search?${params.toString()}`
         : `/api/jobs?${params.toString()}`;
 
@@ -390,7 +392,7 @@ export default function HomePage() {
 
   }, [
     currentPage,
-    searchTerm,
+    debouncedSearchTerm,
     selectedSources,
     selectedLocations,
     selectedJobTypes,
