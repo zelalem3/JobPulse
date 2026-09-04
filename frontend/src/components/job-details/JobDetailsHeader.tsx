@@ -113,7 +113,7 @@ export default function JobDetailsHeader({
           {job.company && (
             <p className="mt-3 text-base text-slate-400">
               <span className="font-bold text-slate-200">
-                {job.company}
+                {job.company.name}
               </span>
             </p>
           )}
