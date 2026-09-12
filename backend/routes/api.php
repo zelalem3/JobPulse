@@ -105,3 +105,8 @@ Route::get('/jobs/search', [JobSearchController::class, 'search']);
 
 Route::apiResource('jobs', JobListingController::class)
     ->only(['index', 'show']);
+
+
+Route::post('/auth/register', [ApiRegisterController::class, 'register']);
+Route::post('/auth/login', [LoginController::class, 'login']);
+Route::post('/auth/logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
