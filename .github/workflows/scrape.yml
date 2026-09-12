@@ -43,4 +43,7 @@ jobs:
           API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_STRING_SESSION: ${{ secrets.TELEGRAM_STRING_SESSION }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{secrets.REDIS_PORT }}
+
         run: python run.py

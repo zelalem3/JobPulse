@@ -1,6 +1,8 @@
 import asyncio
 import logging
-
+import time
+import redis
+import os
 from dotenv import load_dotenv
 
 # ==========================================================
@@ -71,6 +73,29 @@ GEMINI_FAILURE_THRESHOLD = 3
 # This prevents accidentally overwhelming Telegram/websites
 # if many scrapers are enabled later.
 MAX_CONCURRENT_SCRAPERS = 5
+
+
+# ==========================================================
+# Redis Configuration (Shared with Laravel)
+# ==========================================================
+
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_DB = int(os.getenv("REDIS_DB", 0))
+
+try:
+    redis_client = redis.Redis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        db=REDIS_DB,
+        decode_responses=True
+    )
+    # Test connection
+    redis_client.ping()
+    print("Connected to Redis successfully.")
+except Exception as e:
+    print(f"⚠️ Warning: Could not connect to Redis: {e}")
+    redis_client = None
 
 
 # ==========================================================
@@ -796,6 +821,19 @@ async def main():
                 "Failed saving job %s",
                 job.title,
             )
+
+        if saved > 0 and redis_client:
+            try:
+                current_timestamp = int(time.time())
+                redis_client.set("latest_job_timestamp", current_timestamp)
+                print(
+                    f"\n🚀 Successfully saved {saved} new job(s). "
+                    f"Updated 'latest_job_timestamp' in Redis to {current_timestamp} "
+                    f"to invalidate Laravel recommendation caches."
+                )
+            except Exception as e:
+                print(f"⚠️ Failed to update 'latest_job_timestamp' in Redis: {e}")
+                logger.exception("Failed to update Redis timestamp")
 
     # ======================================================
     # Final Cache Checkpoint

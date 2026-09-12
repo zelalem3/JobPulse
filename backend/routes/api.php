@@ -16,6 +16,24 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\TelegramController;
 
+/*
+|-------------------------------------------------------
+|   Purge old Jobs
+|-------------------------------------------------------
+*/
+Route::get('/prugejobs', function (Request $request) {
+    if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    Artisan::call('jobs:purge-old');
+
+    return response()->json([
+        'status' => 'Old Jobs Purged',
+        'output' => Artisan::output(),
+    ]);
+});
+
 
 
 /*

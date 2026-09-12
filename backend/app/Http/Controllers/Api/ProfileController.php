@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Cache;
 
 class ProfileController extends Controller
 {
@@ -47,6 +48,8 @@ class ProfileController extends Controller
         'skills' => ['sometimes', 'nullable', 'array'],
         'skills.*' => ['string'],
     ]);
+    $user->skills()->sync($request->input('skill_ids'));
+    Cache::forget("job_recommendations:{$user->id}:" . now()->toDateString() . ":10");
 
     $user->fill($request->only(['name', 'email', 'role', 'location', 'bio']));
 

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Skill;
 use App\Models\JobAlert;
+use Illuminate\Support\Facades\Cache;
 
 class AlertController extends Controller
 {
@@ -50,6 +51,9 @@ class AlertController extends Controller
 
         // Attach the skill to the user profile
         $user->addSkill($skill->id);
+
+        $user->skills()->sync($request->input('skill_ids'));
+        Cache::forget("job_recommendations:{$user->id}:" . now()->toDateString() . ":10");
 
         // 2. Create the JobAlert record for Telegram notifications
         // firstOrCreate prevents duplicate identical alerts for the same user

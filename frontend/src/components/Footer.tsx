@@ -75,10 +75,8 @@ const Footer = () => {
             <h4 className="text-white font-bold tracking-wider uppercase text-xs">Product</h4>
             <ul className="space-y-3 font-medium">
               <li><a href="#" className="hover:text-indigo-400 transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Enterprise</a></li>
               <li><a href="#" className="hover:text-indigo-400 transition-colors">What's New</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Integrations</a></li>
+      
             </ul>
           </div>
 
@@ -87,10 +85,8 @@ const Footer = () => {
             <h4 className="text-white font-bold tracking-wider uppercase text-xs">Job Seekers</h4>
             <ul className="space-y-3 font-medium">
               <li><a href="#" className="hover:text-indigo-400 transition-colors">Browse Jobs</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Salary Calculator</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Resume Builder</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Career Advice</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Remote Hub</a></li>
+
+   
             </ul>
           </div>
 
@@ -98,11 +94,10 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-white font-bold tracking-wider uppercase text-xs">Employers</h4>
             <ul className="space-y-3 font-medium">
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Post a Job</a></li>
+
               <li><a href="#" className="hover:text-indigo-400 transition-colors">Talent Solutions</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Recruiter Pricing</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Success Stories</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Recruiter Portal</a></li>
+            
+              
             </ul>
           </div>
 
@@ -111,17 +106,10 @@ const Footer = () => {
             <h4 className="text-white font-bold tracking-wider uppercase text-xs">Company</h4>
             <ul className="space-y-3 font-medium">
               <li><a href="#" className="hover:text-indigo-400 transition-colors">About Us</a></li>
-              <li>
-                <a href="#" className="hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5">
-                  Careers 
-                  <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    We're hiring
-                  </span>
-                </a>
-              </li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Press Kit</a></li>
+              
+            
               <li><a href="#" className="hover:text-indigo-400 transition-colors">Contact Support</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">Partners</a></li>
+             
             </ul>
           </div>
 
@@ -130,7 +118,7 @@ const Footer = () => {
         {/* Bottom Section: Copyright & Legal */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs font-medium text-slate-500 gap-4">
           <p className="flex items-center gap-1.5">
-            &copy; {new Date().getFullYear()} JobPulse, Inc. All rights reserved. Built with <Heart size={12} className="text-rose-500 fill-rose-500" /> for tech talent.
+            &copy; {new Date().getFullYear()} JobPulse, Inc. All rights reserved. Built with <Heart size={12} className="text-rose-500 fill-rose-500" />
           </p>
           <div className="flex flex-wrap items-center space-x-6">
             <a href="#" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
