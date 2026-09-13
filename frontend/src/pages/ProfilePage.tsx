@@ -11,7 +11,10 @@ interface UserProfile {
   location?: string;
   bio?: string;
   skills: string[];
-  telegram_username?: string;
+
+  telegram_username?: string | null;
+  telegram_chat_id?: string | number | null;
+  telegram_connected_at?: string | null;
   telegram_enabled?: boolean;
 }
 
@@ -22,16 +25,18 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [profile, setProfile] = useState<UserProfile>({
-    name: 'Zelalem Getnet',
-    role: 'Full Stack Developer',
-    email: '',
-    location: 'Addis Ababa',
-    bio: '',
-    skills: [],
-    telegram_username: undefined,
-    telegram_enabled: true,
-  });
+ const [profile, setProfile] = useState<UserProfile>({
+  name: 'Zelalem Getnet',
+  role: 'Full Stack Developer',
+  email: '',
+  location: 'Addis Ababa',
+  bio: '',
+  skills: [],
+  telegram_username: null,
+  telegram_chat_id: null,
+  telegram_connected_at: null,
+  telegram_enabled: false,
+});
 
   // State for typing a new skill input
   const [newSkill, setNewSkill] = useState('');
@@ -49,33 +54,49 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/api/profile');
-      const data = res.data;
-      
-      const formattedSkills = Array.isArray(data.skills)
-        ? data.skills.map((s: any) => (typeof s === 'object' && s !== null ? s.name : s))
-        : [];
+    const fetchProfile = async () => {
+  try {
+    setLoading(true);
 
-      setProfile({
-        id: data.id,
-        name: data.name || 'Zelalem Getnet',
-        role: data.role || 'Full Stack Developer',
-        email: data.email || '',
-        location: data.location || 'Addis Ababa',
-        bio: data.bio || '',
-        skills: formattedSkills,
-        telegram_username: data.telegram_username,
-        telegram_enabled: data.telegram_enabled ?? true,
-      });
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await api.get('/api/profile');
+
+    const data = res.data.user ?? res.data;
+
+    const formattedSkills = Array.isArray(data.skills)
+      ? data.skills.map((skill: any) =>
+          typeof skill === 'object' && skill !== null
+            ? skill.name
+            : skill
+        )
+      : [];
+
+    setProfile({
+      id: data.id,
+      name: data.name || 'Zelalem Getnet',
+      role: data.role || 'Full Stack Developer',
+      email: data.email || '',
+      location: data.location || 'Addis Ababa',
+      bio: data.bio || '',
+      skills: formattedSkills,
+
+      telegram_username: data.telegram_username ?? null,
+      telegram_chat_id: data.telegram_chat_id ?? null,
+      telegram_connected_at: data.telegram_connected_at ?? null,
+      telegram_enabled: data.telegram_enabled ?? false,
+    });
+
+  } catch (err: any) {
+    console.error('Error fetching profile:', err);
+
+    setMessage({
+      type: 'error',
+      text: err.response?.data?.message || 'Failed to load profile.',
+    });
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
