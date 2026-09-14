@@ -74,26 +74,31 @@ class AlertController extends Controller
             'alerts'  => $user->jobAlerts()->get(),
         ], 201);
     }
+        public function destroy(string $id)
+{
+    $user = Auth::user();
 
-    public function destroy(string $id)
-    {
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
-        // If $id represents a skill id, remove it from skills and matching job alerts
-        $skill = Skill::find($id);
-        if ($skill) {
-            $user->removeSkill($id);
-            // Optionally clean up matching job alerts
-            $user->jobAlerts()->where('keyword', $skill->name)->delete();
-        }
-
+    if (!$user) {
         return response()->json([
-            'message' => 'Alert and skill removed successfully.',
-            'skills'  => $user->skills()->get(),
-        ], 200);
+            'message' => 'Unauthorized',
+        ], 401);
     }
+
+    $alert = JobAlert::where('id', $id)
+        ->where('user_id', $user->id)
+        ->first();
+
+    if (!$alert) {
+        return response()->json([
+            'message' => 'Alert not found.',
+        ], 404);
+    }
+
+    $alert->delete();
+
+    return response()->json([
+        'message' => 'Alert deleted successfully.',
+        'alerts' => $user->jobAlerts()->latest()->get(),
+    ], 200);
+}
 }
