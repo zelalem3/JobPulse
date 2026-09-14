@@ -123,3 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
         [RecommendationController::class, 'getRecommendation']
     );
 });
+// Explicitly handle browser preflight OPTIONS requests to prevent CORS blocks
+Route::options('{any?}', function () {
+    return response()->json([], 200);
+})->where('any', '.*');
