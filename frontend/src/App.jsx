@@ -14,6 +14,9 @@ import PageNotFound from './pages/404';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import AboutUs from './pages/AboutUsPage';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+const queryClient = new QueryClient();
+
 
 function App() {
   return (

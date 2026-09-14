@@ -86,18 +86,24 @@ export default function HomePage() {
   const [isSaving, setIsSaving] =
     useState<number | null>(null);
 
-  /*
+ /*
   |--------------------------------------------------------------------------
-  | Pagination
+  | Pagination (Updated to remember last page)
   |--------------------------------------------------------------------------
   */
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const savedPage = sessionStorage.getItem("jobpulse_current_page");
+    return savedPage ? parseInt(savedPage, 10) : 1;
+  });
+
+  // Save page to session storage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem("jobpulse_current_page", currentPage.toString());
+  }, [currentPage]);
 
   const [lastPage, setLastPage] =
     useState(1);
-
   /*
   |--------------------------------------------------------------------------
   | Metrics
@@ -201,153 +207,73 @@ export default function HomePage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Fetch jobs
+  | Fetch jobs with Session Storage Caching (Optimized)
   |--------------------------------------------------------------------------
   */
 
   const fetchJobs = useCallback(async () => {
-
     try {
-      setLoading(true);
-
       const params = new URLSearchParams();
 
-      params.set(
-        "page",
-        currentPage.toString()
-      );
-
-      params.set(
-        "per_page",
-        itemsPerPage.toString()
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Search / filters
-      |--------------------------------------------------------------------------
-      */
+      params.set("page", currentPage.toString());
+      params.set("per_page", itemsPerPage.toString());
 
       if (debouncedSearchTerm) {
         params.set("q", debouncedSearchTerm);
-
-        if (selectedSources.length > 0) {
-          params.set(
-            "source",
-            selectedSources.join(",")
-          );
-        }
-
-        if (selectedLocations.length > 0) {
-          params.set(
-            "location",
-            selectedLocations.join(",")
-          );
-        }
-
-        if (selectedJobTypes.length > 0) {
-          params.set(
-            "job_type",
-            selectedJobTypes.join(",")
-          );
-        }
-
-        params.set("sort", sort);
-
-        if (activeOnly) {
-          params.set(
-            "active_only",
-            "true"
-          );
-        }
-
-      } else {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Normal jobs endpoint
-        |--------------------------------------------------------------------------
-        */
-
-        if (selectedSources.length > 0) {
-          params.set(
-            "source",
-            selectedSources.join(",")
-          );
-        }
-
-        if (selectedLocations.length > 0) {
-          params.set(
-            "location",
-            selectedLocations.join(",")
-          );
-        }
-
-        if (selectedJobTypes.length > 0) {
-          params.set(
-            "job_type",
-            selectedJobTypes.join(",")
-          );
-        }
-
-        params.set("sort", sort);
-
-        if (activeOnly) {
-          params.set(
-            "active_only",
-            "true"
-          );
-        }
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | API endpoint
-      |--------------------------------------------------------------------------
-      */
+      if (selectedSources.length > 0) {
+        params.set("source", selectedSources.join(","));
+      }
+
+      if (selectedLocations.length > 0) {
+        params.set("location", selectedLocations.join(","));
+      }
+
+      if (selectedJobTypes.length > 0) {
+        params.set("job_type", selectedJobTypes.join(","));
+      }
+
+      params.set("sort", sort);
+
+      if (activeOnly) {
+        params.set("active_only", "true");
+      }
 
       const endpoint = debouncedSearchTerm
         ? `/api/jobs/search?${params.toString()}`
         : `/api/jobs?${params.toString()}`;
 
-      /*
-      |--------------------------------------------------------------------------
-      | Load jobs + saved jobs
-      |--------------------------------------------------------------------------
-      */
+      const cacheKey = `jobpulse_cache_${endpoint}`;
+      const cachedData = sessionStorage.getItem(cacheKey);
+
+      // If cached data exists, load it immediately and DO NOT set loading to true
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        setListings(parsed.listings);
+        setLastPage(parsed.lastPage);
+        setFilteredTotalItems(parsed.filteredTotalItems);
+        setLoading(false); // Ensure loading is off
+        return; 
+      }
+
+      // Only show loading indicator if there is NO cache
+      setLoading(true);
 
       const [jobsResponse, savedResponse] =
         await Promise.all([
           api.get(endpoint),
-
-          api
-            .get("/api/savedjobs")
-            .catch(() => ({
-              data: {
-                savedjobs: [],
-              },
-            })),
+          api.get("/api/savedjobs").catch(() => ({
+            data: { savedjobs: [] },
+          })),
         ]);
 
-      const jobsData =
-        jobsResponse.data.data || [];
+      const jobsData = jobsResponse.data.data || [];
+      const currentTotal = jobsResponse.data.total || 0;
+      const newLastPage = jobsResponse.data.last_page || 1;
 
-      const currentTotal =
-        jobsResponse.data.total || 0;
-
-      setLastPage(
-        jobsResponse.data.last_page || 1
-      );
-
-      setFilteredTotalItems(
-        currentTotal
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Saved jobs
-      |--------------------------------------------------------------------------
-      */
+      setLastPage(newLastPage);
+      setFilteredTotalItems(currentTotal);
 
       const rawSavedJobs =
         savedResponse.data.savedjobs ||
@@ -363,36 +289,29 @@ export default function HomePage() {
         )
       );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Process jobs
-      |--------------------------------------------------------------------------
-      */
-
       const processedJobs: Job[] =
         jobsData.map((job: Job) => ({
           ...job,
-
-          isSaved: savedJobIds.has(
-            job.id
-          ),
-
+          isSaved: savedJobIds.has(job.id),
           skills: job.skills || [],
         }));
 
       setListings(processedJobs);
 
-    } catch (error) {
-
-      console.error(
-        "Error loading jobs:",
-        error
+      // Save to session storage
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          listings: processedJobs,
+          lastPage: newLastPage,
+          filteredTotalItems: currentTotal,
+        })
       );
 
-      setListings([]);
-
+    } catch (error) {
+      console.error("Error loading jobs:", error);
+      setListings([]); // Fixed missing empty array fallback
     } finally {
-
       setLoading(false);
     }
 

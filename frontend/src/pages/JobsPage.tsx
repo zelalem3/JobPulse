@@ -15,7 +15,6 @@ import api from "../services/axios";
 import { Job } from "../types/job";
 import { useDebounce } from '../hooks/useDebounce';
 
-
 import JobsSidebarFilter from "../components/home/JobsSidebarFilter";
 import JobCard from "../components/home/JobCard";
 import PaginationControls from "../components/home/PaginationControls";
@@ -39,13 +38,13 @@ export default function HomePage() {
   */
 
   const [selectedSources, setSelectedSources] =
-    useState<string[]>([]);
+    useState([]);
 
   const [selectedLocations, setSelectedLocations] =
-    useState<string[]>([]);
+    useState([]);
 
   const [selectedJobTypes, setSelectedJobTypes] =
-    useState<string[]>([]);
+    useState([]);
 
   const [activeOnly, setActiveOnly] =
     useState(false);
@@ -60,13 +59,13 @@ export default function HomePage() {
   */
 
   const [allSources, setAllSources] =
-    useState<string[]>([]);
+    useState([]);
 
   const [allLocations, setAllLocations] =
-    useState<string[]>([]);
+    useState([]);
 
   const [allJobTypes, setAllJobTypes] =
-    useState<string[]>([]);
+    useState([]);
 
   const [filtersLoading, setFiltersLoading] =
     useState(true);
@@ -78,22 +77,28 @@ export default function HomePage() {
   */
 
   const [listings, setListings] =
-    useState<Job[]>([]);
+    useState([]);
 
   const [loading, setLoading] =
     useState(false);
 
   const [isSaving, setIsSaving] =
-    useState<number | null>(null);
+    useState(null);
 
   /*
   |--------------------------------------------------------------------------
-  | Pagination
+  | Pagination (Persisted in sessionStorage)
   |--------------------------------------------------------------------------
   */
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const savedPage = sessionStorage.getItem("jobpulse_current_page");
+    return savedPage ? parseInt(savedPage, 10) : 1;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem("jobpulse_current_page", currentPage.toString());
+  }, [currentPage]);
 
   const [lastPage, setLastPage] =
     useState(1);
@@ -138,9 +143,9 @@ export default function HomePage() {
   |--------------------------------------------------------------------------
   */
 
-     useEffect(() => {
+  useEffect(() => {
     const fetchFilters = async () => {
-      setFiltersLoading(true); // ⬅️ Set loading to true
+      setFiltersLoading(true);
       try {
         const response = await api.get(
           "/api/jobs/filters"
@@ -164,7 +169,7 @@ export default function HomePage() {
           error
         );
       } finally {
-        setFiltersLoading(false); // ⬅️ Turn off loading when done
+        setFiltersLoading(false);
       }
     };
 
@@ -201,15 +206,13 @@ export default function HomePage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Fetch jobs
+  | Fetch jobs with Session Storage Caching
   |--------------------------------------------------------------------------
   */
 
   const fetchJobs = useCallback(async () => {
 
     try {
-      setLoading(true);
-
       const params = new URLSearchParams();
 
       params.set(
@@ -222,99 +225,58 @@ export default function HomePage() {
         itemsPerPage.toString()
       );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Search / filters
-      |--------------------------------------------------------------------------
-      */
-
       if (debouncedSearchTerm) {
         params.set("q", debouncedSearchTerm);
-
-        if (selectedSources.length > 0) {
-          params.set(
-            "source",
-            selectedSources.join(",")
-          );
-        }
-
-        if (selectedLocations.length > 0) {
-          params.set(
-            "location",
-            selectedLocations.join(",")
-          );
-        }
-
-        if (selectedJobTypes.length > 0) {
-          params.set(
-            "job_type",
-            selectedJobTypes.join(",")
-          );
-        }
-
-        params.set("sort", sort);
-
-        if (activeOnly) {
-          params.set(
-            "active_only",
-            "true"
-          );
-        }
-
-      } else {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Normal jobs endpoint
-        |--------------------------------------------------------------------------
-        */
-
-        if (selectedSources.length > 0) {
-          params.set(
-            "source",
-            selectedSources.join(",")
-          );
-        }
-
-        if (selectedLocations.length > 0) {
-          params.set(
-            "location",
-            selectedLocations.join(",")
-          );
-        }
-
-        if (selectedJobTypes.length > 0) {
-          params.set(
-            "job_type",
-            selectedJobTypes.join(",")
-          );
-        }
-
-        params.set("sort", sort);
-
-        if (activeOnly) {
-          params.set(
-            "active_only",
-            "true"
-          );
-        }
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | API endpoint
-      |--------------------------------------------------------------------------
-      */
+      if (selectedSources.length > 0) {
+        params.set(
+          "source",
+          selectedSources.join(",")
+        );
+      }
+
+      if (selectedLocations.length > 0) {
+        params.set(
+          "location",
+          selectedLocations.join(",")
+        );
+      }
+
+      if (selectedJobTypes.length > 0) {
+        params.set(
+          "job_type",
+          selectedJobTypes.join(",")
+        );
+      }
+
+      params.set("sort", sort);
+
+      if (activeOnly) {
+        params.set(
+          "active_only",
+          "true"
+        );
+      }
 
       const endpoint = debouncedSearchTerm
         ? `/api/jobs/search?${params.toString()}`
         : `/api/jobs?${params.toString()}`;
 
-      /*
-      |--------------------------------------------------------------------------
-      | Load jobs + saved jobs
-      |--------------------------------------------------------------------------
-      */
+      // 1. Check cache using unique key including current page & params
+      const cacheKey = `jobpulse_cache_${endpoint}`;
+      const cachedData = sessionStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        setListings(parsed.listings);
+        setLastPage(parsed.lastPage);
+        setFilteredTotalItems(parsed.filteredTotalItems);
+        setLoading(false);
+        return; // Exit early without network fetch or loading flicker
+      }
+
+      setLoading(true);
 
       const [jobsResponse, savedResponse] =
         await Promise.all([
@@ -335,19 +297,15 @@ export default function HomePage() {
       const currentTotal =
         jobsResponse.data.total || 0;
 
+      const newLastPage = jobsResponse.data.last_page || 1;
+
       setLastPage(
-        jobsResponse.data.last_page || 1
+        newLastPage
       );
 
       setFilteredTotalItems(
         currentTotal
       );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Saved jobs
-      |--------------------------------------------------------------------------
-      */
 
       const rawSavedJobs =
         savedResponse.data.savedjobs ||
@@ -363,12 +321,6 @@ export default function HomePage() {
         )
       );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Process jobs
-      |--------------------------------------------------------------------------
-      */
-
       const processedJobs: Job[] =
         jobsData.map((job: Job) => ({
           ...job,
@@ -381,6 +333,16 @@ export default function HomePage() {
         }));
 
       setListings(processedJobs);
+
+      // 2. Save fetched data to session cache
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          listings: processedJobs,
+          lastPage: newLastPage,
+          filteredTotalItems: currentTotal,
+        })
+      );
 
     } catch (error) {
 
@@ -544,12 +506,6 @@ export default function HomePage() {
     const previousSavedState =
       !!job.isSaved;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Optimistic update
-    |--------------------------------------------------------------------------
-    */
-
     setListings((prev) =>
       prev.map((item) =>
         item.id === id
@@ -570,18 +526,19 @@ export default function HomePage() {
         `/api/savejob/${id}`
       );
 
+      // Invalidate cache entries when a job is saved/unsaved
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith("jobpulse_cache_")) {
+          sessionStorage.removeItem(key);
+        }
+      });
+
     } catch (error) {
 
       console.error(
         "Error updating save status:",
         error
       );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Rollback
-      |--------------------------------------------------------------------------
-      */
 
       setListings((prev) =>
         prev.map((item) =>
@@ -600,7 +557,6 @@ export default function HomePage() {
       setIsSaving(null);
     }
   };
-
   /*
   |--------------------------------------------------------------------------
   | Render
