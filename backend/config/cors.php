@@ -4,12 +4,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-   
-    'allowed_origins' => [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'https://your-frontend-domain.vercel.app',
-    ],
+    // Option A: Explicitly allow your Vercel URL
+    'allowed_origins' => ['https://job-pulse-five.vercel.app', 'http://localhost:3000', 'http://localhost:5173'],
+
+    // Option B (If you want to allow all origins temporarily for debugging):
+    // 'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 
@@ -19,6 +18,5 @@ return [
 
     'max_age' => 0,
 
-    // Set to true if you are using Sanctum cookies/sessions, false if pure Bearer tokens
-    'supports_credentials' => true, 
+    'supports_credentials' => true,
 ];
