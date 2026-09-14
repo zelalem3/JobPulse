@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('recommendations:send')->dailyAt('08:00');
 Schedule::command('queue:work --stop-when-empty')->everyMinute();
+Schedule::command('alerts:send')->hourly();
 
 
 Schedule::command('jobs:purge-old')->daily();
