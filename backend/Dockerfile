@@ -1,6 +1,6 @@
 FROM php:8.3-fpm-alpine
 
-# Install system dependencies and build tools required for PECL extensions
+# Install system dependencies
 RUN apk add --no-cache \
     bash \
     postgresql-dev \
@@ -11,12 +11,12 @@ RUN apk add --no-cache \
     git \
     $PHPIZE_DEPS
 
-# Install PHP extensions including Redis via pecl
+# Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql gd zip \
     && pecl install redis \
     && docker-php-ext-enable redis
 
-# Clean up dev dependencies to keep the image lightweight (optional but recommended)
+# Clean up build tools AFTER extensions are fully installed and enabled
 RUN apk del $PHPIZE_DEPS
 
 # Get latest Composer
