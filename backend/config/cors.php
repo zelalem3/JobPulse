@@ -1,14 +1,15 @@
 <?php
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'auth/*', '*'],
 
     'allowed_methods' => ['*'],
 
-    // Option A: Explicitly allow your Vercel URL
-    'allowed_origins' => ['https://job-pulse-five.vercel.app', 'http://localhost:3000', 'http://localhost:5173'],
-
-    // Option B (If you want to allow all origins temporarily for debugging):
-    // 'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        env('FRONTEND_URL'),
+        "https://job-pulse-five.vercel.app"
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -18,5 +19,5 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => true,   // ← MUST be true for Sanctum
 ];

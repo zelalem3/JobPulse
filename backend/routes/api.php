@@ -1,92 +1,40 @@
-
 <?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
-
 use App\Http\Controllers\Auth\ApiRegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Api\JobListingController;
 use App\Http\Controllers\Api\JobSearchController;
-use App\Http\Controllers\Api\SaveJobController;
+use App\Http\Controllers\Api\SaveJobController; 
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\AlertController;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\TelegramController;
 
-/*
-|--------------------------------------------------------------------------
-| Public Routes
-|--------------------------------------------------------------------------
-*/
 
-// Authentication
-Route::post('/auth/register', [ApiRegisterController::class, 'register']);
-Route::post('/auth/login', [LoginController::class, 'login']);
-
-// Public jobs
-Route::get('/jobs/filters', [JobListingController::class, 'filters']);
-Route::get('/jobs/search', [JobSearchController::class, 'search']);
-
-Route::apiResource('jobs', JobListingController::class)
-    ->only(['index', 'show']);
-
-/*
-|--------------------------------------------------------------------------
-| Telegram Webhook
-|--------------------------------------------------------------------------
-*/
-
-// Keep this route public.
-// Telegram cannot send your Sanctum user token.
-Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
-
-/*
-|--------------------------------------------------------------------------
-| Purge Old Jobs
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/purgejobs', function (Request $request) {
-
-    if (
-        !$request->hasValidSignature()
-        && $request->query('token') !== env('CRON_SECRET_TOKEN')
-    ) {
-        return response()->json([
-            'error' => 'Unauthorized',
-        ], 401);
-    }
-
-    Artisan::call('jobs:purge-old');
-
-    return response()->json([
-        'status' => 'Old Jobs Purged',
-        'output' => Artisan::output(),
-    ]);
-});
 
 /*
 |--------------------------------------------------------------------------
 | Protected Routes
 |--------------------------------------------------------------------------
 */
-
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Auth
-    Route::post('/auth/logout', [LoginController::class, 'logout']);
-
     // Profile
-    Route::get('/profile', [ProfileController::class, 'show']);
-    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::put('profile', [ProfileController::class, 'update']);
     Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
 
     // Job Search
-    // Public search is already defined above.
+    Route::get('/jobs/search', [JobSearchController::class, 'search']);
+
+    // Job Filters
+    Route::get('/jobs/filters', [JobListingController::class, 'filters']);
 
     // Telegram
     Route::post('/telegram/connect', [TelegramController::class, 'connect']);
@@ -100,30 +48,42 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/topcompanies', [DashboardController::class, 'topcompanies']);
 
     // Saved Jobs
-    Route::get('/savedjobs', [SaveJobController::class, 'index']);
-    Route::post('/savejob/{id}', [SaveJobController::class, 'store']);
-    Route::delete('/savejob/{id}', [SaveJobController::class, 'destroy']);
+    Route::get('savedjobs', [SaveJobController::class, 'index']);
+    Route::post('savejob/{id}', [SaveJobController::class, 'store']);
+    Route::delete('savejob/{id}', [SaveJobController::class, 'destroy']);
 
     // Alerts
-    Route::get('/alerts', [AlertController::class, 'index']);
-    Route::post('/alerts', [AlertController::class, 'store']);
-    Route::delete('/alerts/{id}', [AlertController::class, 'destroy']);
-
-    // Job Alerts
-    Route::get('/job-alerts', [AlertController::class, 'index']);
-    Route::post('/job-alerts', [AlertController::class, 'create']);
-    Route::put('/job-alerts/{id}', [AlertController::class, 'update']);
-    Route::delete('/job-alerts/{id}', [AlertController::class, 'destroy']);
+    Route::get('alerts', [AlertController::class, 'index']);
+    Route::post('alerts', [AlertController::class, 'store']);
+    Route::delete('alerts/{id}', [AlertController::class, 'destroy']);
 
     // Recommendations
     Route::get('/recommendations', [RecommendationController::class, 'index']);
 
+    // Job Alerts
+    Route::get('job-alerts', [AlertController::class, 'index']);
+    Route::post('job-alerts', [AlertController::class, 'create']);
+    Route::put('job-alerts/{id}', [AlertController::class, 'update']);
+    Route::delete('job-alerts/{id}', [AlertController::class, 'destroy']);
+
+    // Job Recommendation
     Route::get(
         '/job/recommendation/{job}',
         [RecommendationController::class, 'getRecommendation']
     );
 });
-// Explicitly handle browser preflight OPTIONS requests to prevent CORS blocks
-Route::options('{any?}', function () {
-    return response()->json([], 200);
-})->where('any', '.*');
+
+
+/*
+|--------------------------------------------------------------------------
+| Public Job Routes
+|--------------------------------------------------------------------------
+*/
+
+
+
+Route::get('/jobs/filters', [JobListingController::class, 'filters']);
+Route::get('/jobs/search', [JobSearchController::class, 'search']);
+
+Route::apiResource('jobs', JobListingController::class)
+    ->only(['index', 'show']);
