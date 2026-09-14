@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase, MapPin, Mail, Save, Lock, Plus, X, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 import api from '../services/axios';
-import TelegramSettings from '../components/dashboard/TelegramSettings'; // Import your new Telegram component
+// import TelegramSettings from '../components/dashboard/'; // Import your new Telegram component
 
 interface UserProfile {
   id?: number;
@@ -430,7 +430,7 @@ export default function Profile() {
         {/* --- TAB WINDOW: TELEGRAM ALERTS --- */}
         {activeTab === 'telegram' && (
           <div className="max-w-xl">
-            <TelegramSettings user={profile} onUpdate={fetchProfile} />
+         
           </div>
         )}
 

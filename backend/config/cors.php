@@ -4,10 +4,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Explicitly add your local Vite development URL(s)
+   
     'allowed_origins' => [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'https://your-frontend-domain.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
