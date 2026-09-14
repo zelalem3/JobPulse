@@ -74,8 +74,8 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/auth/register', [ApiRegisterController::class, 'register']);
+Route::post('/auth/login', [LoginController::class, 'login']);
+Route::post('/register', [ApiRegisterController::class, 'register']);
 Route::get('/jobs/filters', [JobListingController::class, 'filters']);
 Route::get('/jobs/search', [JobSearchController::class, 'search']);
 
