@@ -81,3 +81,16 @@ Route::get('/jobs/search', [JobSearchController::class, 'search']);
 
 Route::apiResource('jobs', JobListingController::class)
     ->only(['index', 'show']);
+
+Route::get('/trigger-daily-recommendations', function (Request $request) {
+    if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    Artisan::call('recommendations:send');
+
+    return response()->json([
+        'status' => 'Recommendation emails triggered successfully!',
+        'output' => Artisan::output()
+    ]);
+});
