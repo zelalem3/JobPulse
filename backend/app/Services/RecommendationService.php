@@ -26,8 +26,7 @@ class RecommendationService
      */
     public function getRecommendations(User $user, int $limit = 8)
     {
-        $latestJobTimestamp = Redis::get('latest_job_timestamp') ?? now()->timestamp;
-
+        $latestJobTimestamp = Cache::get('latest_job_timestamp') ?? now()->timestamp;
         $cacheKey = sprintf(
             'job_recommendations:%d:%s:%d:%s',
             $user->id,
