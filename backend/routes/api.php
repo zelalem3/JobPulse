@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\TelegramController;
 
-Route::post('/logout', [LoginController::class, 'logout']);
+
 Route::middleware('auth:sanctum')->group(function () {
 
     // Profile
@@ -91,6 +91,38 @@ Route::get('/trigger-daily-recommendations', function (Request $request) {
 
     return response()->json([
         'status' => 'Recommendation emails triggered successfully!',
+        'output' => Artisan::output()
+    ]);
+});
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
+Route::get('/ping', function () {
+    return response()->json(['status' => 'alive']);
+});
+Route::get('/prugejobs', function (Request $request) {
+    if ($request->query('token') !== env('CRON_SECRET_TOKEN')) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    Artisan::call('jobs:purge-old');
+
+    return response()->json([
+        'status' => 'Old Jobs Purged',
+        'output' => Artisan::output(),
+    ]);
+});
+Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
+    $secretToken = config('services.cron.token', env('CRON_SECRET_TOKEN'));
+    
+    if ($secretToken && $request->query('token') !== $secretToken) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    Artisan::call('alerts:send');
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Job alerts processed successfully.',
         'output' => Artisan::output()
     ]);
 });
