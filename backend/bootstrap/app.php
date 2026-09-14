@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append(HandleCors::class);
+        // Laravel 12 handles CORS globally out-of-the-box via config/cors.php
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
