@@ -25,49 +25,88 @@ class RecommendationService
      * 9. Cached with shared Redis invalidation for Python scrapers.
      */
     public function getRecommendations(User $user, int $limit = 8)
-    {
-        $latestJobTimestamp = Cache::get('latest_job_timestamp') ?? now()->timestamp;
-        $cacheKey = sprintf(
-            'job_recommendations:%d:%s:%d:%s',
-            $user->id,
-            now()->toDateString(),
-            $limit,
-            $latestJobTimestamp
-        );
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Get user skills BEFORE creating the cache key
+    |--------------------------------------------------------------------------
+    */
+    $userSkillIds = $user->skills()
+        ->pluck('skills.id')
+        ->map(fn ($id) => (int) $id)
+        ->unique()
+        ->sort()
+        ->values();
 
-        return Cache::remember($cacheKey, now()->endOfDay(), function () use ($user, $limit) {
+    /*
+    |--------------------------------------------------------------------------
+    | Do not recommend unrelated jobs when the user has no skills
+    |--------------------------------------------------------------------------
+    */
+    if ($userSkillIds->isEmpty()) {
+        return collect();
+    }
 
-            $userSkillIds = $user->skills()
-                ->pluck('skills.id')
-                ->unique()
-                ->values()
-                ->toArray();
+    /*
+    |--------------------------------------------------------------------------
+    | Include skills in cache key
+    |--------------------------------------------------------------------------
+    */
+    $skillsHash = md5($userSkillIds->implode(','));
 
-            if (empty($userSkillIds)) {
-                return $this->getFallbackRecommendations($user, $limit);
-            }
+    $latestJobTimestamp = Cache::get('latest_job_timestamp')
+        ?? now()->timestamp;
+
+    $cacheKey = sprintf(
+        'job_recommendations:%d:%s:%d:%s:%s',
+        $user->id,
+        now()->toDateString(),
+        $limit,
+        $latestJobTimestamp,
+        $skillsHash
+    );
+
+    return Cache::remember(
+        $cacheKey,
+        now()->endOfDay(),
+        function () use ($user, $userSkillIds, $limit) {
 
             $matchingSkills = DB::table('job_skill')
                 ->select(
                     'job_listing_id',
-                    DB::raw('COUNT(DISTINCT skill_id) AS matching_skills_count')
+                    DB::raw(
+                        'COUNT(DISTINCT skill_id) AS matching_skills_count'
+                    )
                 )
-                ->whereIn('skill_id', $userSkillIds)
+                ->whereIn('skill_id', $userSkillIds->toArray())
                 ->groupBy('job_listing_id');
+
+            $normalizedLocation = $this->normalizeLocation(
+                $user->location
+            );
 
             $query = JobListing::query()
                 ->where('job_listings.is_active', true)
 
-                // Last 2 days instead of only today
-                ->where('job_listings.posted_at', '>=', now()->subDays(2)->startOfDay())
+                // Jobs posted during the last 2 days
+                ->where(
+                    'job_listings.posted_at',
+                    '>=',
+                    now()->subDays(2)->startOfDay()
+                )
 
-                // Don't recommend expired jobs
+                // Do not recommend expired jobs
                 ->where(function ($query) {
                     $query
                         ->whereNull('job_listings.deadline')
-                        ->orWhereDate('job_listings.deadline', '>=', now()->toDateString());
+                        ->orWhereDate(
+                            'job_listings.deadline',
+                            '>=',
+                            now()->toDateString()
+                        );
                 })
 
+                // This guarantees at least one matching skill
                 ->joinSub(
                     $matchingSkills,
                     'matching',
@@ -83,49 +122,73 @@ class RecommendationService
                 ->select([
                     'job_listings.*',
                     'matching.matching_skills_count',
+
                     DB::raw("
                         (
                             matching.matching_skills_count * 10
+
                             +
                             CASE
-                                WHEN matching.matching_skills_count >= 4 THEN 15
-                                WHEN matching.matching_skills_count = 3 THEN 10
-                                WHEN matching.matching_skills_count = 2 THEN 5
-                                ELSE 0
-                            END
-                            +
-                            CASE
-                                WHEN COALESCE(job_listings.quality_score, 0) >= 90 THEN 20
-                                WHEN COALESCE(job_listings.quality_score, 0) >= 80 THEN 15
-                                WHEN COALESCE(job_listings.quality_score, 0) >= 70 THEN 10
-                                WHEN COALESCE(job_listings.quality_score, 0) >= 60 THEN 5
-                                ELSE 0
-                            END
-                            +
-                            CASE
-                                WHEN LOWER(TRIM(COALESCE(job_listings.location, ''))) = LOWER(TRIM(?))
-                                     AND TRIM(?) <> ''
+                                WHEN matching.matching_skills_count >= 4
+                                    THEN 15
+                                WHEN matching.matching_skills_count = 3
                                     THEN 10
+                                WHEN matching.matching_skills_count = 2
+                                    THEN 5
                                 ELSE 0
                             END
+
                             +
                             CASE
-                                WHEN job_listings.posted_at >= ? THEN 10
+                                WHEN COALESCE(
+                                    job_listings.quality_score, 0
+                                ) >= 90 THEN 20
+
+                                WHEN COALESCE(
+                                    job_listings.quality_score, 0
+                                ) >= 80 THEN 15
+
+                                WHEN COALESCE(
+                                    job_listings.quality_score, 0
+                                ) >= 70 THEN 10
+
+                                WHEN COALESCE(
+                                    job_listings.quality_score, 0
+                                ) >= 60 THEN 5
+
+                                ELSE 0
+                            END
+
+                            +
+                            CASE
+                                WHEN LOWER(
+                                    TRIM(
+                                        COALESCE(
+                                            job_listings.location, ''
+                                        )
+                                    )
+                                ) = LOWER(TRIM(?))
+                                AND TRIM(?) <> ''
+                                THEN 10
+                                ELSE 0
+                            END
+
+                            +
+                            CASE
+                                WHEN job_listings.posted_at >= ?
+                                    THEN 10
                                 ELSE 0
                             END
                         ) AS recommendation_score
                     ")
                 ]);
 
-            $normalizedLocation = $this->normalizeLocation($user->location);
-
             $query->addBinding($normalizedLocation, 'select');
             $query->addBinding($normalizedLocation, 'select');
-            $query->addBinding(now()->subDay(), 'select'); // boost jobs from the last 24h
-
-            $query->with(['company', 'skills']);
+            $query->addBinding(now()->subDay(), 'select');
 
             $jobs = $query
+                ->with(['company', 'skills'])
                 ->orderByDesc('recommendation_score')
                 ->orderByDesc('matching_skills_count')
                 ->orderByDesc('quality_score')
@@ -135,13 +198,16 @@ class RecommendationService
 
             return $jobs->map(function ($job) use ($userSkillIds) {
                 $job->matched_skills = $job->skills
-                    ->filter(fn ($skill) => in_array($skill->id, $userSkillIds, true))
+                    ->filter(function ($skill) use ($userSkillIds) {
+                        return $userSkillIds->contains((int) $skill->id);
+                    })
                     ->values();
 
                 return $job;
             });
-        });
-    }
+        }
+    );
+}
 
     /**
      * Fallback recommendations when the user has no skills.
