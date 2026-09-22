@@ -864,5 +864,50 @@
     "Public Health",
     "Quality Assurance",
     "Technical Support"
+  ],
+  "b46412a4dc5d1d59e1719f0d4b8b97d63d02615994bf633f3f7b1c589e5ba8aa": [
+    "Kids Hair Cutting",
+    "Kids Hair Styling",
+    "Sanitation Practices"
+  ],
+  "7feb286b2dc5b3d7473e68819c8332816f832a5bab25b32f7c3bfa0765ef505c": [
+    "Communication",
+    "Content Creation",
+    "Instagram",
+    "On-Camera Presentation",
+    "Social Media Management",
+    "TikTok",
+    "Video Editing",
+    "Video Production"
+  ],
+  "dbaff6936b3461f84fe873c44669aea29be36c39b6b89da55df4b551dc0f23ff": [
+    "Computer Hardware Repair",
+    "Customer Service",
+    "Diagnostics",
+    "Equipment Repair",
+    "Network Configuration",
+    "Network Installation",
+    "Network Maintenance",
+    "Network Security",
+    "Office Machine Repair",
+    "On-Site Technical Support",
+    "Technical Documentation",
+    "Troubleshooting"
+  ],
+  "7e0a3cab2198d0d0adc871cf2526d1cda6af3403269a8adeb2c5c840249be873": [
+    "Communication"
+  ],
+  "0ad6ed8820a8f9b3861d426879b888d8d8110cb8910fbc5eb37d2775e25533c0": [],
+  "29512db9fc36a8ace683dc812450aaaee54e81f2de918d4965a8bf77e880ceea": [
+    "Amharic",
+    "Communication",
+    "Content Creation",
+    "English",
+    "Instagram",
+    "On-Camera Presentation",
+    "Teaching",
+    "TikTok",
+    "Video Production",
+    "YouTube"
   ]
 }

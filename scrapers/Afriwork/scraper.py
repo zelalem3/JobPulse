@@ -17,7 +17,7 @@ class AfriworkScraper(BaseScraper):
         self.url = "https://api.afriworket.com/v1/graphql"
         self.headers = {"Content-Type": "application/json", "x-hasura-role": "anonymous"}
 
-    def fetch(self) -> list:
+    def fetch(self, offset: int = 0) -> list:
         payload = {
             "operationName": "GetAllJobs",
             "query": """query GetAllJobs($offset: Int!) {
@@ -28,13 +28,13 @@ class AfriworkScraper(BaseScraper):
                     compensation_currency, experience_level, entity { name }
                 }
             }""",
-            "variables": {"offset": 0}
+            "variables": {"offset": offset}
         }
         try:
             response = requests.post(self.url, headers=self.headers, json=payload, timeout=10)
             return response.json().get("data", {}).get("jobs", [])
         except Exception as e:
-            print(f"[Afriwork] Fetch failed: {e}")
+            print(f"[Afriwork] Fetch failed at offset {offset}: {e}")
             return []
 
     def parse(self, item: dict) -> JobListing:
@@ -66,9 +66,30 @@ class AfriworkScraper(BaseScraper):
         )
 
     async def run(self):
-        """Run fetch in a thread so it doesn't block the async event loop."""
-        items = await asyncio.to_thread(self.fetch)
-        results = []
-        for item in items:
-            results.append(self.parse(item))
-        return results
+        """Loop through pagination offsets to fetch all available jobs."""
+        limit = 30
+        offset = 0
+        all_results = []
+        
+        while True:
+            # Fetch a batch of jobs in a thread to prevent blocking
+            items = await asyncio.to_thread(self.fetch, offset)
+            
+            # If no items are returned, we've reached the end
+            if not items:
+                break
+                
+            for item in items:
+                all_results.append(self.parse(item))
+                
+            # If fewer items than the limit are returned, this is the last page
+            if len(items) < limit:
+                break
+                
+            # Move to the next batch
+            offset += limit
+            
+            # Optional: a brief sleep to avoid hammering the API too fast
+            await asyncio.sleep(0.5)
+            
+        return all_results
