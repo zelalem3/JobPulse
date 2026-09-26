@@ -52,3 +52,34 @@ def test_prepare_dedup_data_has_hash():
     assert len(data.dedup_hash) == 64  # sha256 hex
     assert data.title
     assert data.company
+
+from common.deduplication import (
+    normalize_text,
+    normalize_title as dedup_normalize_title,
+    text_similarity,
+)
+
+
+def test_normalize_text_basic():
+    assert normalize_text("Software-Engineer!!!") == "software engineer"
+    assert normalize_text(None) == ""
+
+
+def test_dedup_title_strips_generic_words():
+    result = dedup_normalize_title("Software Engineer Vacancy Position")
+    assert "vacancy" not in result
+    assert "position" not in result
+    assert "software" in result
+    assert "engineer" in result
+
+
+def test_text_similarity_identical():
+    assert text_similarity("hello world", "hello world") == 1.0
+    assert text_similarity("", "hello") == 0.0
+
+
+def test_same_company_different_source_same_hash():
+    j1 = _job(source="EthioJobs", url="https://a.com/1")
+    j2 = _job(source="GeezJobs", url="https://b.com/2")
+    # hash ignores source and URL
+    assert generate_dedup_hash(j1) == generate_dedup_hash(j2)
