@@ -29,5 +29,9 @@ class JobAlert extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function deliveries()
+    {
+    return $this->hasMany(JobAlertDelivery::class, 'job_alert_id');
+    }
     
 }
