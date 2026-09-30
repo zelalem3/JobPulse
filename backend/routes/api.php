@@ -118,7 +118,7 @@ Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    Artisan::call('alerts:send');
+    Artisan::call('job-alert:send');
 
     return response()->json([
         'status' => 'success',
