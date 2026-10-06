@@ -1,9 +1,7 @@
 name: Run JobPulse Scrapers
 
 on:
-  schedule:
-    - cron: '*/20 * * * *'
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   scrape:
