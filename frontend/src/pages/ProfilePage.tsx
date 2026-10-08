@@ -1,7 +1,22 @@
+
 import React, { useState, useEffect } from 'react';
-import { User, Briefcase, MapPin, Mail, Save, Lock, Plus, X, Sparkles, ShieldCheck, Zap } from 'lucide-react';
+import {
+  User,
+  Briefcase,
+  MapPin,
+  Mail,
+  Save,
+  Lock,
+  Plus,
+  X,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+} from 'lucide-react';
+
 import api from '../services/axios';
-// import TelegramSettings from '../components/dashboard/'; // Import your new Telegram component
+import Spinner from '../components/Spinner';
+
 
 interface UserProfile {
   id?: number;
@@ -177,18 +192,18 @@ export default function Profile() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-950">
-        <div className="relative">
-          <div className="animate-spin h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles size={16} className="text-emerald-400 animate-pulse" />
-          </div>
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <Spinner
+            size="lg"
+            label="Loading your profile..."
+            card
+          />
         </div>
-      </div>
-    );
-  }
+      );
+    }
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8 font-sans selection:bg-emerald-900 selection:text-white">

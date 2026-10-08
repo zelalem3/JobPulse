@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@tanstack/react-query": "^5.104.1",
     "testing-library": "^0.0.2"
   },
   "devDependencies": {

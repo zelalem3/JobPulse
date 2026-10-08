@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { LogIn, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  LogIn,
+  Mail,
+  Lock,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  CheckCircle2,
+} from "lucide-react";
 import axios from "../services/axios";
-import { useAuthStore } from '../store/authStore'; 
-
+import { useAuthStore } from "../store/authStore";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,8 +19,16 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loginAction = useAuthStore((state) => state.login);
+  const token = useAuthStore((state) => state.token);
   const navigate = useNavigate();
-  
+
+  const isLoggedIn = !!token;
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isLoggedIn, navigate]);
 
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,142 +38,293 @@ const Login = () => {
     try {
       const response = await axios.post("/api/auth/login", {
         email,
-        password
+        password,
       });
-      
-      console.log("login successful", response.data);
+
       const { user, token } = response.data;
-      
-      // Update global auth state
+
       loginAction(user, token);
-
-      // Smoothly bounce user down onto home feed/dashboard
       navigate("/");
-
     } catch (error: any) {
-      if (error.response && error.response.status === 422) {
-          console.error("Laravel Validation Error Details:", error.response.data.errors);
-          // Extract and flatten validation errors from backend payload safely
-          const messages = Object.values(error.response.data.errors).flat().join("\n");
+      if (error.response?.status === 422) {
+        const errors = error.response.data?.errors;
+
+        if (errors) {
+          const messages = Object.values(errors)
+            .flat()
+            .join("\n");
+
           setErrorMessage(messages);
+        } else {
+          setErrorMessage(
+            error.response.data?.message ||
+              "Please check your email and password."
+          );
+        }
       } else {
-          console.error("Generic Login Failure:", error);
-          setErrorMessage("Invalid credentials or server connection issue.");
+        setErrorMessage(
+          "Unable to sign in. Please check your credentials and try again."
+        );
       }
     } finally {
       setIsLoading(false);
     }
   }
-  
-  const token = useAuthStore((state) => state.token);
-  const isLoggedIn = !!token;
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isLoggedIn, navigate]);
+  const fieldClass =
+    "group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-3 transition-all duration-200 focus-within:border-indigo-500/70 focus-within:bg-slate-950 focus-within:ring-2 focus-within:ring-indigo-500/10";
 
-
+  const inputClass =
+    "w-full bg-transparent outline-none text-sm text-slate-100 placeholder:text-slate-500";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-slate-800 selection:text-white">
-      <div className="max-w-md w-full bg-slate-900/60 backdrop-blur-xl p-8 sm:p-10 rounded-3xl border border-slate-800/80 shadow-xl space-y-6">
-        
-        {/* --- BRANDING / HEADER HEADER --- */}
-        <div className="space-y-2 text-center">
-          <div className="w-12 h-12 bg-slate-950 text-slate-300 rounded-2xl flex items-center justify-center mx-auto border border-slate-800 shadow-inner">
-            <LogIn size={22} className="ml-0.5" />
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
-            Welcome Back
-          </h1>
-          <p className="text-sm font-semibold text-slate-400">
-            Sign in to manage your pipeline indexes and alerts.
-          </p>
-        </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      {/* Ambient background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-indigo-600/10 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-violet-600/5 blur-3xl" />
+      </div>
 
-        {/* --- DYNAMIC INLINE VALIDATION TOAST DISMISSAL --- */}
-        {errorMessage && (
-          <div className="p-3.5 bg-rose-950/60 border border-rose-900/80 rounded-2xl flex gap-2.5 items-start text-rose-300 text-xs font-bold leading-relaxed shadow-xl">
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <div className="whitespace-pre-line">{errorMessage}</div>
-          </div>
-        )}
+      <div className="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid w-full overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70 shadow-2xl shadow-black/30 backdrop-blur-xl lg:grid-cols-[0.9fr_1.1fr]">
+          {/* Left panel */}
+          <div className="hidden border-r border-slate-800 bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 p-10 lg:flex lg:flex-col">
+            <div>
+              {/* Brand */}
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 text-sm font-bold text-white"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-950/40">
+                  <span className="text-sm font-black">JP</span>
+                </span>
 
-        {/* --- SUBMIT ACTIONS FORM --- */}
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          
-          {/* Email Block */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-              Email Address
-            </label>
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl focus-within:border-slate-700 transition duration-150 shadow-inner">
-              <Mail size={16} className="text-slate-400 shrink-0" />
-              <input
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
-                className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
-                required
-                disabled={isLoading}
-              />
+                <span>
+                  Job<span className="text-indigo-400">Pulse</span>
+                </span>
+              </Link>
+
+              <div className="mt-20">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400">
+                  Welcome back
+                </p>
+
+                <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight text-white">
+                  Your next
+                  <span className="block text-slate-400">
+                    opportunity is waiting.
+                  </span>
+                </h2>
+
+                <p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">
+                  Sign in to continue discovering jobs, managing saved
+                  opportunities, and keeping your job search organized.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-auto space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <CheckCircle2 size={16} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">
+                    Discover relevant jobs
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Browse opportunities collected from multiple sources.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <CheckCircle2 size={16} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">
+                    Keep your search organized
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Save interesting jobs and manage them from one place.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <CheckCircle2 size={16} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">
+                    Stay informed
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Set up alerts for the roles you're looking for.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Password Block */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                Password
-              </label>
-              <a href="#forgot" className="text-xs font-semibold text-slate-300 hover:text-white transition">
-                Forgot?
-              </a>
-            </div>
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl focus-within:border-slate-700 transition duration-150 shadow-inner">
-              <Lock size={16} className="text-slate-400 shrink-0" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-transparent outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500"
-                required
-                disabled={isLoading}
-              />
-            </div>
-          </div>
+          {/* Login panel */}
+          <div className="p-6 sm:p-8 lg:p-12">
+            {/* Mobile branding */}
+            <div className="mb-10 flex items-center justify-between lg:hidden">
+              <Link
+                to="/"
+                className="flex items-center gap-2 text-sm font-bold text-white"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
+                  <span className="text-sm font-black">JP</span>
+                </span>
 
-          {/* Core Submission Trigger */}
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full mt-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800/50 border border-slate-700/60 text-white font-bold rounded-2xl text-sm transition shadow-lg flex items-center justify-center gap-2 select-none cursor-pointer"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={16} className="animate-spin text-slate-300" /> Verifying Credentials...
-              </>
-            ) : (
-              "Sign In"
+                Job<span className="text-indigo-400">Pulse</span>
+              </Link>
+
+              <Link
+                to="/register"
+                className="text-xs font-semibold text-slate-400 transition hover:text-white"
+              >
+                Create account
+              </Link>
+            </div>
+
+            {/* Header */}
+            <div className="mb-8">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
+                <LogIn size={20} />
+              </div>
+
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Welcome back
+              </h1>
+
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Sign in to continue your job search.
+              </p>
+            </div>
+
+            {/* Error */}
+            {errorMessage && (
+              <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-900/60 bg-rose-950/30 px-4 py-3.5 text-sm text-rose-300">
+                <AlertCircle
+                  size={17}
+                  className="mt-0.5 shrink-0 text-rose-400"
+                />
+
+                <div className="whitespace-pre-line leading-5">
+                  {errorMessage}
+                </div>
+              </div>
             )}
-          </button>
-        </form>
 
-        {/* Form Footer */}
-        <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400 font-medium">
-          Don't have platform clear keys?{" "}
-          <a href="#register" className="text-slate-200 font-bold hover:underline">
-            Request Access
-          </a>
+            {/* Form */}
+            <form onSubmit={handleFormSubmit} className="space-y-5">
+              {/* Email */}
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-slate-400">
+                  Email address
+                </label>
+
+                <div className={fieldClass}>
+                  <Mail
+                    size={17}
+                    className="shrink-0 text-slate-500 transition group-focus-within:text-indigo-400"
+                  />
+
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className={inputClass}
+                    required
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-400">
+                    Password
+                  </label>
+
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-semibold text-indigo-400 transition hover:text-indigo-300"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <div className={fieldClass}>
+                  <Lock
+                    size={17}
+                    className="shrink-0 text-slate-500 transition group-focus-within:text-indigo-400"
+                  />
+
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className={inputClass}
+                    required
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-950/30 transition-all duration-200 hover:bg-indigo-500 hover:shadow-indigo-900/40 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={17} className="animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign in
+                    <ArrowRight
+                      size={17}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Register */}
+            <div className="mt-8 border-t border-slate-800 pt-6 text-center">
+              <p className="text-sm text-slate-500">
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
+                  className="font-semibold text-indigo-400 transition hover:text-indigo-300"
+                >
+                  Create one
+                </Link>
+              </p>
+            </div>
+          </div>
         </div>
-
       </div>
     </div>
   );
 };
 
 export default Login;
+
