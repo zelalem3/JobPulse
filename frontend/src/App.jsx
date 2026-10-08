@@ -14,6 +14,7 @@ import PageNotFound from './pages/404';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import AboutUs from './pages/AboutUsPage';
+import ContactUs from './pages/ContactUsPage';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactUs />} />
       
         <Route path="/jobs" element={<Jobs />} />
         
