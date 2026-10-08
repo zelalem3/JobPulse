@@ -7,6 +7,9 @@ import {
   Plus,
   AlertCircle,
   Search,
+  Activity,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 
 import api from "../services/axios";
@@ -42,7 +45,10 @@ export default function AlertsPage() {
 
   const showToast = useCallback((message: string) => {
     setToast(message);
-    window.setTimeout(() => setToast(null), 3200);
+
+    window.setTimeout(() => {
+      setToast(null);
+    }, 3200);
   }, []);
 
   const fetchAlerts = useCallback(async () => {
@@ -50,9 +56,10 @@ export default function AlertsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await api.get<AlertItemType[] | AlertsResponse>(
-        "/api/alerts"
-      );
+      const response = await api.get<
+        AlertItemType[] | AlertsResponse
+      >("/api/alerts");
+
       const data = response.data;
 
       if (Array.isArray(data)) {
@@ -64,10 +71,12 @@ export default function AlertsPage() {
       }
     } catch (err: any) {
       console.error("Error fetching job alerts:", err);
+
       setError(
         err.response?.data?.message ||
           "Could not retrieve your active job alerts."
       );
+
       setAlerts([]);
     } finally {
       setLoading(false);
@@ -81,18 +90,27 @@ export default function AlertsPage() {
   const getAlertLabel = (alert: AlertItemType) =>
     (alert.name || alert.keyword || "").trim();
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreate = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
     const trimmed = keyword.trim();
-    if (!trimmed) return;
+
+    if (!trimmed) {
+      return;
+    }
 
     const alreadyExists = alerts.some(
-      (a) => getAlertLabel(a).toLowerCase() === trimmed.toLowerCase()
+      (alert) =>
+        getAlertLabel(alert).toLowerCase() ===
+        trimmed.toLowerCase()
     );
 
     if (alreadyExists) {
-      setError(`You are already monitoring "${trimmed}".`);
+      setError(
+        `You are already monitoring "${trimmed}".`
+      );
       return;
     }
 
@@ -100,12 +118,19 @@ export default function AlertsPage() {
       setIsSubmitting(true);
       setError(null);
 
-      const payload: Record<string, string> = { name: trimmed };
+      const payload: Record<string, string> = {
+        name: trimmed,
+      };
+
       if (location.trim()) {
         payload.location = location.trim();
       }
 
-      const response = await api.post<AlertsResponse>("/api/alerts", payload);
+      const response = await api.post<AlertsResponse>(
+        "/api/alerts",
+        payload
+      );
+
       const updated = response.data?.alerts;
 
       if (Array.isArray(updated)) {
@@ -116,9 +141,13 @@ export default function AlertsPage() {
 
       setKeyword("");
       setLocation("");
-      showToast(`"${trimmed}" is now being monitored.`);
+
+      showToast(
+        `"${trimmed}" is now being monitored.`
+      );
     } catch (err: any) {
       console.error("Error creating job alert:", err);
+
       setError(
         err.response?.data?.message ||
           "Could not create job alert. Please try again."
@@ -133,18 +162,24 @@ export default function AlertsPage() {
       setDeletingId(id);
       setError(null);
 
-      const response = await api.delete<AlertsResponse>(`/api/alerts/${id}`);
+      const response = await api.delete<AlertsResponse>(
+        `/api/alerts/${id}`
+      );
+
       const updated = response.data?.alerts;
 
       if (Array.isArray(updated)) {
         setAlerts(updated);
       } else {
-        setAlerts((prev) => prev.filter((a) => a.id !== id));
+        setAlerts((prev) =>
+          prev.filter((alert) => alert.id !== id)
+        );
       }
 
       showToast("Alert removed.");
     } catch (err: any) {
       console.error("Error deleting job alert:", err);
+
       setError(
         err.response?.data?.message ||
           "Could not delete the alert. Please try again."
@@ -155,21 +190,39 @@ export default function AlertsPage() {
   };
 
   const filteredAlerts = filter.trim()
-    ? alerts.filter((a) => {
-        const label = getAlertLabel(a).toLowerCase();
-        const loc = (a.location || "").toLowerCase();
+    ? alerts.filter((alert) => {
+        const label =
+          getAlertLabel(alert).toLowerCase();
+
+        const loc =
+          (alert.location || "").toLowerCase();
+
         const q = filter.trim().toLowerCase();
-        return label.includes(q) || loc.includes(q);
+
+        return (
+          label.includes(q) ||
+          loc.includes(q)
+        );
       })
     : alerts;
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] bg-slate-950 flex items-center justify-center">
-        <div className="text-center space-y-3 flex flex-col items-center">
-          <Loader2 className="animate-spin text-emerald-400" size={32} />
+      <div className="min-h-[70vh] bg-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-2xl bg-indigo-500/20 blur-xl animate-pulse" />
+
+            <div className="relative w-12 h-12 rounded-2xl bg-slate-900 border border-indigo-500/20 flex items-center justify-center">
+              <Loader2
+                size={22}
+                className="animate-spin text-indigo-400"
+              />
+            </div>
+          </div>
+
           <p className="text-sm font-medium text-slate-400">
-            Loading alerts…
+            Loading your monitors...
           </p>
         </div>
       </div>
@@ -178,56 +231,122 @@ export default function AlertsPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Ambient */}
-      <div className="pointer-events-none absolute top-0 left-1/4 w-[400px] h-[400px] bg-emerald-600/8 rounded-full blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-1/4 right-0 w-[320px] h-[320px] bg-indigo-600/8 rounded-full blur-[100px]" />
+
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute -top-40 left-1/3 w-[600px] h-[600px] rounded-full bg-indigo-600/[0.08] blur-[130px]" />
+
+      <div className="pointer-events-none absolute top-[35%] -right-40 w-[500px] h-[500px] rounded-full bg-violet-600/[0.06] blur-[130px]" />
+
+      <div className="pointer-events-none absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-indigo-500/[0.04] blur-[120px]" />
 
       {/* Toast */}
       {toast && (
-        <div
-          role="status"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-emerald-500/30 text-sm font-semibold text-white shadow-2xl shadow-emerald-950/40 animate-in fade-in"
-        >
-          <span className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-            <Check size={16} />
-          </span>
-          {toast}
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-3 fade-in duration-300">
+          <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-indigo-500/30 shadow-2xl shadow-black/40">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center">
+              <Check
+                size={15}
+                className="text-indigo-400"
+              />
+            </div>
+
+            <span className="text-sm font-semibold text-white">
+              {toast}
+            </span>
+          </div>
         </div>
       )}
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
-        {/* Header */}
-        <header className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-emerald-950/30 p-6 sm:p-8 shadow-xl">
-          <div className="absolute top-0 right-0 p-6 opacity-[0.07] pointer-events-none">
-            <Sparkles size={100} className="text-emerald-400" />
-          </div>
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
-          <div className="relative space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 text-[11px] font-bold uppercase tracking-wider">
-              <Bell size={12} />
-              Notifications
-            </div>
+        {/* Hero */}
+        <header className="relative overflow-hidden rounded-[28px] border border-slate-800/80 bg-slate-900/70 backdrop-blur-xl shadow-2xl">
 
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
-                Job Alerts
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </h1>
-              <p className="mt-2 text-sm text-slate-400 max-w-xl leading-relaxed">
-                Track skills and keywords. When matching roles appear, your
-                monitors help surface them faster.
-              </p>
-            </div>
+          {/* Decorative grid */}
+          <div
+            className="absolute inset-0 opacity-[0.025]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.8) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+            }}
+          />
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-semibold text-slate-300">
-                <Bell size={13} className="text-emerald-400" />
-                {alerts.length} active monitor{alerts.length === 1 ? "" : "s"}
-              </span>
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-semibold text-slate-300">
-                <Sparkles size={13} className="text-indigo-400" />
-                Keyword tracking
-              </span>
+          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl" />
+
+          <div className="relative p-6 sm:p-8 lg:p-10">
+
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+
+              <div className="max-w-2xl">
+
+                {/* Status */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75 animate-ping" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-400" />
+                  </span>
+
+                  Job monitoring
+                </div>
+
+                <h1 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+                  Never miss the
+                  <span className="block bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
+                    right opportunity.
+                  </span>
+                </h1>
+
+                <p className="mt-4 text-sm sm:text-base text-slate-400 leading-relaxed max-w-xl">
+                  Create monitors for the skills, technologies,
+                  roles, and locations you care about. JobPulse
+                  watches incoming listings so you can focus on
+                  applying.
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="flex gap-3">
+
+                <div className="min-w-[125px] rounded-2xl bg-slate-950/70 border border-slate-800/80 px-4 py-4">
+                  <div className="flex items-center gap-2 text-slate-500 text-[11px] font-semibold uppercase tracking-wider">
+                    <Activity
+                      size={13}
+                      className="text-indigo-400"
+                    />
+                    Active
+                  </div>
+
+                  <p className="mt-2 text-2xl font-black text-white">
+                    {alerts.length}
+                  </p>
+
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    active monitor
+                    {alerts.length === 1
+                      ? ""
+                      : "s"}
+                  </p>
+                </div>
+
+                <div className="hidden sm:block min-w-[125px] rounded-2xl bg-slate-950/70 border border-slate-800/80 px-4 py-4">
+                  <div className="flex items-center gap-2 text-slate-500 text-[11px] font-semibold uppercase tracking-wider">
+                    <Zap
+                      size={13}
+                      className="text-violet-400"
+                    />
+                    Tracking
+                  </div>
+
+                  <p className="mt-2 text-2xl font-black text-white">
+                    Live
+                  </p>
+
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    keyword matching
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </header>
@@ -236,16 +355,21 @@ export default function AlertsPage() {
         {error && (
           <div
             role="alert"
-            className="flex items-start gap-3 px-4 py-3.5 rounded-2xl bg-rose-950/40 border border-rose-800/50 text-sm text-rose-200"
+            className="mt-6 flex items-start gap-3 p-4 rounded-2xl bg-rose-950/30 border border-rose-900/50"
           >
-            <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium">{error}</p>
-            </div>
+            <AlertCircle
+              size={18}
+              className="text-rose-400 shrink-0 mt-0.5"
+            />
+
+            <p className="flex-1 text-sm text-rose-200">
+              {error}
+            </p>
+
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-rose-400/80 hover:text-rose-300 text-lg leading-none px-1"
+              className="text-rose-400 hover:text-rose-200 text-lg leading-none"
               aria-label="Dismiss error"
             >
               ×
@@ -253,10 +377,12 @@ export default function AlertsPage() {
           </div>
         )}
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
-          {/* Create form */}
-          <aside className="lg:col-span-1 space-y-5">
+        {/* Content */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
+
+          {/* Create */}
+          <div className="space-y-4">
+
             <AlertForm
               keyword={keyword}
               setKeyword={setKeyword}
@@ -266,104 +392,187 @@ export default function AlertsPage() {
               isSubmitting={isSubmitting}
             />
 
-            <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-950/70 border border-emerald-800/40 flex items-center justify-center shrink-0">
-                  <Sparkles size={15} className="text-emerald-400" />
+            {/* Small explanation */}
+            <div className="rounded-2xl border border-slate-800/70 bg-slate-900/40 backdrop-blur-xl p-5">
+              <div className="flex gap-3">
+
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center shrink-0">
+                  <Sparkles
+                    size={15}
+                    className="text-indigo-400"
+                  />
                 </div>
+
                 <div>
-                  <h3 className="text-sm font-bold text-white">How it works</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1.5">
-                    Add keywords like React, Python, or DevOps. JobPulse watches
-                    incoming listings for matches against your monitors.
+                  <p className="text-xs font-bold text-white">
+                    Build your watchlist
+                  </p>
+
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                    Try specific technologies such as
+                    React, Python, Laravel, or PostgreSQL,
+                    or broader roles such as Backend
+                    Developer.
                   </p>
                 </div>
               </div>
             </div>
-          </aside>
+          </div>
 
-          {/* Alerts list */}
-          <section className="lg:col-span-2 rounded-2xl sm:rounded-3xl border border-slate-800/70 bg-slate-900/60 backdrop-blur-xl shadow-xl overflow-hidden">
-            <div className="px-5 sm:px-6 py-4 border-b border-slate-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-bold text-white">
-                  Active monitors
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Skills and keywords you are tracking
-                </p>
-              </div>
+          {/* Monitor list */}
+          <section className="min-w-0">
 
-              <div className="flex items-center gap-2">
-                {alerts.length > 3 && (
-                  <div className="relative">
-                    <Search
-                      size={14}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-                    />
-                    <input
-                      type="search"
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                      placeholder="Filter…"
-                      className="pl-8 pr-3 py-2 w-36 sm:w-44 text-xs rounded-xl bg-slate-950/80 border border-slate-800 text-slate-200 placeholder:text-slate-600 outline-none focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/15"
-                    />
+            <div className="rounded-[24px] border border-slate-800/70 bg-slate-900/60 backdrop-blur-xl shadow-xl overflow-hidden">
+
+              {/* List header */}
+              <div className="px-5 sm:px-6 py-5 border-b border-slate-800/70">
+
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                        <Bell
+                          size={15}
+                          className="text-indigo-400"
+                        />
+                      </div>
+
+                      <h2 className="text-sm font-bold text-white">
+                        Your monitors
+                      </h2>
+                    </div>
+
+                    <p className="text-xs text-slate-500 mt-2">
+                      {alerts.length === 0
+                        ? "Nothing is being tracked yet."
+                        : "Keywords JobPulse is watching for you."}
+                    </p>
                   </div>
-                )}
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 text-xs font-bold tabular-nums">
-                  {filteredAlerts.length}
-                  {filter.trim() ? ` / ${alerts.length}` : ""}
-                </span>
-              </div>
-            </div>
 
-            {alerts.length === 0 ? (
-              <div className="py-16 px-6 text-center space-y-4">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500">
-                  <Bell size={24} />
+                  {alerts.length > 3 && (
+                    <div className="relative">
+                      <Search
+                        size={14}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+                      />
+
+                      <input
+                        type="search"
+                        value={filter}
+                        onChange={(e) =>
+                          setFilter(
+                            e.target.value
+                          )
+                        }
+                        placeholder="Filter monitors"
+                        className="pl-9 pr-3 py-2.5 w-full sm:w-48 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 outline-none focus:border-indigo-500/40 focus:ring-2 focus:ring-indigo-500/10 transition"
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5 max-w-sm mx-auto">
-                  <p className="text-sm font-bold text-white">
-                    No monitors yet
+              </div>
+
+              {/* Empty */}
+              {alerts.length === 0 ? (
+                <div className="relative py-20 px-6 text-center overflow-hidden">
+
+                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/[0.03] to-transparent" />
+
+                  <div className="relative">
+
+                    <div className="relative w-20 h-20 mx-auto">
+                      <div className="absolute inset-0 rounded-3xl bg-indigo-500/10 blur-xl" />
+
+                      <div className="relative w-20 h-20 rounded-3xl bg-slate-950 border border-slate-800 flex items-center justify-center">
+                        <Bell
+                          size={28}
+                          className="text-indigo-400"
+                        />
+                      </div>
+                    </div>
+
+                    <h3 className="mt-6 text-base font-bold text-white">
+                      Your opportunity radar is empty
+                    </h3>
+
+                    <p className="mt-2 max-w-sm mx-auto text-xs sm:text-sm text-slate-500 leading-relaxed">
+                      Create a monitor for something you want
+                      to work with and JobPulse will keep it
+                      on your radar.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById(
+                            "alert-keyword-input"
+                          )
+                          ?.focus()
+                      }
+                      className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-950/30 transition-all hover:-translate-y-0.5"
+                    >
+                      <Plus size={14} />
+                      Create your first monitor
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : filteredAlerts.length === 0 ? (
+                <div className="py-16 px-6 text-center">
+                  <Search
+                    size={22}
+                    className="mx-auto text-slate-600"
+                  />
+
+                  <p className="mt-3 text-sm font-semibold text-slate-300">
+                    No matching monitors
                   </p>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Create your first alert on the left to start tracking
-                    keywords and skills.
+
+                  <p className="mt-1 text-xs text-slate-600">
+                    Try another keyword.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    document.getElementById("alert-keyword-input")?.focus()
-                  }
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
-                >
-                  <Plus size={14} />
-                  Add first alert
-                </button>
-              </div>
-            ) : filteredAlerts.length === 0 ? (
-              <div className="py-12 px-6 text-center">
-                <p className="text-sm text-slate-400">
-                  No monitors match “{filter}”.
-                </p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-800/60">
-                {filteredAlerts.map((alert) => (
-                  <li key={alert.id} className="relative">
-                    <AlertItem
-                      alert={alert}
-                      onDelete={handleDelete}
-                      isDeleting={deletingId === alert.id}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
+              ) : (
+                <div className="p-3 sm:p-4 space-y-2">
+                  {filteredAlerts.map(
+                    (alert) => (
+                      <AlertItem
+                        key={alert.id}
+                        alert={alert}
+                        onDelete={handleDelete}
+                        isDeleting={
+                          deletingId ===
+                          alert.id
+                        }
+                      />
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* Footer */}
+              {alerts.length > 0 && (
+                <div className="px-5 py-3 border-t border-slate-800/60 bg-slate-950/20">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-600">
+                      {filteredAlerts.length} of{" "}
+                      {alerts.length} monitors
+                    </span>
+
+                    <span className="flex items-center gap-1.5 text-indigo-400/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                      Monitoring
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
         </div>
       </div>
     </div>
   );
 }
+
