@@ -1,8 +1,7 @@
+import React from "react";
+import { Tag, Trash2, MapPin, Loader2, Clock } from "lucide-react";
 
-import React from 'react';
-import { Tag, Trash2, MapPin } from 'lucide-react';
-
-interface Skill {
+export interface AlertData {
   id: number;
   name?: string | null;
   keyword?: string | null;
@@ -11,65 +10,93 @@ interface Skill {
 }
 
 interface AlertItemProps {
-  skill: Skill;
+  alert: AlertData;
   onDelete: (id: number) => void;
+  isDeleting?: boolean;
+}
+
+function formatCreated(date?: string) {
+  if (!date) return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function AlertItem({
-  skill,
+  alert,
   onDelete,
+  isDeleting = false,
 }: AlertItemProps) {
-  // Support both legacy "name" and backend "keyword"
   const displayName =
-    skill.name?.trim() ||
-    skill.keyword?.trim() ||
-    'Unnamed Alert';
+    alert.name?.trim() || alert.keyword?.trim() || "Unnamed alert";
+  const created = formatCreated(alert.created_at);
 
   return (
-    <div className="p-5 flex items-center justify-between gap-4 hover:bg-slate-900/60 transition-all group">
-      
-      {/* Alert Information */}
+    <div
+      className={`
+        relative px-5 sm:px-6 py-4
+        flex items-center justify-between gap-4
+        hover:bg-slate-900/50 transition-colors
+        ${isDeleting ? "opacity-60 pointer-events-none" : ""}
+      `}
+    >
       <div className="flex items-center gap-3.5 min-w-0">
-        
-        <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-center text-slate-400 group-hover:border-indigo-500/30 group-hover:text-indigo-400 group-hover:bg-indigo-500/10 transition-all shrink-0">
-          <Tag size={16} />
+        <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-400 shrink-0 group-hover:border-indigo-500/30">
+          <Tag size={16} className="text-indigo-400/90" />
         </div>
 
-        <div className="space-y-1 min-w-0">
-          
-          {/* FIX: Render displayName instead of skill.name */}
-          <h4 className="text-sm font-semibold text-white truncate">
+        <div className="min-w-0 space-y-1">
+          <h3 className="text-sm font-semibold text-white truncate">
             {displayName}
-          </h4>
+          </h3>
 
           <div className="flex flex-wrap items-center gap-2">
-            
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 bg-slate-900/80 px-2.5 py-0.5 rounded-md border border-slate-800">
-              Active Watch
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-300/90 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded-md">
+              Active
             </span>
 
-            {skill.location && (
+            {alert.location && (
               <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
                 <MapPin size={11} />
-                {skill.location}
+                {alert.location}
               </span>
             )}
 
+            {created && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-slate-600">
+                <Clock size={11} />
+                {created}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Delete Button */}
       <button
         type="button"
-        onClick={() => onDelete(skill.id)}
-        className="p-2.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-sm opacity-80 group-hover:opacity-100 shrink-0"
+        onClick={() => onDelete(alert.id)}
+        disabled={isDeleting}
+        className="
+          p-2.5 rounded-xl border border-transparent
+          text-slate-500 hover:text-rose-400
+          hover:bg-rose-950/40 hover:border-rose-900/40
+          transition-all shrink-0
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40
+          disabled:opacity-50
+        "
         title={`Delete alert: ${displayName}`}
         aria-label={`Delete alert: ${displayName}`}
       >
-        <Trash2 size={16} />
+        {isDeleting ? (
+          <Loader2 size={16} className="animate-spin text-slate-400" />
+        ) : (
+          <Trash2 size={16} />
+        )}
       </button>
-
     </div>
   );
 }

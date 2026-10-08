@@ -1,20 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Bell,
-  ShieldAlert,
   Loader2,
   Check,
   Sparkles,
-  Layers,
   Plus,
-  Trash2,
-} from 'lucide-react';
+  AlertCircle,
+  Search,
+} from "lucide-react";
 
-import api from '../services/axios';
-import AlertForm from '../components/alert/AlertForm';
-import AlertItem from '../components/alert/AlertItem';
+import api from "../services/axios";
+import AlertForm from "../components/alert/AlertForm";
+import AlertItem from "../components/alert/AlertItem";
 
-interface AlertItemType {
+export interface AlertItemType {
   id: number;
   user_id: number;
   keyword: string;
@@ -30,32 +29,30 @@ interface AlertsResponse {
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertItemType[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [newName, setNewName] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [keyword, setKeyword] = useState("");
+  const [location, setLocation] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const [showToast, setShowToast] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string>('');
+  const [toast, setToast] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
 
-  useEffect(() => {
-    fetchAlerts();
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3200);
   }, []);
 
-  /**
-   * Fetch all active alerts for the authenticated user.
-   */
-  const fetchAlerts = async (): Promise<void> => {
+  const fetchAlerts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await api.get<AlertItemType[] | AlertsResponse>(
-        '/api/alerts'
+        "/api/alerts"
       );
-
       const data = response.data;
 
       if (Array.isArray(data)) {
@@ -66,65 +63,36 @@ export default function AlertsPage() {
         setAlerts([]);
       }
     } catch (err: any) {
-      console.error('Error fetching job alerts:', err);
-
+      console.error("Error fetching job alerts:", err);
       setError(
         err.response?.data?.message ||
-          'Could not retrieve your active job alerts.'
+          "Could not retrieve your active job alerts."
       );
-
       setAlerts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  /**
-   * Show a temporary success notification.
-   */
-  const showSuccessToast = (message: string) => {
-    setToastMessage(message);
-    setShowToast(true);
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
 
-    window.setTimeout(() => {
-      setShowToast(false);
-    }, 3500);
-  };
+  const getAlertLabel = (alert: AlertItemType) =>
+    (alert.name || alert.keyword || "").trim();
 
-  /**
-   * Create a new skill/job alert.
-   *
-   * The profile page treats skills as strings, so alerts use
-   * the same normalized representation.
-   */
-  const handleCreateSkill = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const trimmedName = newName.trim();
+    const trimmed = keyword.trim();
+    if (!trimmed) return;
 
-    if (!trimmedName) {
-      return;
-    }
-
-    /**
-     * Prevent duplicate alerts locally.
-     */
-    const alreadyExists = alerts.some((alert) => {
-      const existingName = (
-        alert.name ||
-        alert.keyword ||
-        ''
-      )
-        .trim()
-        .toLowerCase();
-
-      return existingName === trimmedName.toLowerCase();
-    });
+    const alreadyExists = alerts.some(
+      (a) => getAlertLabel(a).toLowerCase() === trimmed.toLowerCase()
+    );
 
     if (alreadyExists) {
-      setError(`You are already monitoring "${trimmedName}".`);
+      setError(`You are already monitoring "${trimmed}".`);
       return;
     }
 
@@ -132,109 +100,76 @@ export default function AlertsPage() {
       setIsSubmitting(true);
       setError(null);
 
-      const response = await api.post<AlertsResponse>(
-        '/api/alerts',
-        {
-          name: trimmedName,
-        }
-      );
+      const payload: Record<string, string> = { name: trimmed };
+      if (location.trim()) {
+        payload.location = location.trim();
+      }
 
-      const updatedAlerts = response.data?.alerts;
+      const response = await api.post<AlertsResponse>("/api/alerts", payload);
+      const updated = response.data?.alerts;
 
-      if (Array.isArray(updatedAlerts)) {
-        setAlerts(updatedAlerts);
+      if (Array.isArray(updated)) {
+        setAlerts(updated);
       } else {
-        /**
-         * Some backend responses only return the created alert/message.
-         * Refresh the registry in that case.
-         */
         await fetchAlerts();
       }
 
-      setNewName('');
-
-      showSuccessToast(
-        `"${trimmedName}" is now being monitored.`
-      );
+      setKeyword("");
+      setLocation("");
+      showToast(`"${trimmed}" is now being monitored.`);
     } catch (err: any) {
-      console.error('Error creating job alert:', err);
-
+      console.error("Error creating job alert:", err);
       setError(
         err.response?.data?.message ||
-          'Could not create job alert. Please try again.'
+          "Could not create job alert. Please try again."
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /**
-   * Delete an alert.
-   *
-   * Important:
-   * The backend currently returns HTTP 200 but may not return
-   * the complete updated alert list. Therefore we optimistically
-   * remove the item from local state after a successful DELETE.
-   */
-  const handleDeleteAlert = async (id: number): Promise<void> => {
+  const handleDelete = async (id: number) => {
     try {
       setDeletingId(id);
       setError(null);
 
-      const response = await api.delete<AlertsResponse>(
-        `/api/alerts/${id}`
-      );
+      const response = await api.delete<AlertsResponse>(`/api/alerts/${id}`);
+      const updated = response.data?.alerts;
 
-      console.log('Delete response:', response.data);
-
-      const updatedAlerts = response.data?.alerts;
-
-      if (Array.isArray(updatedAlerts)) {
-        setAlerts(updatedAlerts);
+      if (Array.isArray(updated)) {
+        setAlerts(updated);
       } else {
-        setAlerts((previousAlerts) =>
-          previousAlerts.filter((alert) => alert.id !== id)
-        );
+        setAlerts((prev) => prev.filter((a) => a.id !== id));
       }
 
-      showSuccessToast('Alert monitor removed.');
+      showToast("Alert removed.");
     } catch (err: any) {
-      console.error(
-        'Error deleting job alert:',
-        err.response?.data || err.message
-      );
-
+      console.error("Error deleting job alert:", err);
       setError(
         err.response?.data?.message ||
-          'Could not delete the alert. Please try again.'
+          "Could not delete the alert. Please try again."
       );
     } finally {
       setDeletingId(null);
     }
   };
 
-  /**
-   * Keep compatibility with any existing AlertItem usage.
-   */
-  const handleDeleteSkill = handleDeleteAlert;
+  const filteredAlerts = filter.trim()
+    ? alerts.filter((a) => {
+        const label = getAlertLabel(a).toLowerCase();
+        const loc = (a.location || "").toLowerCase();
+        const q = filter.trim().toLowerCase();
+        return label.includes(q) || loc.includes(q);
+      })
+    : alerts;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center w-full">
-        <div className="text-center space-y-4 flex flex-col items-center">
-          <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <Loader2
-                className="animate-spin text-emerald-400"
-                size={25}
-              />
-            </div>
-
-            <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 blur-xl" />
-          </div>
-
-          <p className="text-sm font-semibold text-slate-400">
-            Loading your monitoring suite...
+      <div className="min-h-[60vh] bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-3 flex flex-col items-center">
+          <Loader2 className="animate-spin text-emerald-400" size={32} />
+          <p className="text-sm font-medium text-slate-400">
+            Loading alerts…
           </p>
         </div>
       </div>
@@ -242,274 +177,191 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8 font-sans selection:bg-emerald-900 selection:text-white w-full relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden">
+      {/* Ambient */}
+      <div className="pointer-events-none absolute top-0 left-1/4 w-[400px] h-[400px] bg-emerald-600/8 rounded-full blur-[100px]" />
+      <div className="pointer-events-none absolute bottom-1/4 right-0 w-[320px] h-[320px] bg-indigo-600/8 rounded-full blur-[100px]" />
 
-      {/* Ambient background */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Toast */}
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-emerald-500/30 text-sm font-semibold text-white shadow-2xl shadow-emerald-950/40 animate-in fade-in"
+        >
+          <span className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <Check size={16} />
+          </span>
+          {toast}
+        </div>
+      )}
 
-      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-6xl mx-auto space-y-8 relative z-10">
-
-        {/* Toast */}
-        {showToast && (
-          <div className="fixed bottom-6 right-6 bg-slate-900/95 backdrop-blur-xl border border-emerald-500/30 text-white px-5 py-4 rounded-2xl shadow-2xl shadow-emerald-950/50 flex items-center gap-3 text-sm font-semibold z-50">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <Check size={17} />
-            </div>
-
-            <span>{toastMessage}</span>
-          </div>
-        )}
-
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
         {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-emerald-950/30 backdrop-blur-2xl rounded-3xl p-8 border border-slate-800/80 shadow-2xl">
-
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(16,185,129,0.10),transparent_35%)] pointer-events-none" />
-
-          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <Sparkles
-              size={120}
-              className="text-emerald-400"
-            />
+        <header className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-emerald-950/30 p-6 sm:p-8 shadow-xl">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.07] pointer-events-none">
+            <Sparkles size={100} className="text-emerald-400" />
           </div>
 
-          <div className="relative z-10 space-y-4">
-
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-800/60 text-emerald-300 text-xs font-black tracking-wide uppercase">
-              <Layers size={13} />
-              Active System
+          <div className="relative space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 text-[11px] font-bold uppercase tracking-wider">
+              <Bell size={12} />
+              Notifications
             </div>
 
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                <Bell
-                  size={30}
-                  className="text-emerald-400"
-                />
-                Job Alerts & Skill Monitors
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
+                Job Alerts
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </h1>
-
-              <p className="text-sm text-slate-400 max-w-2xl mt-3 leading-relaxed font-medium">
-                Monitor the technologies and skills you care about.
-                JobPulse can use these monitors to keep you informed
-                when matching opportunities enter the system.
+              <p className="mt-2 text-sm text-slate-400 max-w-xl leading-relaxed">
+                Track skills and keywords. When matching roles appear, your
+                monitors help surface them faster.
               </p>
             </div>
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-3 pt-2">
-
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-950/60 border border-slate-800">
-                <Bell
-                  size={15}
-                  className="text-emerald-400"
-                />
-
-                <span className="text-xs font-bold text-slate-300">
-                  {alerts.length} Active Monitor
-                  {alerts.length === 1 ? '' : 's'}
-                </span>
-              </div>
-
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-950/60 border border-slate-800">
-                <Sparkles
-                  size={15}
-                  className="text-emerald-400"
-                />
-
-                <span className="text-xs font-bold text-slate-300">
-                  Personalized Tracking
-                </span>
-              </div>
-
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-semibold text-slate-300">
+                <Bell size={13} className="text-emerald-400" />
+                {alerts.length} active monitor{alerts.length === 1 ? "" : "s"}
+              </span>
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-semibold text-slate-300">
+                <Sparkles size={13} className="text-indigo-400" />
+                Keyword tracking
+              </span>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Error */}
         {error && (
-          <div className="p-4 bg-rose-950/50 border border-rose-900/60 text-rose-300 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xl backdrop-blur-xl">
-
-            <ShieldAlert
-              size={18}
-              className="text-rose-400 shrink-0"
-            />
-
-            <span className="flex-1">
-              {error}
-            </span>
-
+          <div
+            role="alert"
+            className="flex items-start gap-3 px-4 py-3.5 rounded-2xl bg-rose-950/40 border border-rose-800/50 text-sm text-rose-200"
+          >
+            <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium">{error}</p>
+            </div>
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-rose-400 hover:text-white transition-colors"
+              className="text-rose-400/80 hover:text-rose-300 text-lg leading-none px-1"
+              aria-label="Dismiss error"
             >
               ×
             </button>
           </div>
         )}
 
-        {/* Main layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start w-full">
+        {/* Main grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+          {/* Create form */}
+          <aside className="lg:col-span-1 space-y-5">
+            <AlertForm
+              keyword={keyword}
+              setKeyword={setKeyword}
+              location={location}
+              setLocation={setLocation}
+              onSubmit={handleCreate}
+              isSubmitting={isSubmitting}
+            />
 
-          {/* Create monitor */}
-          <div className="lg:col-span-1">
-
-            <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden">
-
-              <div className="px-6 pt-6 pb-4 border-b border-slate-800/80">
-
-                <div className="flex items-center gap-3">
-
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center">
-                    <Plus
-                      size={19}
-                      className="text-emerald-400"
-                    />
-                  </div>
-
-                  <div>
-                    <h2 className="text-sm font-black text-white">
-                      Add Skill Monitor
-                    </h2>
-
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Track a technology or keyword
-                    </p>
-                  </div>
-
-                </div>
-              </div>
-
-              <div className="p-6">
-                <AlertForm
-                  newName={newName}
-                  setNewName={setNewName}
-                  onSubmit={handleCreateSkill}
-                  isSubmitting={isSubmitting}
-                />
-              </div>
-
-            </div>
-
-            {/* Helpful explanation */}
-            <div className="mt-6 bg-slate-900/40 backdrop-blur-xl rounded-3xl border border-slate-800/60 p-6">
-
+            <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5">
               <div className="flex items-start gap-3">
-
-                <div className="w-9 h-9 rounded-xl bg-emerald-950/70 border border-emerald-800/50 flex items-center justify-center shrink-0">
-                  <Sparkles
-                    size={16}
-                    className="text-emerald-400"
-                  />
+                <div className="w-9 h-9 rounded-xl bg-emerald-950/70 border border-emerald-800/40 flex items-center justify-center shrink-0">
+                  <Sparkles size={15} className="text-emerald-400" />
                 </div>
-
                 <div>
-                  <h3 className="text-sm font-black text-white">
-                    How it works
-                  </h3>
-
-                  <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                    Add technologies such as React, Python,
-                    PostgreSQL, Node.js, or Laravel. JobPulse
-                    monitors incoming listings for these keywords.
+                  <h3 className="text-sm font-bold text-white">How it works</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1.5">
+                    Add keywords like React, Python, or DevOps. JobPulse watches
+                    incoming listings for matches against your monitors.
                   </p>
                 </div>
-
               </div>
             </div>
+          </aside>
 
-          </div>
-
-          {/* Active monitors */}
-          <div className="lg:col-span-2 bg-slate-900/60 backdrop-blur-2xl rounded-3xl border border-slate-800/80 shadow-2xl overflow-hidden">
-
-            {/* List header */}
-            <div className="px-6 py-5 border-b border-slate-800/80 bg-slate-900/40 flex justify-between items-center">
-
+          {/* Alerts list */}
+          <section className="lg:col-span-2 rounded-2xl sm:rounded-3xl border border-slate-800/70 bg-slate-900/60 backdrop-blur-xl shadow-xl overflow-hidden">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <Bell
-                    size={16}
-                    className="text-emerald-400"
-                  />
-
-                  Active Monitors
-                </h3>
-
-                <p className="text-xs text-slate-500 mt-1">
-                  Skills and keywords you're currently tracking.
+                <h2 className="text-sm font-bold text-white">
+                  Active monitors
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Skills and keywords you are tracking
                 </p>
-
               </div>
 
-              <span className="px-3 py-1.5 rounded-xl bg-emerald-950/70 border border-emerald-800/50 text-emerald-300 text-xs font-black">
-                {alerts.length}
-              </span>
-
+              <div className="flex items-center gap-2">
+                {alerts.length > 3 && (
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                    <input
+                      type="search"
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      placeholder="Filter…"
+                      className="pl-8 pr-3 py-2 w-36 sm:w-44 text-xs rounded-xl bg-slate-950/80 border border-slate-800 text-slate-200 placeholder:text-slate-600 outline-none focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/15"
+                    />
+                  </div>
+                )}
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 text-xs font-bold tabular-nums">
+                  {filteredAlerts.length}
+                  {filter.trim() ? ` / ${alerts.length}` : ""}
+                </span>
+              </div>
             </div>
 
-            {/* Empty state */}
             {alerts.length === 0 ? (
-
-              <div className="py-20 px-6 text-center space-y-5">
-
-                <div className="w-16 h-16 bg-slate-950 text-slate-500 rounded-2xl flex items-center justify-center mx-auto border border-slate-800 shadow-inner">
-                  <Bell size={27} />
+              <div className="py-16 px-6 text-center space-y-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500">
+                  <Bell size={24} />
                 </div>
-
-                <div className="space-y-2 max-w-sm mx-auto">
-
-                  <p className="text-sm font-black text-white">
-                    No skill monitors yet
+                <div className="space-y-1.5 max-w-sm mx-auto">
+                  <p className="text-sm font-bold text-white">
+                    No monitors yet
                   </p>
-
-                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Add a technology or job keyword on the left
-                    to start monitoring new opportunities.
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Create your first alert on the left to start tracking
+                    keywords and skills.
                   </p>
-
                 </div>
-
+                <button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("alert-keyword-input")?.focus()
+                  }
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors"
+                >
+                  <Plus size={14} />
+                  Add first alert
+                </button>
               </div>
-
+            ) : filteredAlerts.length === 0 ? (
+              <div className="py-12 px-6 text-center">
+                <p className="text-sm text-slate-400">
+                  No monitors match “{filter}”.
+                </p>
+              </div>
             ) : (
-
-              <div className="divide-y divide-slate-800/60">
-
-                {alerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className="relative"
-                  >
+              <ul className="divide-y divide-slate-800/60">
+                {filteredAlerts.map((alert) => (
+                  <li key={alert.id} className="relative">
                     <AlertItem
-                      skill={alert}
-                      onDelete={handleDeleteAlert}
+                      alert={alert}
+                      onDelete={handleDelete}
+                      isDeleting={deletingId === alert.id}
                     />
-
-                    {deletingId === alert.id && (
-                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-10">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 shadow-xl">
-                          <Loader2
-                            size={15}
-                            className="animate-spin text-emerald-400"
-                          />
-
-                          <span className="text-xs font-bold text-slate-300">
-                            Removing monitor...
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  </li>
                 ))}
-
-              </div>
+              </ul>
             )}
-
-          </div>
+          </section>
         </div>
       </div>
     </div>
