@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Zap,
 } from "lucide-react";
+import Spinner from "../components/Spinner";
 
 import api from "../services/axios";
 import AlertForm from "../components/alert/AlertForm";
@@ -206,28 +207,16 @@ export default function AlertsPage() {
       })
     : alerts;
 
-  if (loading) {
-    return (
-      <div className="min-h-[70vh] bg-slate-950 text-slate-100 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-2xl bg-indigo-500/20 blur-xl animate-pulse" />
-
-            <div className="relative w-12 h-12 rounded-2xl bg-slate-900 border border-indigo-500/20 flex items-center justify-center">
-              <Loader2
-                size={22}
-                className="animate-spin text-indigo-400"
-              />
-            </div>
-          </div>
-
-          <p className="text-sm font-medium text-slate-400">
-            Loading your monitors...
-          </p>
+   if (loading) {
+      return (
+        <div className="min-h-[60vh] bg-slate-950 flex items-center justify-center">
+          <Spinner
+            size="lg"
+            label="Loading your workspace..."
+          />
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden">

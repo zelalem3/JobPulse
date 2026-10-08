@@ -5,7 +5,7 @@ import {
   ShieldAlert,
   Loader2,
 } from "lucide-react";
-
+import Spinner from "../components/Spinner";
 import api from "../services/axios";
 import { JobDetails, Skill } from "../types/jobDetails";
 
@@ -202,33 +202,16 @@ export default function JobDetailsPage() {
   |--------------------------------------------------------------------------
   */
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center relative overflow-hidden">
-        {/* Ambient glow */}
-        <div className="absolute w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
-
-        <div className="text-center space-y-4 flex flex-col items-center z-10">
-          <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-xl">
-            <Loader2
-              className="animate-spin text-emerald-400"
-              size={32}
-            />
-          </div>
-
-          <div>
-            <p className="text-xs font-black text-slate-300 uppercase tracking-wider">
-              Gathering opportunity intel
-            </p>
-
-            <p className="text-[11px] text-slate-600 mt-1">
-              Loading job information...
-            </p>
-          </div>
+   if (loading) {
+      return (
+        <div className="min-h-[60vh] bg-slate-950 flex items-center justify-center">
+          <Spinner
+            size="lg"
+            label="Loading your workspace..."
+          />
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   /*
   |--------------------------------------------------------------------------
