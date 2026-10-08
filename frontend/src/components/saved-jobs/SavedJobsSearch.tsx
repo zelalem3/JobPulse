@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 interface SavedJobsSearchProps {
   searchTerm: string;
@@ -11,17 +11,26 @@ export default function SavedJobsSearch({
   onSearchChange,
 }: SavedJobsSearchProps) {
   return (
-    <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-4 border border-slate-800/80 shadow-xl flex items-center">
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl w-full shadow-inner">
-        <Search size={16} className="text-slate-400 shrink-0" />
-        <input
-          type="text"
-          placeholder="Search saved jobs by title, company, location, or source..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="bg-transparent border-none outline-none text-sm font-semibold text-slate-100 placeholder:text-slate-500 w-full"
-        />
-      </div>
+    <div className="relative flex items-center gap-2 rounded-2xl bg-slate-900/70 border border-slate-800/70 px-3.5 py-2.5 shadow-lg focus-within:border-amber-500/35 focus-within:ring-2 focus-within:ring-amber-500/15 transition-all">
+      <Search size={16} className="text-slate-500 shrink-0" />
+      <input
+        type="search"
+        placeholder="Search by title, company, location, or source…"
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="flex-1 bg-transparent border-none outline-none text-sm font-medium text-slate-100 placeholder:text-slate-500 min-w-0"
+        aria-label="Search saved jobs"
+      />
+      {searchTerm && (
+        <button
+          type="button"
+          onClick={() => onSearchChange("")}
+          className="p-1 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+          aria-label="Clear search"
+        >
+          <X size={14} />
+        </button>
+      )}
     </div>
   );
 }
