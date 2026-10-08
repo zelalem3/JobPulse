@@ -1,45 +1,98 @@
-import React from 'react';
-import { Loader2 } from 'lucide-react';
+import React from "react";
+import { Loader2 } from "lucide-react";
 
 interface SpinnerProps {
-  /** Size of the spinner: 'sm' (16px), 'md' (24px), 'lg' (32px), 'xl' (48px) */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Tailwind text color class, e.g., 'text-blue-600' or 'text-white' */
+  size?: "sm" | "md" | "lg" | "xl";
   color?: string;
-  /** Optional message to display below or next to the spinner */
   label?: string;
-  /** Direction of the optional label layout */
-  layout?: 'vertical' | 'horizontal';
+  layout?: "vertical" | "horizontal";
+  glow?: boolean;
+  card?: boolean;
 }
 
-export default function Spinner({ 
-  size = 'md', 
-  color = 'text-blue-600', 
-  label, 
-  layout = 'vertical' 
-}: SpinnerProps) {
-  
-  // Map size variants to Lucide pixel dimensions
-  const sizeMap = {
-    sm: 16,
-    md: 24,
-    lg: 32,
-    xl: 48
-  };
+const sizeClasses = {
+  sm: "w-4 h-4",
+  md: "w-5 h-5",
+  lg: "w-[22px] h-[22px]",
+  xl: "w-7 h-7",
+};
 
-  const isHorizontal = layout === 'horizontal';
+const labelSizes = {
+  sm: "text-xs",
+  md: "text-sm",
+  lg: "text-sm",
+  xl: "text-base",
+};
+
+export default function Spinner({
+  size = "md",
+  color = "text-indigo-400",
+  label,
+  layout = "vertical",
+  glow = true,
+  card = false,
+}: SpinnerProps) {
+  const spinner = (
+    <div className={card ? "relative" : undefined}>
+      {card && glow && (
+        <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-xl" />
+      )}
+
+      <div
+        className={
+          card
+            ? "relative w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center"
+            : undefined
+        }
+      >
+        <Loader2
+          className={`${sizeClasses[size]} ${color} animate-spin ${
+            glow
+              ? "drop-shadow-[0_0_8px_rgba(99,102,241,0.25)]"
+              : ""
+          }`}
+          strokeWidth={2.2}
+        />
+      </div>
+    </div>
+  );
+
+  if (layout === "horizontal") {
+    return (
+      <div
+        className="flex items-center justify-center gap-3"
+        role="status"
+        aria-label={label || "Loading"}
+      >
+        {spinner}
+
+        {label && (
+          <span
+            className={`${labelSizes[size]} font-medium text-slate-400`}
+          >
+            {label}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex items-center justify-center ${isHorizontal ? 'flex-row gap-3' : 'flex-col gap-2'}`}>
-      <Loader2 
-        className={`animate-spin ${color}`} 
-        size={sizeMap[size]} 
-      />
+    <div
+      className="flex flex-col items-center justify-center gap-4"
+      role="status"
+      aria-label={label || "Loading"}
+    >
+      {spinner}
+
       {label && (
-        <p className={`text-sm font-semibold text-slate-500 tracking-wide ${isHorizontal ? 'mt-0' : 'mt-1'}`}>
+        <p
+          className={`${labelSizes[size]} font-medium text-slate-400`}
+        >
           {label}
         </p>
       )}
     </div>
   );
 }
+

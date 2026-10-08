@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bookmark,
-  Loader2,
   Sparkles,
   SearchX,
   ArrowRight,
@@ -10,11 +9,14 @@ import {
   Clock3,
   ChevronRight,
 } from "lucide-react";
+
+
 import { Link } from "react-router-dom";
 import api from "../services/axios";
 import { SavedJob } from "../types/savedJobs";
 import SavedJobsSearch from "../components/saved-jobs/SavedJobsSearch";
 import SavedJobCard from "../components/saved-jobs/SavedJobCard";
+import Spinner from "../components/Spinner";
 
 function resolveCompany(company: unknown): string {
   if (typeof company === "string" && company.trim()) {
@@ -139,27 +141,20 @@ export default function SavedJobsPage() {
     });
   }, [savedJobs, searchTerm]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-xl" />
-            <div className="relative w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center">
-              <Loader2
-                className="animate-spin text-indigo-400"
-                size={22}
-              />
-            </div>
-          </div>
 
-          <p className="text-sm font-medium text-slate-400">
-            Loading your saved jobs...
-          </p>
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <Spinner
+            size="lg"
+            label="Loading your saved jobs..."
+            card
+          />
         </div>
-      </div>
-    );
-  }
+      );
+}
+
+
 
   const hasSearch = searchTerm.trim().length > 0;
 
