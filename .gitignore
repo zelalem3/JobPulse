@@ -2,4 +2,5 @@ jobpulse_session.session
 ethiojob_debug.html
 cookies.txt
 .env
-*.txt
+*.txtnode_modules/
+node_modules/
