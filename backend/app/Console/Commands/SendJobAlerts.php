@@ -119,13 +119,13 @@ class SendJobAlerts extends Command
         return $query->orderByDesc('created_at')->get();
     }
 
-    protected function buildMessage(JobListing $job): string
+   protected function buildMessage(JobListing $job): string
     {
-        $title    = $job->title    ?? 'Untitled Job';
-        $location = $job->location ?? 'Remote / Not specified';
-        $url      = $job->url      ?? '#';
-        $salary   = $job->salary   ?? null;
-        $type     = $job->employment_type ?? null;
+        $title    = $this->escapeMarkdown($job->title ?? 'Untitled Job');
+        $location = $this->escapeMarkdown($job->location ?? 'Remote / Not specified');
+        $url      =$job->url ?? '#';
+        $salary   =$job->salary ? $this->escapeMarkdown($job->salary) : null;
+        $type     =$job->employment_type ? $this->escapeMarkdown($job->employment_type) : null;
 
         $message  = "🔔 *New Job Match*\n\n";
         $message .= "*{$title}*\n";
@@ -142,5 +142,16 @@ class SendJobAlerts extends Command
         $message .= "\n[Apply / View Job]({$url})";
 
         return $message;
+    }
+
+    /**
+     * Helper to escape special characters for Telegram Markdown parsing.
+     */
+    protected function escapeMarkdown(string $string): string
+    {
+        // Escaping common markdown characters that might break Telegram formatting
+        return str_replace(['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'], [
+            '\_', '\*', '\[', '\]', '\(', '\)', '\~', '\`', '\>', '\#', '\+', '\-', '\=', '\|', '\{', '\}', '\.', '\!'
+        ], $string);
     }
 }
