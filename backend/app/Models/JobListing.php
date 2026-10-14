@@ -66,4 +66,13 @@ class JobListing extends Model
     {
         return $query->where('quality_score', '<', 50);
     }
+    public function scopeByCategory($query, string $category)
+    {
+        return $query->where('category', $category);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

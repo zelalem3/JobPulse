@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\TelegramController;
+use App\Http\Controllers\Api\CategoryController;
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -29,6 +30,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Job Filters
     Route::get('/jobs/filters', [JobListingController::class, 'filters']);
+
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/categories/{category}', [CategoryController::class, 'jobs']);
+    Route::get('/categories/{category}/jobs', [CategoryController::class, 'jobs']);
 
     // Telegram
     Route::post('/telegram/connect', [TelegramController::class, 'connect']);
@@ -78,6 +84,10 @@ Route::post('/auth/login', [LoginController::class, 'login']);
 Route::post('/auth/register', [ApiRegisterController::class, 'register']);
 Route::get('/jobs/filters', [JobListingController::class, 'filters']);
 Route::get('/jobs/search', [JobSearchController::class, 'search']);
+// Categories
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'jobs']);
+Route::get('/categories/{category}/jobs', [CategoryController::class, 'jobs']);
 
 Route::apiResource('jobs', JobListingController::class)
     ->only(['index', 'show']);
