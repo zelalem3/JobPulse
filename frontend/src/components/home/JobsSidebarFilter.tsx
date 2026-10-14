@@ -5,10 +5,12 @@ interface JobsSidebarFilterProps {
   allSources: string[];
   allLocations: string[];
   allJobTypes: string[];
+  allCategories: string[];
 
   selectedSources: string[];
   selectedLocations: string[];
   selectedJobTypes: string[];
+  selectedCategories: string[];
 
   activeOnly: boolean;
   sort: string;
@@ -16,6 +18,7 @@ interface JobsSidebarFilterProps {
   onSourceToggle: (source: string) => void;
   onLocationToggle: (location: string) => void;
   onJobTypeToggle: (jobType: string) => void;
+  onCategoryToggle: (category: string) => void;
 
   onActiveOnlyChange: (value: boolean) => void;
   onSortChange: (value: string) => void;
@@ -30,10 +33,12 @@ export default function JobsSidebarFilter({
   allSources,
   allLocations,
   allJobTypes,
+  allCategories,
 
   selectedSources,
   selectedLocations,
   selectedJobTypes,
+  selectedCategories,
 
   activeOnly,
   sort,
@@ -41,6 +46,7 @@ export default function JobsSidebarFilter({
   onSourceToggle,
   onLocationToggle,
   onJobTypeToggle,
+  onCategoryToggle,
 
   onActiveOnlyChange,
   onSortChange,
@@ -54,6 +60,7 @@ export default function JobsSidebarFilter({
     selectedSources.length > 0 ||
     selectedLocations.length > 0 ||
     selectedJobTypes.length > 0 ||
+    selectedCategories.length > 0 ||
     activeOnly;
 
   return (
@@ -63,7 +70,6 @@ export default function JobsSidebarFilter({
       }`}
     >
       <div className="space-y-6">
-
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
           <div className="flex items-center gap-2 text-white font-bold text-sm">
@@ -88,7 +94,6 @@ export default function JobsSidebarFilter({
           <label className="text-xs font-semibold text-slate-300">
             Sort by
           </label>
-
           <select
             value={sort}
             onChange={(e) => onSortChange(e.target.value)}
@@ -113,7 +118,6 @@ export default function JobsSidebarFilter({
               Hide expired opportunities
             </p>
           </div>
-
           <input
             type="checkbox"
             checked={activeOnly}
@@ -140,7 +144,14 @@ export default function JobsSidebarFilter({
           isLoading={isLoading}
         />
 
-        
+        {/* Categories */}
+        <FilterSection
+          title="Category"
+          items={allCategories}
+          selected={selectedCategories}
+          onToggle={onCategoryToggle}
+          isLoading={isLoading}
+        />
       </div>
     </aside>
   );

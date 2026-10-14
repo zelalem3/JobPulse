@@ -41,6 +41,9 @@ interface FiltersResponse {
   sources?: string[];
   locations?: string[];
   job_types?: string[];
+  employment_types?: string[];
+  experience_levels?: string[];
+  categories?: string[];
 }
 
 interface JobsQueryResult {
@@ -129,6 +132,11 @@ export default function HomePage() {
       searchParams.get("job_type")
     );
 
+  const selectedCategories =
+    parseArrayParam(
+      searchParams.get("category")
+    );
+
   const activeOnly =
     searchParams.get("active_only") ===
     "true";
@@ -169,8 +177,6 @@ export default function HomePage() {
       setSearchTerm(urlSearch);
     }
 
-    // We intentionally only react to URL changes.
-    // Search typing itself is handled separately.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -263,7 +269,12 @@ export default function HomePage() {
     filterData?.locations || [];
 
   const allJobTypes =
-    filterData?.job_types || [];
+    filterData?.employment_types ||
+    filterData?.job_types ||
+    [];
+
+  const allCategories =
+    filterData?.categories || [];
 
   /*
   |--------------------------------------------------------------------------
@@ -312,6 +323,7 @@ export default function HomePage() {
       sources: selectedSources,
       locations: selectedLocations,
       jobTypes: selectedJobTypes,
+      categories: selectedCategories,
       activeOnly,
       sort,
     },
@@ -340,46 +352,42 @@ export default function HomePage() {
         ITEMS_PER_PAGE.toString()
       );
 
-      if (
-        debouncedSearchTerm
-      ) {
+      if (debouncedSearchTerm) {
         params.set(
-          "q",
+          "search",
           debouncedSearchTerm
         );
       }
 
-      if (
-        selectedSources.length > 0
-      ) {
+      if (selectedSources.length > 0) {
         params.set(
           "source",
           selectedSources.join(",")
         );
       }
 
-      if (
-        selectedLocations.length > 0
-      ) {
+      if (selectedLocations.length > 0) {
         params.set(
           "location",
           selectedLocations.join(",")
         );
       }
 
-      if (
-        selectedJobTypes.length > 0
-      ) {
+      if (selectedJobTypes.length > 0) {
         params.set(
-          "job_type",
+          "employment_type",
           selectedJobTypes.join(",")
         );
       }
 
-      params.set(
-        "sort",
-        sort
-      );
+      if (selectedCategories.length > 0) {
+        params.set(
+          "category",
+          selectedCategories.join(",")
+        );
+      }
+
+      params.set("sort", sort);
 
       if (activeOnly) {
         params.set(
@@ -388,10 +396,8 @@ export default function HomePage() {
         );
       }
 
-      const endpoint =
-        debouncedSearchTerm
-          ? `/api/jobs/search?${params.toString()}`
-          : `/api/jobs?${params.toString()}`;
+      // Use main jobs endpoint (supports category + filters)
+      const endpoint = `/api/jobs?${params.toString()}`;
 
       const [
         jobsResponse,
@@ -483,33 +489,14 @@ export default function HomePage() {
       };
     },
 
-    /*
-    |--------------------------------------------------------------------------
-    | Cache configuration
-    |--------------------------------------------------------------------------
-    */
-
     staleTime:
       5 * 60 * 1000,
 
     gcTime:
       30 * 60 * 1000,
 
-    /*
-    |--------------------------------------------------------------------------
-    | Keep previous page visible
-    |--------------------------------------------------------------------------
-    */
-
     placeholderData:
       keepPreviousData,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Don't refetch just because the
-    | user switches browser tabs
-    |--------------------------------------------------------------------------
-    */
 
     refetchOnWindowFocus: false,
 
@@ -678,6 +665,37 @@ export default function HomePage() {
 
   /*
   |--------------------------------------------------------------------------
+  | Category filter
+  |--------------------------------------------------------------------------
+  */
+
+  const handleCategoryToggle = (
+    category: string
+  ) => {
+    const next =
+      selectedCategories.includes(
+        category
+      )
+        ? selectedCategories.filter(
+            (item) =>
+              item !== category
+          )
+        : [
+            ...selectedCategories,
+            category,
+          ];
+
+    updateSearchParams({
+      category:
+        next.length > 0
+          ? next.join(",")
+          : null,
+      page: "1",
+    });
+  };
+
+  /*
+  |--------------------------------------------------------------------------
   | Active only
   |--------------------------------------------------------------------------
   */
@@ -796,12 +814,6 @@ export default function HomePage() {
     const nextSavedState =
       !previousSavedState;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Optimistic update
-    |--------------------------------------------------------------------------
-    */
-
     updateCachedJobSaveState(
       id,
       nextSavedState
@@ -814,41 +826,21 @@ export default function HomePage() {
         `/api/savejob/${id}`
       );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Keep every cached page
-      | synchronized
-      |--------------------------------------------------------------------------
-      */
-
       updateCachedJobSaveState(
         id,
         nextSavedState
       );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Refresh saved jobs query
-      | if you later add one
-      |--------------------------------------------------------------------------
-      */
 
       queryClient.invalidateQueries({
         queryKey: [
           "saved-jobs",
         ],
       });
-    } catch (error) {
+    } catch (err) {
       console.error(
         "Error updating save status:",
-        error
+        err
       );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Rollback
-      |--------------------------------------------------------------------------
-      */
 
       updateCachedJobSaveState(
         id,
@@ -870,6 +862,7 @@ export default function HomePage() {
     selectedSources,
     selectedLocations,
     selectedJobTypes,
+    selectedCategories,
     searchTerm,
   ];
 
@@ -916,6 +909,50 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Category chips */}
+        {allCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-1 justify-center">
+            <button
+              type="button"
+              onClick={() =>
+                updateSearchParams({
+                  category: null,
+                  page: "1",
+                })
+              }
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                selectedCategories.length === 0
+                  ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-200"
+                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              All
+            </button>
+
+            {allCategories.map((cat) => {
+              const active =
+                selectedCategories.includes(cat);
+
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() =>
+                    handleCategoryToggle(cat)
+                  }
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    active
+                      ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-200"
+                      : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Mobile filter button */}
         <div className="flex justify-between items-center md:hidden">
 
@@ -954,6 +991,9 @@ export default function HomePage() {
             allJobTypes={
               allJobTypes
             }
+            allCategories={
+              allCategories
+            }
             selectedSources={
               selectedSources
             }
@@ -962,6 +1002,9 @@ export default function HomePage() {
             }
             selectedJobTypes={
               selectedJobTypes
+            }
+            selectedCategories={
+              selectedCategories
             }
             activeOnly={
               activeOnly
@@ -975,6 +1018,9 @@ export default function HomePage() {
             }
             onJobTypeToggle={
               handleJobTypeToggle
+            }
+            onCategoryToggle={
+              handleCategoryToggle
             }
             onActiveOnlyChange={
               handleActiveOnlyChange
@@ -1007,13 +1053,19 @@ export default function HomePage() {
                     ? "job"
                     : "jobs"}{" "}
                   found
+                  {totalDatabaseCount > 0 && (
+                    <span className="text-slate-600">
+                      {" "}
+                      · {totalDatabaseCount} total
+                    </span>
+                  )}
                 </p>
 
                 {searchTerm && (
                   <p className="text-xs text-slate-500">
                     Results for{" "}
                     <span className="text-slate-300 font-medium">
-                      "{searchTerm}"
+                      &quot;{searchTerm}&quot;
                     </span>
                   </p>
                 )}
@@ -1097,7 +1149,6 @@ export default function HomePage() {
                     )
                   )}
 
-                  {/* Background fetch indicator */}
                   {isFetching &&
                     !loading && (
                       <div className="absolute top-2 right-2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 shadow-lg backdrop-blur-xl">
