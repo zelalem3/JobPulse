@@ -861,6 +861,8 @@ def normalize_experience_level(value):
 
     return value.title()
 
+
+
 # ============================================================
 # CATEGORY
 # ============================================================
@@ -887,14 +889,19 @@ CANONICAL_CATEGORIES = [
     "Other",
 ]
 
-# Map messy source labels → canonical
+# Map messy source labels → canonical (Expanded for tech/CS/SE variations)
 CATEGORY_ALIASES = {
     "it": "Software Development",
     "ict": "Software Development",
     "it & telecom": "Software Development",
     "information technology": "Software Development",
+    "information systems": "Software Development",
+    "computer science": "Software Development",
+    "software engineering": "Software Development",
     "software": "Software Development",
     "tech": "Software Development",
+    "technology": "Software Development",
+    "computer": "Software Development",
     "general": None,  # force re-infer
     "other": None,
     "healthcare": "Healthcare",
@@ -918,80 +925,100 @@ CATEGORY_ALIASES = {
     "administration": "Administration",
 }
 
+# Broadened and expanded keywords for high-accuracy identification
 CATEGORY_KEYWORDS = {
     "Software Development": [
-        "software engineer", "software developer", "web developer",
-        "mobile developer", "full stack", "fullstack", "backend", "front end",
-        "frontend", "laravel", "django", "react", "node.js", "flutter",
-        "programmer", "devops", "android developer", "ios developer",
+        "software engineer", "software developer", "software engineering",
+        "computer scientist", "computer science", "programmer", "coding",
+        "web developer", "mobile developer", "full stack", "full-stack", "fullstack",
+        "backend", "back-end", "front end", "frontend", "front-end",
+        "laravel", "django", "react", "node.js", "angular", "vue", "flutter",
+        "react native", "android developer", "ios developer", "python developer",
+        "java developer", "php developer", ".net developer", "c++ developer",
+        "devops", "site reliability", "sre", "qa engineer", "quality assurance",
+        "test engineer", "systems analyst", "system analyst", "it support",
+        "it specialist", "it officer", "information technology", "tech support",
+        "software architect", "application developer"
     ],
     "Data & AI": [
         "data scientist", "data engineer", "data analyst", "machine learning",
-        "artificial intelligence", "ml engineer", "business intelligence",
-        "power bi", "data science",
+        "artificial intelligence", "ml engineer", "ai engineer", "deep learning",
+        "business intelligence", "power bi", "tableau", "data science", "big data",
+        "nlp", "computer vision", "analytics engineer"
     ],
     "Cybersecurity": [
-        "cybersecurity", "cyber security", "information security",
-        "soc analyst", "penetration test", "security engineer",
+        "cybersecurity", "cyber security", "information security", "infosec",
+        "soc analyst", "penetration test", "pentester", "security engineer",
+        "security analyst", "cyber threat", "vulnerability assessor"
     ],
     "Networking": [
         "network engineer", "network administrator", "system administrator",
-        "systems administrator", "network admin",
+        "systems administrator", "network admin", "sysadmin", "infrastructure engineer",
+        "network specialist", "cloud architect", "cloud engineer"
     ],
     "Engineering": [
         "civil engineer", "mechanical engineer", "electrical engineer",
-        "construction engineer", "site engineer",
+        "construction engineer", "site engineer", "chemical engineer",
+        "structural engineer", "industrial engineer"
     ],
     "Healthcare": [
         "nurse", "doctor", "physician", "pharmacist", "clinical",
         "healthcare", "health care", "medical officer", "midwife",
+        "surgeon", "dentist", "public health", "biomedical"
     ],
     "Finance": [
         "finance", "financial analyst", "banker", "banking", "fintech",
-        "microfinance", "loan officer", "treasury",
+        "microfinance", "loan officer", "treasury", "investment analyst",
+        "risk manager", "portfolio manager"
     ],
     "Accounting": [
         "accountant", "accounting", "auditor", "audit", "bookkeeper",
-        "financial controller",
+        "financial controller", "tax accountant", "cpa"
     ],
     "Marketing": [
         "marketing", "digital marketing", "brand manager", "seo",
-        "social media manager", "content marketing",
+        "social media manager", "content marketing", "growth marketer",
+        "copywriter", "public relations", "communications officer"
     ],
     "Sales": [
         "sales", "business development", "account manager",
-        "sales representative", "sales executive",
+        "sales representative", "sales executive", "account executive",
+        "channel partner", "telesales"
     ],
     "Human Resources": [
         "human resource", "human resources", "recruitment", "recruiter",
-        "talent acquisition", "hr manager", "hr officer",
+        "talent acquisition", "hr manager", "hr officer", "people operations",
+        "compensation and benefits"
     ],
     "Education": [
         "teacher", "lecturer", "instructor", "trainer", "principal",
-        "education officer", "tutor",
+        "education officer", "tutor", "professor", "academic coordinator"
     ],
     "NGO": [
         "ngo", "non-governmental", "humanitarian", "project officer",
-        "program officer", "international development",
+        "program officer", "international development", "community mobilizer",
+        "grant writer", "civil society"
     ],
     "Customer Service": [
         "customer service", "call center", "customer support",
-        "help desk", "client service",
+        "help desk", "client service", "customer success", "support specialist"
     ],
     "Logistics": [
         "logistics", "supply chain", "warehouse", "procurement",
-        "fleet", "transport",
+        "fleet", "transport", "shipping", "inventory manager", "purchasing"
     ],
     "Legal": [
         "lawyer", "legal officer", "attorney", "legal advisor", "counsel",
+        "paralegal", "compliance officer"
     ],
     "Administration": [
         "administrative", "office administrator", "executive assistant",
-        "secretary", "office manager", "admin assistant",
+        "secretary", "office manager", "admin assistant", "receptionist",
+        "front desk"
     ],
 }
 
-# Prefer specific categories first
+# Priority order for disambiguation
 CATEGORY_PRIORITY = [
     "Cybersecurity",
     "Data & AI",
@@ -1014,8 +1041,10 @@ CATEGORY_PRIORITY = [
 
 
 def _contains_phrase(text: str, phrase: str) -> bool:
-    """Word-boundary-ish match so 'data' doesn't match everything."""
-    pattern = r"(?<!\w)" + re.escape(phrase.lower()) + r"(?!\w)"
+    """Robust word-boundary match that handles internal dots/symbols correctly."""
+    phrase = phrase.lower().strip()
+    # Using \b handles word boundaries securely while supporting dots/symbols (like node.js)
+    pattern = r"\b" + re.escape(phrase) + r"\b"
     return re.search(pattern, text) is not None
 
 
@@ -1046,7 +1075,7 @@ def infer_category(job) -> str:
         )
     ).lower()
 
-    # 1) Title matches first (higher signal)
+    # 1) Title matches first (highest signal)
     for category in CATEGORY_PRIORITY:
         for keyword in CATEGORY_KEYWORDS.get(category, []):
             if _contains_phrase(title, keyword):
@@ -1059,7 +1088,6 @@ def infer_category(job) -> str:
                 return category
 
     return "Other"
-
 # ============================================================
 # SALARY EXTRACTION
 # ============================================================
