@@ -861,199 +861,204 @@ def normalize_experience_level(value):
 
     return value.title()
 
-
 # ============================================================
 # CATEGORY
 # ============================================================
 
+# Fixed list users can filter by
+CANONICAL_CATEGORIES = [
+    "Software Development",
+    "Data & AI",
+    "Cybersecurity",
+    "Networking",
+    "Engineering",
+    "Healthcare",
+    "Finance",
+    "Accounting",
+    "Marketing",
+    "Sales",
+    "Human Resources",
+    "Education",
+    "NGO",
+    "Customer Service",
+    "Logistics",
+    "Legal",
+    "Administration",
+    "Other",
+]
+
+# Map messy source labels → canonical
+CATEGORY_ALIASES = {
+    "it": "Software Development",
+    "ict": "Software Development",
+    "it & telecom": "Software Development",
+    "information technology": "Software Development",
+    "software": "Software Development",
+    "tech": "Software Development",
+    "general": None,  # force re-infer
+    "other": None,
+    "healthcare": "Healthcare",
+    "health": "Healthcare",
+    "medical": "Healthcare",
+    "finance": "Finance",
+    "banking": "Finance",
+    "accounting": "Accounting",
+    "marketing": "Marketing",
+    "sales": "Sales",
+    "hr": "Human Resources",
+    "human resources": "Human Resources",
+    "education": "Education",
+    "ngo": "NGO",
+    "non profit": "NGO",
+    "nonprofit": "NGO",
+    "customer service": "Customer Service",
+    "logistics": "Logistics",
+    "legal": "Legal",
+    "admin": "Administration",
+    "administration": "Administration",
+}
+
 CATEGORY_KEYWORDS = {
-
     "Software Development": [
-        "software",
-        "developer",
-        "development",
-        "programmer",
-        "backend",
-        "back end",
-        "frontend",
-        "front end",
-        "full stack",
-        "full-stack",
-        "web developer",
-        "mobile developer",
-        "laravel",
-        "django",
-        "flask",
-        "react",
-        "next.js",
-        "node.js",
-        "typescript",
-        "javascript",
-        "python",
-        "java",
-        "php",
-        "flutter",
+        "software engineer", "software developer", "web developer",
+        "mobile developer", "full stack", "fullstack", "backend", "front end",
+        "frontend", "laravel", "django", "react", "node.js", "flutter",
+        "programmer", "devops", "android developer", "ios developer",
     ],
-
     "Data & AI": [
-        "data",
-        "data science",
-        "data scientist",
-        "machine learning",
-        "artificial intelligence",
-        "ai ",
-        " ai",
-        "analyst",
-        "analytics",
+        "data scientist", "data engineer", "data analyst", "machine learning",
+        "artificial intelligence", "ml engineer", "business intelligence",
+        "power bi", "data science",
     ],
-
-    "Networking": [
-        "network",
-        "networking",
-        "system administrator",
-        "systems administrator",
-        "network administrator",
-        "network engineer",
-    ],
-
     "Cybersecurity": [
-        "security",
-        "cybersecurity",
-        "cyber security",
-        "information security",
-        "soc analyst",
+        "cybersecurity", "cyber security", "information security",
+        "soc analyst", "penetration test", "security engineer",
     ],
-
-    "Finance": [
-        "finance",
-        "financial",
-        "bank",
-        "banking",
-        "fintech",
-        "microfinance",
-        "micro-finance",
-        "sacco",
+    "Networking": [
+        "network engineer", "network administrator", "system administrator",
+        "systems administrator", "network admin",
     ],
-
-    "Accounting": [
-        "accountant",
-        "accounting",
-        "auditor",
-        "audit",
-    ],
-
-    "Marketing": [
-        "marketing",
-        "digital marketing",
-        "social media marketing",
-        "brand marketing",
-    ],
-
-    "Sales": [
-        "sales",
-        "business development",
-        "business developer",
-        "sales representative",
-    ],
-
-    "Human Resources": [
-        "hr",
-        "human resource",
-        "human resources",
-        "recruitment",
-        "recruiter",
-        "talent acquisition",
-    ],
-
     "Engineering": [
-        "engineer",
-        "engineering",
-        "electrical engineer",
-        "mechanical engineer",
-        "civil engineer",
+        "civil engineer", "mechanical engineer", "electrical engineer",
+        "construction engineer", "site engineer",
     ],
-
     "Healthcare": [
-        "doctor",
-        "nurse",
-        "medical",
-        "healthcare",
-        "health care",
-        "clinical",
-        "pharmacist",
+        "nurse", "doctor", "physician", "pharmacist", "clinical",
+        "healthcare", "health care", "medical officer", "midwife",
     ],
-
+    "Finance": [
+        "finance", "financial analyst", "banker", "banking", "fintech",
+        "microfinance", "loan officer", "treasury",
+    ],
+    "Accounting": [
+        "accountant", "accounting", "auditor", "audit", "bookkeeper",
+        "financial controller",
+    ],
+    "Marketing": [
+        "marketing", "digital marketing", "brand manager", "seo",
+        "social media manager", "content marketing",
+    ],
+    "Sales": [
+        "sales", "business development", "account manager",
+        "sales representative", "sales executive",
+    ],
+    "Human Resources": [
+        "human resource", "human resources", "recruitment", "recruiter",
+        "talent acquisition", "hr manager", "hr officer",
+    ],
     "Education": [
-        "teacher",
-        "teaching",
-        "lecturer",
-        "education",
-        "school",
-        "instructor",
-        "trainer",
+        "teacher", "lecturer", "instructor", "trainer", "principal",
+        "education officer", "tutor",
     ],
-
     "NGO": [
-        "ngo",
-        "non-governmental",
-        "humanitarian",
-        "development organization",
-        "international development",
+        "ngo", "non-governmental", "humanitarian", "project officer",
+        "program officer", "international development",
+    ],
+    "Customer Service": [
+        "customer service", "call center", "customer support",
+        "help desk", "client service",
+    ],
+    "Logistics": [
+        "logistics", "supply chain", "warehouse", "procurement",
+        "fleet", "transport",
+    ],
+    "Legal": [
+        "lawyer", "legal officer", "attorney", "legal advisor", "counsel",
+    ],
+    "Administration": [
+        "administrative", "office administrator", "executive assistant",
+        "secretary", "office manager", "admin assistant",
     ],
 }
 
+# Prefer specific categories first
+CATEGORY_PRIORITY = [
+    "Cybersecurity",
+    "Data & AI",
+    "Software Development",
+    "Networking",
+    "Engineering",
+    "Healthcare",
+    "Legal",
+    "Accounting",
+    "Finance",
+    "Marketing",
+    "Sales",
+    "Human Resources",
+    "Education",
+    "NGO",
+    "Customer Service",
+    "Logistics",
+    "Administration",
+]
 
-def infer_category(job):
 
-    text = " ".join(
+def _contains_phrase(text: str, phrase: str) -> bool:
+    """Word-boundary-ish match so 'data' doesn't match everything."""
+    pattern = r"(?<!\w)" + re.escape(phrase.lower()) + r"(?!\w)"
+    return re.search(pattern, text) is not None
+
+
+def normalize_category(value: str | None) -> str | None:
+    """Map source labels into canonical categories, or None to re-infer."""
+    if not value:
+        return None
+    key = str(value).strip().lower()
+    if key in CATEGORY_ALIASES:
+        return CATEGORY_ALIASES[key]
+    # Already canonical?
+    for cat in CANONICAL_CATEGORIES:
+        if cat.lower() == key:
+            return cat
+    return None  # unknown → let inference decide
+
+
+def infer_category(job) -> str:
+    title = (getattr(job, "title", "") or "").lower()
+    body = " ".join(
         filter(
             None,
             [
-                getattr(job, "title", ""),
-                getattr(job, "description", ""),
-                getattr(job, "requirements", ""),
-                getattr(job, "responsibilities", ""),
+                getattr(job, "description", "") or "",
+                getattr(job, "requirements", "") or "",
+                getattr(job, "responsibilities", "") or "",
             ],
         )
     ).lower()
 
-    # --------------------------------------------------------
-    # Category priority
-    #
-    # More specific categories should be checked before
-    # broader categories.
-    # --------------------------------------------------------
+    # 1) Title matches first (higher signal)
+    for category in CATEGORY_PRIORITY:
+        for keyword in CATEGORY_KEYWORDS.get(category, []):
+            if _contains_phrase(title, keyword):
+                return category
 
-    category_priority = [
-        "Cybersecurity",
-        "Data & AI",
-        "Software Development",
-        "Networking",
-        "Engineering",
-        "Healthcare",
-        "Finance",
-        "Accounting",
-        "Marketing",
-        "Sales",
-        "Human Resources",
-        "Education",
-        "NGO",
-    ]
-
-    for category in category_priority:
-
-        keywords = CATEGORY_KEYWORDS.get(
-            category,
-            [],
-        )
-
-        for keyword in keywords:
-
-            if keyword in text:
+    # 2) Then body
+    for category in CATEGORY_PRIORITY:
+        for keyword in CATEGORY_KEYWORDS.get(category, []):
+            if _contains_phrase(body, keyword):
                 return category
 
     return "Other"
-
 
 # ============================================================
 # SALARY EXTRACTION
@@ -1272,10 +1277,11 @@ def normalize_job(job):
     # Category
     # --------------------------------------------------------
 
-    if not job.category:
-
-        job.category = infer_category(
-            job
-        )
+    mapped = normalize_category(getattr(job, "category", None))
+    if mapped:
+        job.category = mapped
+    else:
+        job.category = infer_category(job)
 
     return job
+
