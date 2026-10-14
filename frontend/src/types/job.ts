@@ -5,17 +5,17 @@ export interface Job {
   location: string | null;
 
   description?: string | null;
-
   salary: string | null;
 
   job_type?: string | null;
   type?: string | null;
+  employment_type: string | null;
+  experience_level: string | null;
+  category?: string | null;  // ← add this
 
   source: string | null;
-
   apply_link?: string | null;
   deadline?: string | null;
-
   scraped_at?: string | null;
   created_at?: string | null;
 
@@ -29,7 +29,4 @@ export interface Job {
   >;
 
   isSaved?: boolean;
-  employment_type: string | null
-  experience_level: string | null
-  
 }
