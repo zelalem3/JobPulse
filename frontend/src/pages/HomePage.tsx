@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
-
+import { Link } from "react-router-dom";
 import {
   Briefcase,
   SlidersHorizontal,
+  Search,
+  Bell,
+  Sparkles,
+  ArrowRight,
+  MapPin,
+  Zap,
+  ShieldCheck,
 } from "lucide-react";
-
+import { useAuthStore } from "../store/authStore";
 import {
   keepPreviousData,
   useQuery,
@@ -68,6 +75,8 @@ interface SavedJob {
 
 export default function HomePage() {
   const queryClient = useQueryClient();
+  const token = useAuthStore((s) => s.token);
+  const isLoggedIn = !!token;
 
   const [searchParams, setSearchParams] =
     useSearchParams();
@@ -885,29 +894,176 @@ export default function HomePage() {
           scrollDependencies
         }
       />
+                                    {/* ========== LANDING HERO ========== */}
+      <section className="relative overflow-hidden border-b border-slate-800/80">
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-indigo-600/10 blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.06),transparent_55%)]" />
+        </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-800/50 bg-emerald-950/40 px-3.5 py-1.5 text-xs font-bold text-emerald-300">
+              <Sparkles size={14} className="text-emerald-400" />
+              Smart job discovery 
+            </div>
 
-        {/* Search */}
-        <div className="max-w-3xl mx-auto w-full px-2">
+            <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Find work that
+              <span className="block bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent">
+                fits your skills
+              </span>
+            </h1>
 
-          <div className="relative group w-full">
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
+              JobPulse pulls openings from across the web, matches them to your profile,
+              and helps you track what matters — without the noise.
+            </p>
 
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-md opacity-50 group-hover:opacity-80 transition duration-500" />
+            {/* Search CTA */}
+            <div className="mx-auto mt-8 max-w-xl">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearch(searchTerm);
+                }}
+                className="flex flex-col gap-3 sm:flex-row sm:items-center"
+              >
+                <div className="flex flex-1 items-center gap-3 rounded-2xl border border-slate-700/80 bg-slate-900/80 px-4 py-3.5 shadow-xl shadow-black/20 backdrop-blur-sm focus-within:border-emerald-500/50 focus-within:ring-2 focus-within:ring-emerald-500/10">
+                  <Search size={18} className="shrink-0 text-slate-500" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Role, skill, or company…"
+                    className="w-full bg-transparent text-sm font-medium text-slate-100 outline-none placeholder:text-slate-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-950/40 transition hover:bg-emerald-500"
+                >
+                  Search jobs
+                  <ArrowRight size={16} />
+                </button>
+              </form>
+            </div>
 
-            <div className="relative bg-[#0b0f19] border border-indigo-500/40 rounded-full shadow-2xl w-full">
+            {/* Stats */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Briefcase size={16} className="text-emerald-500" />
+                <span>
+                  <strong className="font-bold text-white">
+                    {totalDatabaseCount.toLocaleString()}
+                  </strong>{" "}
+                  openings tracked
+                </span>
+              </div>
+              <div className="hidden h-4 w-px bg-slate-700 sm:block" />
+              <div className="flex items-center gap-2 text-slate-400">
+                <Zap size={16} className="text-amber-400" />
+                <span>Updated continuously</span>
+              </div>
+              <div className="hidden h-4 w-px bg-slate-700 sm:block" />
+              <div className="flex items-center gap-2 text-slate-400">
+                <ShieldCheck size={16} className="text-indigo-400" />
+                <span>Free to start</span>
+              </div>
+            </div>
 
-              <SearchBar
-                onSearch={
-                  handleSearch
-                }
-                placeholder="Search jobs, skills, companies, or locations..."
-                className=""
-              />
-
+            {/* Secondary CTAs */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/jobs"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800"
+              >
+                Browse all jobs
+              </Link>
+              {!isLoggedIn ? (
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-800/50 bg-emerald-950/40 px-4 py-2.5 text-sm font-bold text-emerald-300 transition hover:bg-emerald-950/70"
+                >
+                  Create free profile
+                  <ArrowRight size={14} />
+                </Link>
+              ) : (
+                <Link
+                  to="/alerts"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-800/50 bg-emerald-950/40 px-4 py-2.5 text-sm font-bold text-emerald-300 transition hover:bg-emerald-950/70"
+                >
+                  <Bell size={14} />
+                  Set job alerts
+                </Link>
+              )}
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ========== VALUE PROPS ========== */}
+      <section className="border-b border-slate-800/80 bg-slate-950/50">
+        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
+          {[
+            {
+              icon: <Search size={20} className="text-emerald-400" />,
+              title: "Search that understands you",
+              body: "Filter by skill, location, and type — or let recommendations surface roles that match your profile.",
+            },
+            {
+              icon: <Bell size={20} className="text-indigo-400" />,
+              title: "Alerts when it matters",
+              body: "Save keywords and get notified when new openings appear, so you never miss a fit.",
+            },
+            {
+              icon: <MapPin size={20} className="text-teal-400" />,
+              title: "One place for your hunt",
+              body: "Save jobs, track alerts, and keep your profile ready — without juggling a dozen tabs.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 transition hover:border-slate-700 hover:bg-slate-900/70"
+            >
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-950/80">
+                {item.icon}
+              </div>
+              <h3 className="text-sm font-black text-white">{item.title}</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      
+      {/* ========== JOBS SECTION LABEL ========== */}
+      <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-500/90">
+              Live openings
+            </p>
+            <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">
+              Explore roles right now
+            </h2>
+          </div>
+          {filteredTotalItems > 0 && (
+            <p className="text-sm font-medium text-slate-400">
+              Showing{" "}
+              <span className="font-bold text-slate-200">
+                {filteredTotalItems.toLocaleString()}
+              </span>{" "}
+              matches
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
+
+        
 
         {/* Category chips */}
         {allCategories.length > 0 && (
@@ -1112,6 +1268,7 @@ export default function HomePage() {
                 </button>
 
               </div>
+                            
             ) : loading ? (
 
               <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-16 text-center space-y-3 shadow-xl">
