@@ -12,19 +12,14 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-    'name', 
-    'email', 
-    'password', 
-    'role',
-    'location', 
-    'bio',
-    'github_url', 
-    'linkedin_url', 
-    'resume',
-    'telegram_chat_id',
-    'telegram_username',
-    'telegram_connected_at',
-];
+        'name',
+        'email',
+        'password',
+        'role',
+        'telegram_chat_id',
+        'telegram_username',
+        'telegram_connected_at',
+    ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
@@ -40,10 +35,10 @@ class User extends Authenticatable
         $query = JobListing::query();
 
         $userSkills = $this->skills()->get();
-        
+
         if ($userSkills->isNotEmpty()) {
             $userSkillIds = $userSkills->pluck('id')->toArray();
-            
+
             $query->whereHas('skills', function ($q) use ($userSkillIds) {
                 $q->whereIn('skills.id', $userSkillIds);
             });
@@ -55,7 +50,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Define the many-to-many relationship with Skill.
+     * Many-to-many relationship with Skill.
      */
     public function skills()
     {
@@ -63,15 +58,15 @@ class User extends Authenticatable
     }
 
     /**
-     * Helper: Add a single skill or multiple skills without removing existing ones.
+     * Add skill(s) without removing existing ones.
      */
-    public function addSkill($skillIdRs)
+    public function addSkill($skillIds)
     {
-        return $this->skills()->syncWithoutDetaching($skillIdRs);
+        return $this->skills()->syncWithoutDetaching($skillIds);
     }
 
     /**
-     * Helper: Remove a specific skill from the user.
+     * Remove a specific skill.
      */
     public function removeSkill($skillId)
     {
@@ -79,20 +74,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Helper: Completely synchronize user skills to match an exact list.
+     * Sync skills to an exact list.
      */
     public function syncSkills(array $skillIds)
     {
         return $this->skills()->sync($skillIds);
     }
+
     public function savedJobs()
     {
         return $this->hasMany(SavedJob::class);
     }
+
     public function jobAlerts()
     {
         return $this->hasMany(JobAlert::class);
     }
+
     public function profile()
     {
         return $this->hasOne(Profile::class);
