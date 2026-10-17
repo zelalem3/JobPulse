@@ -6,30 +6,27 @@ use App\Http\Controllers\Controller;
 use App\Models\JobAlert;
 use App\Models\Skill;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AlertController extends Controller
 {
     /**
-     * Get the authenticated user's alerts and matching skills.
+     * Get the authenticated user's alerts, skills, and profile.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = $request->user();
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
+        // Ensure profile exists
+        $user->profile()->firstOrCreate(
+            ['user_id' => $user->id]
+        );
 
-        $user->load('skills');
+        $user->load(['skills', 'profile']);
 
         return response()->json([
-            'skills' => $user->skills,
-            'alerts' => $user->jobAlerts()
-                ->latest()
-                ->get(),
+            'skills'  => $user->skills,
+            'alerts'  => $user->jobAlerts()->latest()->get(),
+            'profile' => $user->profile,
         ], 200);
     }
 
@@ -42,12 +39,6 @@ class AlertController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
 
         $validated = $request->validate([
             'name' => [
@@ -76,37 +67,28 @@ class AlertController extends Controller
         }
 
         /*
-         * ---------------------------------------------------------
          * 1. Find or create the canonical Skill
-         * ---------------------------------------------------------
-         *
-         * The alert keyword becomes a user matching skill.
          */
         $skill = Skill::firstOrCreate([
             'name' => $keyword,
         ]);
 
         /*
-         * ---------------------------------------------------------
-         * 2. Add the skill to the user
-         * ---------------------------------------------------------
-         *
-         * IMPORTANT:
-         * syncWithoutDetaching() preserves every existing skill.
-         *
-         * We intentionally do NOT use sync() here because that
-         * would replace the user's entire skill collection.
+         * 2. Attach skill to the user (preserves existing skills)
          */
         $user->skills()->syncWithoutDetaching([
             $skill->id,
         ]);
 
         /*
-         * ---------------------------------------------------------
-         * 3. Create the alert
-         * ---------------------------------------------------------
-         *
-         * Prevent duplicate alerts for the same user + keyword.
+         * 3. Ensure profile exists
+         */
+        $user->profile()->firstOrCreate(
+            ['user_id' => $user->id]
+        );
+
+        /*
+         * 4. Create the alert (no duplicates for same user + keyword)
          */
         $alert = JobAlert::firstOrCreate(
             [
@@ -114,58 +96,38 @@ class AlertController extends Controller
                 'keyword' => $keyword,
             ],
             [
-                'location' => $validated['location'] ?? null,
-                'category' => $validated['category'] ?? null,
+                'location'         => $validated['location'] ?? null,
+                'category'         => $validated['category'] ?? null,
                 'telegram_enabled' => true,
-                'email_enabled' => true,
-
-                // Check existing jobs from the previous 24 hours
-                // when the alert is first created.
-                'last_checked_at' => now()->subDay(),
+                'email_enabled'    => true,
+                'last_checked_at'  => now()->subDay(),
             ]
         );
 
         /*
-         * ---------------------------------------------------------
-         * 4. Reload relationships
-         * ---------------------------------------------------------
+         * 5. Reload relationships
          */
-        $user->load('skills');
+        $user->load(['skills', 'profile']);
 
-        /*
-         * ---------------------------------------------------------
-         * 5. Return the complete current state
-         * ---------------------------------------------------------
-         */
         return response()->json([
             'message' => 'Alert and matching skill added successfully.',
-            'skill' => $skill,
-            'alert' => $alert,
-            'skills' => $user->skills,
-            'alerts' => $user->jobAlerts()
-                ->latest()
-                ->get(),
+            'skill'   => $skill,
+            'alert'   => $alert,
+            'skills'  => $user->skills,
+            'alerts'  => $user->jobAlerts()->latest()->get(),
+            'profile' => $user->profile,
         ], 201);
     }
 
     /**
      * Delete a job alert.
      *
-     * IMPORTANT:
      * We do NOT remove the corresponding skill.
-     *
-     * The user may still want jobs containing that skill in
-     * recommendations even after disabling notifications.
+     * The user may still want that skill in recommendations.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
+        $user = $request->user();
 
         $alert = JobAlert::where('id', $id)
             ->where('user_id', $user->id)
@@ -179,14 +141,13 @@ class AlertController extends Controller
 
         $alert->delete();
 
-        $user->load('skills');
+        $user->load(['skills', 'profile']);
 
         return response()->json([
             'message' => 'Alert deleted successfully.',
-            'alerts' => $user->jobAlerts()
-                ->latest()
-                ->get(),
-            'skills' => $user->skills,
+            'alerts'  => $user->jobAlerts()->latest()->get(),
+            'skills'  => $user->skills,
+            'profile' => $user->profile,
         ], 200);
     }
 }
