@@ -909,5 +909,59 @@
     "TikTok",
     "Video Production",
     "YouTube"
+  ],
+  "6fce218710ab5bd3f949f6ea415240eff85214a898008942a02e2bf99fc80f2d": [
+    "Access Point Configuration",
+    "CCTV Installation",
+    "CCTV System Configuration",
+    "Cable Pulling",
+    "Cable Termination",
+    "Cable Testing",
+    "Cable Trunking Installation",
+    "DVR Installation",
+    "Excel",
+    "Fiber Optic Cabling",
+    "IP Camera Installation",
+    "NVR Installation",
+    "Networking",
+    "Patch Panel Termination",
+    "PoE Configuration",
+    "Rack Mounting",
+    "Router Configuration",
+    "Structured Cabling",
+    "Switch Configuration",
+    "Technical Documentation",
+    "Technical Drawing Interpretation",
+    "Troubleshooting"
+  ],
+  "907e197ef8ec4ca3e9fca2004f26bcd0e96d0a52e56a993f3aafa089b0c02393": [
+    "API",
+    "API Integration",
+    "Communication",
+    "English"
+  ],
+  "8213e9bbd1d674a5e681bb538546b0a3b4882145b8e055a4b2c5f52ea32c860c": [
+    "Attention to Detail",
+    "Communication",
+    "Interpersonal Skills",
+    "Strategic Planning"
+  ],
+  "159fad20ae5279c77921a222cece003415837f46a4021c59bdf48cafbac8a1d4": [],
+  "73d160683e579427f318b559a74938202367b2014ffd9f1f56ae759242dd3102": [
+    "Communication"
+  ],
+  "2e367c0f0abe7bb6d0e3a4cb12f08e5310ebad0e51b5ae0544b72474a399046c": [
+    "Account Management",
+    "Content Management",
+    "Data Management",
+    "E-learning",
+    "Issue Resolution",
+    "Platform Administration",
+    "Root Cause Analysis",
+    "System Troubleshooting",
+    "Technical Support",
+    "UI/UX Design",
+    "User Experience Optimization",
+    "User Training"
   ]
 }
