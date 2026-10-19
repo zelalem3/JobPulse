@@ -105,7 +105,7 @@ except Exception as e:
 SCRAPERS = [
     AfriworkScraper(),
     EthioReport(),
-    EthioJob(),
+    EthioJob(category="IT-+Computer+Science+and+Software+Engineering"),
     GeezJobsScraper(),
     LinkedInJobsScraper(),
     EthiNGOJobsScraper(),
