@@ -15,21 +15,73 @@ class AfriworkScraper(BaseScraper):
     def __init__(self):
         super().__init__("Afriwork")
         self.url = "https://api.afriworket.com/v1/graphql"
+        
+        
         self.headers = {"Content-Type": "application/json", "x-hasura-role": "anonymous"}
 
-    def fetch(self, offset: int = 0) -> list:
+    def fetch(self, offset: int = 0, sector: str = "Information Technology") -> list:
         payload = {
             "operationName": "GetAllJobs",
-            "query": """query GetAllJobs($offset: Int!) {
-                jobs(limit: 30, offset: $offset, where: {approval_status: {_in: ["PUBLISHED", "REFRESHED"]}}) {
-                    id, title, created_at, published_at, description, job_type, job_site, 
-                    skill_requirements { skill { name } }, city { name }, 
-                    sectors { sector { name } }, deadline, compensation_amount_cents, 
-                    compensation_currency, experience_level, entity { name }
+            "query": """
+                query GetAllJobs($offset: Int!, $whereCondition: jobs_bool_exp!, $orderCondition: [jobs_order_by!]) {
+                jobs(
+                    order_by: $orderCondition
+                    offset: $offset
+                    limit: 30
+                    where: $whereCondition
+                ) {
+                    id
+                    title
+                    created_at
+                    updated_at
+                    published_at
+                    refreshed_at
+                    approval_status
+                    description
+                    job_type
+                    job_site
+                    skill_requirements {
+                    skill {
+                        name
+                        id
+                    }
+                    }
+                    city {
+                    name
+                    country {
+                        name
+                    }
+                    }
+                    sectors {
+                    sector {
+                        name
+                        id
+                    }
+                    }
+                    deadline
+                    compensation_amount_cents
+                    compensation_type
+                    compensation_currency
+                    experience_level
+                    entity {
+                    type
+                    name
+                    }
                 }
-            }""",
-            "variables": {"offset": offset}
+                }
+            """,
+            "variables": {
+                "offset": offset,
+                "orderCondition": {"latest_activity_at": "desc"},
+                "whereCondition": {
+                    "_and": [
+                        {"approval_status": {"_in": ["PUBLISHED", "REFRESHED"]}},
+                        {"sectors": {"sector": {"name": {"_eq": sector}}}}
+                    ]
+                }
+            }
         }
+
         try:
             response = requests.post(self.url, headers=self.headers, json=payload, timeout=10)
             return response.json().get("data", {}).get("jobs", [])
@@ -37,6 +89,7 @@ class AfriworkScraper(BaseScraper):
             print(f"[Afriwork] Fetch failed at offset {offset}: {e}")
             return []
 
+        
     def parse(self, item: dict) -> JobListing:
         # Salary logic
         salary = "Negotiable"

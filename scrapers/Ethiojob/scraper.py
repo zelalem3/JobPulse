@@ -1,255 +1,206 @@
-import os
 import re
+import asyncio
 from datetime import datetime
-from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
+from typing import List
+
+from curl_cffi import requests
 from common.base_scraper import BaseScraper
 from common.models import JobListing
-from addskill import extract_skills  
+from addskill import extract_skills
 
 
-def safe_str(text: any, length: int = 250) -> str:
-    if text is None: return ""
+def safe_str(text, length: int = 250) -> str:
+    if text is None:
+        return ""
     return str(text).strip()[:length]
 
 
 class EthioJob(BaseScraper):
-    def __init__(self):
+    def __init__(self, category: str = "IT-+Computer+Science+and+Software+Engineering"):
         super().__init__("EthioJobs")
-        self.base_url = "https://www.ethiojobs.net"
-        self.start_url = "https://www.ethiojobs.net/jobs"
+        self.base_url = "https://ethiojobs.net"
+        self.category = category  # "" for all jobs
         self.headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
+            "Accept": "application/json,text/html",
+            "Accept-Language": "en-US,en;q=0.9",
+            "User-Agent": (
+                "Mozilla/5.0 (X11; Linux x86_64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/138.0.0.0 Safari/537.36"
+            ),
         }
+        self._build_id = None
 
-    def _is_valid_job_link(self, href: str) -> bool:
-        if not href:
-            return False
-        return bool(re.search(r"/job/[a-zA-Z0-9]+-", href))
+    def _get_build_id(self) -> str:
+        if self._build_id:
+            return self._build_id
 
-    def _normalize_url(self, href: str) -> str:
-        return self.base_url + href if href.startswith("/") else href
+        url = f"{self.base_url}/jobs"
+        if self.category:
+            url += f"?category={self.category}&page=1&isFeatured=false"
 
-    async def fetch(self) -> list:
-        """Asynchronous fetch method to gather job links."""
-        links = set()
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            try:
-                await page.goto(self.start_url, wait_until="domcontentloaded", timeout=30000)
-                try:
-                    await page.wait_for_selector("a[href*='/job/']", timeout=10000)
-                except Exception:
-                    await page.wait_for_timeout(3000)
+        resp = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
+        resp.raise_for_status()
 
-                anchors = page.locator("a")
-                count = await anchors.count()
-                for i in range(count):
-                    href = await anchors.nth(i).get_attribute("href")
-                    if href:
-                        normalized = self._normalize_url(href)
-                        if self._is_valid_job_link(normalized):
-                            links.add(normalized)
-            except Exception as e:
-                print(f"[{self.name}] Fetch error: {e}")
-            finally:
-                await browser.close()
-        return list(links)
+        match = re.search(r'/_next/data/([a-zA-Z0-9_-]+)/', resp.text)
+        if not match:
+            match = re.search(r'"buildId"\s*:\s*"([a-zA-Z0-9_-]+)"', resp.text)
+        if not match:
+            raise RuntimeError("[EthioJobs] Could not find Next.js build ID")
 
-    async def parse_page(self, page, url: str) -> JobListing | None:
-        """Parses an individual job page with full diagnostic instrumentation and addskill integration."""
+        self._build_id = match.group(1)
+        print(f"[{self.name}] Build ID: {self._build_id}")
+        return self._build_id
+
+    # ------------------------------------------------------------------
+    # Required by BaseScraper (must be sync + named exactly like this)
+    # ------------------------------------------------------------------
+    def fetch(self, page: int = 1) -> List[dict]:
+        """Fetch one page of raw job dicts. Required abstract method."""
         try:
-            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            await page.wait_for_timeout(3000)
+            build_id = self._get_build_id()
+            params = f"page={page}&isFeatured=false"
+            if self.category:
+                params = f"category={self.category}&{params}"
 
-            page_title = await page.title()
-            print(f"PAGE TITLE: {page_title}")
+            url = f"{self.base_url}/_next/data/{build_id}/en/jobs.json?{params}"
+            resp = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
 
-            content = await page.content()
-            
-            with open("ethiojob_debug.html", "w", encoding="utf-8") as f:
-                f.write(content)
+            if resp.status_code != 200:
+                print(f"[{self.name}] Page {page} status {resp.status_code}")
+                return []
 
-            if not content or len(content) < 200:
-                return None
+            data = resp.json()
+            jobs_obj = data.get("pageProps", {}).get("jobs", {})
+            items = jobs_obj.get("data") or []
 
-            soup = BeautifulSoup(content, "lxml")
-            
+            # stash meta on the instance so run() can paginate
+            self._last_meta = jobs_obj.get("meta") or {}
+            return items
+        except Exception as e:
+            print(f"[{self.name}] Fetch failed at page {page}: {e}")
+            return []
+
+    def parse(self, item: dict) -> JobListing:
+        """Turn one raw job dict into a JobListing. Required abstract method."""
+        title = safe_str(item.get("title"), 255) or "Untitled Position"
+
+        company = "Not Specified"
+        if isinstance(item.get("company"), dict):
+            company = safe_str(item["company"].get("name"), 255) or "Not Specified"
+
+        location_parts = []
+        if item.get("city"):
+            location_parts.append(item["city"])
+        if item.get("state") and item.get("state") != item.get("city"):
+            location_parts.append(item["state"])
+        location = ", ".join(location_parts) or "Addis Ababa"
+
+        raw_desc = item.get("description") or ""
+        description = re.sub(r"<[^>]+>", " ", raw_desc)
+        description = re.sub(r"\s+", " ", description).strip()
+
+        requirements = safe_str(item.get("requirement"), 4000) or None
+
+        employment_type = "Full Time"
+        type_name = item.get("type_name")
+        if isinstance(type_name, list) and type_name:
+            employment_type = safe_str(type_name[0], 50)
+        elif isinstance(type_name, str):
+            employment_type = safe_str(type_name, 50)
+
+        experience_level = (
+            safe_str(item.get("career_level_name") or item.get("work_experience_name"), 50)
+            or "Not Specified"
+        )
+
+        category = "IT & Professional"
+        catalog_names = item.get("catalog_names") or []
+        if catalog_names:
+            category = safe_str(catalog_names[0], 100)
+
+        posted_at = datetime.utcnow()
+        if item.get("date_published"):
             try:
-                await page.wait_for_selector("h1", timeout=15000)
+                posted_at = datetime.fromisoformat(
+                    item["date_published"].replace("Z", "+00:00")
+                )
             except Exception:
                 pass
 
-            for element in soup(["script", "style", "nav", "footer", "header", "head"]):
-                element.decompose()
-
-            text = soup.get_text("\n", strip=True)
-
-            print("-" * 40 + " TEXT SNIPPET " + "-" * 40)
-            print(text[:1000])
-            print("-" * 94)
-
-            lines = [l.strip() for l in text.splitlines() if l.strip()]
-
-            # --- Title Extraction ---
-            title_elem = soup.select_one("h1, .job-title, .position-title, .vacancy-title")
-            title = title_elem.get_text(strip=True) if title_elem else "Untitled Position"
-            if not title or title == "Untitled Position":
-                if lines:
-                    title = lines[0]
-
-            # --- Location Extraction ---
-            location = "Addis Ababa"
-            for i, line in enumerate(lines):
-                if line == title and i + 1 < len(lines):
-                    nxt = lines[i + 1]
-                    if len(nxt) < 60 and "Office" not in nxt and "Remote" not in nxt and "Hybrid" not in nxt:
-                        location = nxt
-                        break
-
-            # --- Company Extraction ---
-            company = "EthioJobs Employer"
-            company_elem = soup.select_one(".company-name, .employer-name, .company")
-            if company_elem:
-                c_text = company_elem.get_text(strip=True)
-                if c_text and len(c_text) < 80:
-                    company = c_text
-            else:
-                for line in lines:
-                    if (
-                        line not in (title, location, "View all open positions", "Expired", "Office", "Remote", "Hybrid")
-                        and len(line) < 80
-                        and not line.startswith("Deadline")
-                        and not line.startswith("Location")
-                    ):
-                        company = line
-                        break
-
-            def get_match(pattern, text_content):
-                m = re.search(pattern, text_content, re.IGNORECASE)
-                return m.group(1).strip() if m else None
-
-            employment_type = get_match(r"Employment Type\s*[:\-]?\s*(.+)", text) or "Full Time"
-            experience_level = (
-                get_match(r"Work Experience\s*[:\-]?\s*(.+)", text) 
-                or get_match(r"Career Level\s*[:\-]?\s*(.+)", text) 
-                or "Not Specified"
-            )
-            
-            # --- Deadline Parsing ---
-            deadline = None
-            date_match = re.search(r"Deadline\s*[:\-]?\s*([A-Za-z]+\s+\d+\w{2},\s+\d{4})", text, re.IGNORECASE)
-            if not date_match:
-                date_match = re.search(r"Deadline\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", text, re.IGNORECASE)
-            if date_match:
-                clean_date = re.sub(r"(st|nd|rd|th)", "", date_match.group(1))
-                try:
-                    deadline = datetime.strptime(clean_date, "%B %d, %Y")
-                except ValueError:
-                    try:
-                        deadline = datetime.strptime(clean_date, "%d/%m/%Y")
-                    except ValueError:
-                        deadline = None
-
-            # --- Structural Section Extraction ---
-            def extract_between(start_str, ends_list):
-                s = text.find(start_str)
-                if s == -1:
-                    return ""
-                s += len(start_str)
-                e = len(text)
-                for x in ends_list:
-                    p = text.find(x, s)
-                    if p != -1:
-                        e = min(e, p)
-                return text[s:e].strip()
-
-            end_sections = ["About You", "Key Responsibilities", "Requirement Skill", "How To Apply", "More Jobs", "Requirements"]
-
-            description = extract_between("About the Job", [x for x in end_sections if x != "About the Job"])
-            if not description:
-                description = extract_between("Job Summary", [x for x in end_sections if x != "Job Summary"])
-            if not description:
-                paragraphs = [p.get_text(strip=True) for p in soup.find_all("p") if len(p.get_text(strip=True)) > 20]
-                description = "\n".join(paragraphs[:10]) if paragraphs else text[:1000]
-
-            responsibilities = extract_between("Key Responsibilities", [x for x in end_sections if x != "Key Responsibilities"])
-            requirements = extract_between("About You", [x for x in end_sections if x != "About You"])
-            if not requirements:
-                requirements = extract_between("Requirements", [x for x in end_sections if x != "Requirements"])
-            if not requirements:
-                requirements = "See main job description for requirements."
-
-            full_requirements = requirements
-            if responsibilities:
-                full_requirements = f"Key Responsibilities:\n{responsibilities}\n\nRequirements:\n{requirements}"
-
-            # --- Unified Skill Extraction via addskill ---
-            extracted_skills = extract_skills(
-                job_description_text=safe_str(f"{description}\n{full_requirements}", 2500),
-                job_title=safe_str(title, 250)
-            )
-
-            print("=" * 80)
-            print("URL:", url)
-            print("TITLE:", title)
-            print("COMPANY:", company)
-            print("LOCATION:", location)
-            print("EMPLOYMENT:", employment_type)
-            print("EXPERIENCE:", experience_level)
-            print("DEADLINE:", deadline)
-            print("SKILLS:", extracted_skills)
-            print("=" * 80)
-
-            return JobListing(
-                title=safe_str(title, 250) or "Untitled Position",
-                company=safe_str(company, 250) or "Unknown",
-                location=safe_str(location, 250) or "Addis Ababa",
-                description=safe_str(description, 5000),
-                requirements=safe_str(full_requirements, 3000),
-                employment_type=safe_str(employment_type, 50) or "Full Time",
-                experience_level=safe_str(experience_level, 50) or "Not Specified",
-                salary="Negotiable",
-                skills=extracted_skills,
-                deadline=deadline,
-                posted_at=datetime.utcnow(),
-                source="EthioJobs",
-                url=str(url)
-            )
-        except Exception as e:
-            print(f"Error parsing {url}: {e}")
-            return None
-
-    async def parse(self, url: str) -> JobListing | None:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            job = await self.parse_page(page, url)
-            await browser.close()
-            return job
-
-    async def run(self) -> list:
-        print(f"[{self.name}] Starting...")
-        links = await self.fetch()
-        print(f"[{self.name}] Found {len(links)} job links. Parsing...")
-        
-        jobs = []
-        if not links:
-            print(f"[{self.name}] Finished. Extracted 0 jobs.")
-            return jobs
-
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
+        deadline = None
+        if item.get("date_expiry"):
             try:
-                for link in links:
-                    job = await self.parse_page(page, link)
-                    if job:
-                        jobs.append(job)
-            finally:
-                await browser.close()
+                deadline = datetime.fromisoformat(
+                    item["date_expiry"].replace("Z", "+00:00")
+                )
+            except Exception:
+                pass
 
-        print(f"[{self.name}] Finished. Extracted {len(jobs)} jobs.")
-        return jobs
+        slug = item.get("slug") or ""
+        job_url = f"{self.base_url}/job/{slug}" if slug else self.base_url
+
+        site_skills = []
+        for key in ("skills_mandatory_names", "skills_desired_names"):
+            vals = item.get(key) or []
+            if isinstance(vals, list):
+                site_skills.extend(vals)
+
+        extracted = extract_skills(
+            job_description_text=safe_str(f"{description}\n{requirements or ''}", 2500),
+            job_title=title,
+        )
+        skills = list(dict.fromkeys(site_skills + (extracted or [])))
+
+        return JobListing(
+            title=title,
+            company=company,
+            location=safe_str(location, 255),
+            requirements=requirements,
+            description=safe_str(description, 10000),
+            employment_type=employment_type,
+            experience_level=experience_level,
+            salary="Negotiable",
+            category=category,
+            deadline=deadline,
+            posted_at=posted_at,
+            source="EthioJobs",
+            url=job_url,
+            skills=skills,
+        )
+
+    # ------------------------------------------------------------------
+    # Override run() so we can paginate (same pattern as Afriwork)
+    # ------------------------------------------------------------------
+    async def run(self) -> list:
+        print(f"[{self.name}] Starting (category={self.category or 'ALL'})...")
+        all_jobs = []
+        page = 1
+        self._last_meta = {}
+
+        while True:
+            items = await asyncio.to_thread(self.fetch, page)
+            if not items:
+                break
+
+            for item in items:
+                try:
+                    all_jobs.append(self.parse(item))
+                except Exception as e:
+                    print(f"[{self.name}] Skipping malformed job: {e}")
+
+            meta = getattr(self, "_last_meta", {}) or {}
+            last_page = meta.get("lastPage") or meta.get("last_page") or 1
+            total = meta.get("total", "?")
+            print(
+                f"[{self.name}] Page {page}/{last_page} → "
+                f"{len(items)} jobs (total so far {len(all_jobs)}/{total})"
+            )
+
+            if page >= last_page:
+                break
+            page += 1
+            await asyncio.sleep(0.8)
+
+        print(f"[{self.name}] Finished. Extracted {len(all_jobs)} jobs.")
+        return all_jobs

@@ -17,7 +17,7 @@ class GeezJobsScraper(BaseScraper):
     def __init__(self):
         super().__init__("GeezJobs")
         self.base_url = "https://geezjobs.com"
-        self.start_url = "https://geezjobs.com/jobs-in-ethiopia"
+        self.start_url = "https://geezjobs.com/study/computer-software-it-data-jobs-in-ethiopia"
 
     def _clean(self, text):
         if not text: return None

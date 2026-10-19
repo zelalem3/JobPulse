@@ -30,55 +30,67 @@ class HaHuJobsScraper(BaseScraper):
 
     def fetch(self) -> list:
         payload = {
-            "query": (
-                "query ($args: search_jobs_args!, $filter: jobs_bool_exp, $limit: Int, $offset: Int, $orderBy: [jobs_order_by!]) {\n"
-                "  search_jobs_aggregate(args: $args, where: $filter) {\n"
-                "    aggregate {\n"
-                "      count\n"
-                "    }\n"
-                "  }\n"
-                "  jobs: search_jobs(\n"
-                "    where: $filter\n"
-                "    order_by: $orderBy\n"
-                "    args: $args\n"
-                "    offset: $offset\n"
-                "    limit: $limit\n"
-                "  ) {\n"
-                "    id\n"
-                "    title\n"
-                "    summary\n"
-                "    salary\n"
-                "    deadline\n"
-                "    location\n"
-                "    type\n"
-                "    application_method\n"
-                "    application_url\n"
-                "    application_email\n"
-                "    entity {\n"
-                "      name\n"
-                "    }\n"
-                "    sub_sector {\n"
-                "      name\n"
-                "      sector {\n"
-                "        name\n"
-                "      }\n"
-                "    }\n"
-                "  }\n"
-                "}"
-            ),
-            "variables": {
-                "limit": 50,
-                "filter": {
-                    "_and": [
-                        {"expired": {"_eq": False}},
-                        {"requested_to_delete": {"_eq": False}}
-                    ]
-                },
-                "args": {"search": ""},
-                "offset": 0,
-                "orderBy": [{"priority": "desc_nulls_last"}, {"deadline": "asc"}]
-            }
-        }
+                    "query": (
+                        "query ($args: search_jobs_args!, $filter: jobs_bool_exp, $limit: Int, $offset: Int, $orderBy: [jobs_order_by!]) {\n"
+                        "  search_jobs_aggregate(args: $args, where: $filter) {\n"
+                        "    aggregate {\n"
+                        "      count\n"
+                        "    }\n"
+                        "  }\n"
+                        "  jobs: search_jobs(\n"
+                        "    where: $filter\n"
+                        "    order_by: $orderBy\n"
+                        "    args: $args\n"
+                        "    offset: $offset\n"
+                        "    limit: $limit\n"
+                        "  ) {\n"
+                        "    id\n"
+                        "    title\n"
+                        "    summary\n"
+                        "    salary\n"
+                        "    deadline\n"
+                        "    location\n"
+                        "    type\n"
+                        "    application_method\n"
+                        "    application_url\n"
+                        "    application_email\n"
+                        "    entity {\n"
+                        "      name\n"
+                        "    }\n"
+                        "    sub_sector {\n"
+                        "      name\n"
+                        "      sector {\n"
+                        "        name\n"
+                        "      }\n"
+                        "    }\n"
+                        "  }\n"
+                        "}"
+                    ),
+                    "variables": {
+                        "limit": 50,
+                        "filter": {
+                            "_and": [
+                                {
+                                    "sub_sector": {
+                                        "sector": {
+                                            "id": {
+                                                "_eq": "iL3qCg1STtXlr8fc_edq3"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "expired": {
+                                        "_eq": False
+                                    }
+                                }
+                            ]
+                        },
+                        "args": {"search": ""},
+                        "offset": 0,
+                        "orderBy": [{"priority": "desc_nulls_last"}, {"deadline": "asc"}]
+                    }
+                }
 
         try:
             print(f"[HaHuJobs] Querying GraphQL endpoint directly...")
