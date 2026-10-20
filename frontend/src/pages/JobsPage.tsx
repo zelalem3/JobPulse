@@ -758,40 +758,36 @@ export default function HomePage() {
   | job queries
   |--------------------------------------------------------------------------
   */
-
-  const updateCachedJobSaveState = (
-    jobId: number,
-    isSaved: boolean
-  ) => {
-    queryClient.setQueriesData<
-      JobsQueryResult
-    >(
-      {
-        queryKey: ["jobs"],
-      },
-      (oldData) => {
-        if (!oldData) {
-          return oldData;
-        }
-
-        return {
-          ...oldData,
-
-          listings:
-            oldData.listings.map(
-              (job) =>
-                job.id === jobId
-                  ? {
-                      ...job,
-                      isSaved,
-                    }
-                  : job
-            ),
-        };
+const updateCachedJobSaveState = (
+  jobId: number,
+  isSaved: boolean
+) => {
+  queryClient.setQueriesData<JobsQueryResult>(
+    {
+      queryKey: ["jobs"],
+    },
+    (oldData) => {
+      if (
+        !oldData ||
+        !Array.isArray(oldData.listings)
+      ) {
+        return oldData;
       }
-    );
-  };
 
+      return {
+        ...oldData,
+        listings: oldData.listings.map((job) =>
+          job.id === jobId
+            ? {
+                ...job,
+                isSaved,
+              }
+            : job
+        ),
+      };
+    }
+  );
+};
   /*
   |--------------------------------------------------------------------------
   | Save / unsave job
