@@ -2,7 +2,7 @@ export default function TelegramBanner({ user }) {
   // Hide banner if already connected
   if (user?.telegram_username) return null;
 
-  const botUsername = "@JobPulsebot1"; // Replace with your actual Telegram bot handle
+  const botUsername = "@JobPulsebot1"; 
 
   return (
     <div className="bg-gradient-to-r from-sky-900 to-slate-900 text-white rounded-2xl p-6 mb-6 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
