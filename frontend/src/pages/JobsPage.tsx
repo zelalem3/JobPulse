@@ -1139,26 +1139,28 @@ export default function HomePage() {
 
               <>
                 <div className="space-y-4 relative">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
-                  {listings.map(
-                    (job) => (
-                      <JobCard
-                        key={
-                          job.id
-                        }
-                        job={
-                          job
-                        }
-                        onToggleSave={
-                          toggleSaveJob
-                        }
-                        isSaving={
-                          isSaving ===
-                          job.id
-                        }
-                      />
-                    )
-                  )}
+                          {listings.map(
+                            (job) => (
+                              <JobCard
+                                key={
+                                  job.id
+                                }
+                                job={
+                                  job
+                                }
+                                onToggleSave={
+                                  toggleSaveJob
+                                }
+                                isSaving={
+                                  isSaving ===
+                                  job.id
+                                }
+                              />
+                            )
+                          )}
+                    </div>
 
                   {isFetching &&
                     !loading && (
