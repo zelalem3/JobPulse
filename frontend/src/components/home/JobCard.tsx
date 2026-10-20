@@ -1,14 +1,17 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  Calendar,
+  CalendarDays,
   ExternalLink,
   Bookmark,
   BookmarkCheck,
   MapPin,
   Building2,
   Banknote,
-  Clock,
+  Clock3,
+  BriefcaseBusiness,
+  Sparkles,
 } from "lucide-react";
 import { Job } from "../../types/job";
 
@@ -23,14 +26,6 @@ export default function JobCard({
   onToggleSave,
   isSaving,
 }: JobCardProps) {
-  const renderSkillName = (skill: any): string => {
-    if (typeof skill === "string") return skill;
-    if (skill && typeof skill === "object") {
-      return skill.name || skill.title || String(skill.id || "");
-    }
-    return "";
-  };
-
   const companyName =
     typeof job.company === "object" && job.company !== null
       ? job.company.name
@@ -43,236 +38,277 @@ export default function JobCard({
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
+      .map((word) => word[0]?.toUpperCase() ?? "")
       .join("") || "CE";
 
-  const formatTimeAgo = (date?: string | null) => {
+  const skills = Array.isArray(job.skills) ? job.skills : [];
+
+  const renderSkillName = (skill: unknown): string => {
+    if (typeof skill === "string") return skill;
+
+    if (skill && typeof skill === "object") {
+      const item = skill as {
+        name?: string;
+        title?: string;
+        id?: string | number;
+      };
+
+      return item.name || item.title || "";
+    }
+
+    return "";
+  };
+
+  const formatTimeAgo = (date?: string | null): string => {
     if (!date) return "Recently posted";
 
     const parsedDate = new Date(date);
-    if (Number.isNaN(parsedDate.getTime())) return date;
 
-    const now = new Date();
-    const diffInSeconds = Math.floor(
-      (now.getTime() - parsedDate.getTime()) / 1000
-    );
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Date unavailable";
+    }
 
-    if (diffInSeconds < 60) return "Just now";
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
+    const difference = Date.now() - parsedDate.getTime();
+
+    if (difference < 0) return "Upcoming";
+
+    const minutes = Math.floor(difference / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
 
     return parsedDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      year: "numeric",
+      year:
+        parsedDate.getFullYear() !== new Date().getFullYear()
+          ? "numeric"
+          : undefined,
     });
   };
 
-  const isVeryRecent = (date?: string | null) => {
+  const isVeryRecent = (date?: string | null): boolean => {
     if (!date) return false;
+
     const parsedDate = new Date(date);
-    const diffInHours =
-      (new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60);
-    return diffInHours <= 24;
+    if (Number.isNaN(parsedDate.getTime())) return false;
+
+    const age = Date.now() - parsedDate.getTime();
+
+    return age >= 0 && age <= 24 * 60 * 60 * 1000;
   };
 
-  const getSkillBadgeStyle = (index: number) => {
-    const colorThemes = [
-      "bg-indigo-500/10 border-indigo-500/25 text-indigo-300",
-      "bg-emerald-500/10 border-emerald-500/25 text-emerald-300",
-      "bg-violet-500/10 border-violet-500/25 text-violet-300",
-      "bg-sky-500/10 border-sky-500/25 text-sky-300",
-      "bg-amber-500/10 border-amber-500/25 text-amber-300",
-      "bg-rose-500/10 border-rose-500/25 text-rose-300",
-    ];
-    return colorThemes[index % colorThemes.length];
+  const formatDeadline = (date?: string | null): string => {
+    if (!date) return "";
+
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return date;
+
+    return parsedDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year:
+        parsedDate.getFullYear() !== new Date().getFullYear()
+          ? "numeric"
+          : undefined,
+    });
   };
 
-  const skills = Array.isArray(job.skills) ? job.skills : [];
+  const isExpired = (date?: string | null): boolean => {
+    if (!date) return false;
+
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return false;
+
+    return parsedDate.getTime() < Date.now();
+  };
+
+  const skillStyles = [
+    "border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300",
+    "border-indigo-500/20 bg-indigo-500/[0.07] text-indigo-300",
+    "border-sky-500/20 bg-sky-500/[0.07] text-sky-300",
+    "border-violet-500/20 bg-violet-500/[0.07] text-violet-300",
+  ];
+
+  const validSkills = skills
+    .map(renderSkillName)
+    .filter((skill) => skill.trim().length > 0);
+
+  const saved = Boolean(job.isSaved);
+  const recent = isVeryRecent(job.created_at);
+  const expired = isExpired(job.deadline);
 
   return (
-    <article
-      className="
-        relative group
-        bg-slate-900/70 backdrop-blur-xl
-        rounded-2xl sm:rounded-3xl
-        p-5 sm:p-6
-        border border-slate-800/70
-        hover:border-emerald-500/35
-        hover:bg-slate-900/90
-        hover:shadow-xl hover:shadow-emerald-950/20
-        hover:-translate-y-0.5
-        transition-all duration-300 ease-out
-        overflow-hidden
-      "
-    >
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <article className="group relative isolate overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/65 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/35 hover:bg-slate-900 hover:shadow-2xl hover:shadow-emerald-950/20">
+      {/* Subtle hover accent */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div
-              className="
-                shrink-0 w-11 h-11 sm:w-12 sm:h-12
-                rounded-2xl
-                bg-gradient-to-br from-slate-800 to-slate-900
-                border border-slate-700/60
-                flex items-center justify-center
-                text-sm font-bold text-emerald-400
-                shadow-inner
-              "
-              aria-hidden
-            >
-              {companyInitials}
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {job.source && (
-                  <span className="text-[10px] sm:text-[11px] font-semibold bg-indigo-500/15 border border-indigo-500/25 px-2.5 py-0.5 rounded-full text-indigo-300 uppercase tracking-wide">
-                    {job.source}
-                  </span>
-                )}
-                {job.employment_type && (
-                  <span className="text-[10px] sm:text-[11px] font-medium bg-slate-800/80 border border-slate-700/60 px-2.5 py-0.5 rounded-full text-slate-300">
-                    {job.employment_type}
-                  </span>
-                )}
-                {job.experience_level && (
-                  <span className="text-[10px] sm:text-[11px] font-medium bg-violet-500/15 border border-violet-500/25 px-2.5 py-0.5 rounded-full text-violet-300">
-                    {job.experience_level}
-                  </span>
-                )}
-              </div>
-
-              <h2 className="text-base sm:text-lg font-bold tracking-tight leading-snug">
-                <Link
-                  to={`/jobs/${job.id}`}
-                  className="text-white hover:text-emerald-400 transition-colors duration-200 line-clamp-2"
-                >
-                  {job.title || "Untitled Position"}
-                </Link>
-              </h2>
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <span className="inline-flex items-center gap-1.5 text-slate-200 font-medium truncate max-w-[200px] sm:max-w-[260px]">
-                  <Building2
-                    size={13}
-                    className="text-emerald-400/80 shrink-0"
-                  />
-                  {companyName}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-slate-400 truncate max-w-[180px] sm:max-w-[220px]">
-                  <MapPin size={13} className="text-slate-500 shrink-0" />
-                  {job.location || "Remote / Worldwide"}
-                </span>
-              </div>
-            </div>
+      <div className="p-5 sm:p-6">
+        {/* Company and actions */}
+        <div className="flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/15 bg-gradient-to-br from-emerald-500/15 via-slate-800 to-indigo-500/10 text-sm font-black tracking-wide text-emerald-300 shadow-inner sm:h-14 sm:w-14">
+            {companyInitials}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => onToggleSave(job.id)}
-              disabled={isSaving}
-              className={`
-                p-2.5 sm:p-3 rounded-xl border transition-all duration-200
-                flex items-center justify-center
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50
-                ${
-                  job.isSaved
-                    ? "text-amber-300 border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25"
-                    : "text-slate-400 border-slate-800 bg-slate-950/60 hover:border-slate-600 hover:text-white hover:bg-slate-800"
-                }
-                ${isSaving ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-              `}
-              title={job.isSaved ? "Saved to bookmarks" : "Save job"}
-              aria-label={job.isSaved ? "Unsave job" : "Save job"}
-            >
-              {job.isSaved ? (
-                <BookmarkCheck size={17} fill="currentColor" />
-              ) : (
-                <Bookmark size={17} />
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {job.source && (
+                <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-slate-700/80 bg-slate-950/70 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                  {job.source}
+                </span>
               )}
-            </button>
+
+              {recent && (
+                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  New
+                </span>
+              )}
+
+              {expired && (
+                <span className="rounded-md border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-rose-300">
+                  Deadline passed
+                </span>
+              )}
+            </div>
+
+            <p className="mt-2 truncate text-sm font-semibold text-slate-200">
+              {companyName}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onToggleSave(job.id)}
+            disabled={isSaving}
+            aria-label={saved ? "Remove saved job" : "Save job"}
+            aria-pressed={saved}
+            title={saved ? "Remove from saved jobs" : "Save job"}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-50 ${
+              saved
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-300"
+            }`}
+          >
+            {saved ? (
+              <BookmarkCheck size={18} />
+            ) : (
+              <Bookmark size={18} />
+            )}
+          </button>
+        </div>
+
+        {/* Job title */}
+        <div className="mt-5">
+          <h2 className="text-lg font-bold leading-snug tracking-tight text-white transition-colors group-hover:text-emerald-300 sm:text-xl">
+            <Link
+              to={`/jobs/${job.id}`}
+              className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+            >
+              {job.title || "Untitled Position"}
+            </Link>
+          </h2>
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400">
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin size={14} className="shrink-0 text-emerald-400" />
+              <span>{job.location || "Location not specified"}</span>
+            </span>
+
+            {job.employment_type && (
+              <span className="inline-flex items-center gap-1.5">
+                <BriefcaseBusiness
+                  size={14}
+                  className="shrink-0 text-slate-500"
+                />
+                {job.employment_type}
+              </span>
+            )}
+
+            {job.experience_level && (
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles
+                  size={14}
+                  className="shrink-0 text-indigo-400"
+                />
+                {job.experience_level}
+              </span>
+            )}
           </div>
         </div>
 
-        {skills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {skills.slice(0, 6).map((skill, index) => {
-              const skillName = renderSkillName(skill);
-              if (!skillName) return null;
+        {/* Skills */}
+        {validSkills.length > 0 && (
+          <div className="mt-5 border-t border-slate-800/70 pt-4">
+            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              Skills & expertise
+            </p>
 
-              return (
+            <div className="flex flex-wrap gap-2">
+              {validSkills.slice(0, 5).map((skill, index) => (
                 <span
-                  key={`${skillName}-${index}`}
-                  className={`text-[11px] border px-2.5 py-1 rounded-lg font-medium transition-colors ${getSkillBadgeStyle(index)}`}
+                  key={`${skill}-${index}`}
+                  title={skill}
+                  className={`max-w-full truncate rounded-lg border px-2.5 py-1.5 text-[11px] font-medium ${
+                    skillStyles[index % skillStyles.length]
+                  }`}
                 >
-                  {skillName}
+                  {skill}
                 </span>
-              );
-            })}
-            {skills.length > 6 && (
-              <span className="text-[11px] text-slate-500 px-2 py-1 font-medium">
-                +{skills.length - 6} more
-              </span>
-            )}
+              ))}
+
+              {validSkills.length > 5 && (
+                <span className="inline-flex items-center rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-1.5 text-[11px] font-medium text-slate-400">
+                  +{validSkills.length - 5}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-slate-800/60">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {job.salary && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/40 border border-emerald-500/25 px-3 py-1.5 rounded-xl">
-                <Banknote size={13} className="text-emerald-400" />
-                {job.salary}
-              </span>
-            )}
-            {job.deadline && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 bg-slate-950/50 border border-slate-800 px-3 py-1.5 rounded-xl">
-                <Calendar size={12} className="text-violet-400" />
-                Deadline: {formatTimeAgo(job.deadline)}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              {isVeryRecent(job.created_at) && (
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                </span>
-              )}
-              <Clock size={12} className="text-slate-500" />
-              {formatTimeAgo(job.created_at)}
+        {/* Compensation and dates */}
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          {job.salary && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-2 text-xs font-bold text-emerald-300">
+              <Banknote size={14} />
+              {job.salary}
             </span>
+          )}
+
+          {job.deadline && (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium ${
+                expired
+                  ? "border-rose-500/20 bg-rose-500/[0.06] text-rose-300"
+                  : "border-slate-800 bg-slate-950/50 text-slate-400"
+              }`}
+            >
+              <CalendarDays size={14} />
+              {expired ? "Closed" : "Apply by"}{" "}
+              {formatDeadline(job.deadline)}
+            </span>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-5 flex flex-col gap-4 border-t border-slate-800/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Clock3 size={14} className="shrink-0" />
+            <span>Posted {formatTimeAgo(job.created_at)}</span>
           </div>
 
           <Link
             to={`/jobs/${job.id}`}
-            className="
-              inline-flex items-center justify-center gap-2
-              px-4 py-2.5
-              bg-gradient-to-r from-emerald-600 to-teal-600
-              hover:from-emerald-500 hover:to-teal-500
-              active:scale-[0.98]
-              text-white text-xs font-bold
-              rounded-xl
-              transition-all duration-200
-              shadow-lg shadow-emerald-950/40
-              hover:shadow-emerald-600/30
-              border border-emerald-400/20
-              group/btn
-              w-full sm:w-auto
-            "
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500 px-4 py-3 text-xs font-bold text-slate-950 shadow-lg shadow-emerald-950/20 transition-all duration-200 hover:border-emerald-300/40 hover:bg-emerald-400 active:scale-[0.98] sm:w-auto"
           >
-            <span>View Details</span>
+            View opportunity
             <ExternalLink
-              size={13}
-              className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform duration-200"
+              size={14}
+              className="transition-transform group-hover:translate-x-0.5"
             />
           </Link>
         </div>
