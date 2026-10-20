@@ -306,20 +306,19 @@ export default function SavedJobsPage() {
           </div>
         )}
 
-        {/* Jobs */}
-        {filteredJobs.length > 0 ? (
-          <div className="space-y-3">
+        
+          {filteredJobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 items-stretch">
+              {filteredJobs.map((job) => (
+                <SavedJobCard
+                  key={job.id}
+                  job={job}
+                  onRemove={removeJob}
+                  isRemoving={removingId === job.id}
+                />
+              ))}
+            </div>
 
-            {filteredJobs.map((job) => (
-              <SavedJobCard
-                key={job.id}
-                job={job}
-                onRemove={removeJob}
-                isRemoving={removingId === job.id}
-              />
-            ))}
-
-          </div>
         ) : savedJobs.length > 0 && hasSearch ? (
 
           /* Search empty */

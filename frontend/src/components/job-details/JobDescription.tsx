@@ -1,4 +1,9 @@
+
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeRaw from "rehype-raw";
 import { FileText } from "lucide-react";
 
 interface JobDescriptionProps {
@@ -8,227 +13,151 @@ interface JobDescriptionProps {
 export default function JobDescription({
   description,
 }: JobDescriptionProps) {
-  const descriptionText = description || "";
+  const descriptionText = description?.trim() || "";
 
-  // Detect actual HTML tags.
-  const hasHtml = /<([a-z][\s\S]*?)>/i.test(descriptionText);
+  // Detect HTML tags without confusing ordinary text for HTML.
+  const hasHtml = /<\/?[a-z][^>]*>/i.test(descriptionText);
 
-  const renderMarkdownText = (text: string) => {
-    const parts = text.split(/\*\*(.*?)\*\*/g);
-
-    return parts.map((part, index) => {
-      if (index % 2 === 1) {
-        return (
-          <strong
-            key={index}
-            className="font-bold text-white"
-          >
-            {part}
-          </strong>
-        );
-      }
-
-      return <React.Fragment key={index}>{part}</React.Fragment>;
-    });
-  };
-
-  const renderPlainText = () => {
-    const lines = descriptionText.split(/\n+/);
-
-    return (
-      <div className="space-y-4">
-        {lines.map((line, index) => {
-          const trimmed = line.trim();
-
-          if (!trimmed) {
-            return null;
-          }
-
-          // Markdown headings
-          if (trimmed.startsWith("###")) {
-            return (
-              <div key={index} className="pt-5 first:pt-0">
-                <h3
-                  className="
-                    text-sm
-                    font-black
-                    text-white
-                    uppercase
-                    tracking-wide
-                    flex items-center gap-3
-                  "
-                >
-                  <span className="w-1 h-4 rounded-full bg-emerald-400" />
-                  {trimmed.replace(/^###\s*/, "")}
-                </h3>
-              </div>
-            );
-          }
-
-          // Markdown bullets
-          if (/^[*-]\s+/.test(trimmed)) {
-            const cleanItem = trimmed.replace(/^[*-]\s+/, "");
-
-            return (
-              <div
-                key={index}
-                className="flex items-start gap-3"
-              >
-                <span
-                  className="
-                    mt-2
-                    w-1.5
-                    h-1.5
-                    rounded-full
-                    bg-emerald-400
-                    shrink-0
-                  "
-                />
-
-                <p
-                  className="
-                    text-[14px]
-                    leading-7
-                    text-slate-300
-                  "
-                >
-                  {renderMarkdownText(cleanItem)}
-                </p>
-              </div>
-            );
-          }
-
-          // Normal paragraph
-          return (
-            <p
-              key={index}
-              className="
-                text-[14px]
-                sm:text-[15px]
-                leading-7
-                text-slate-300
-                font-normal
-              "
-            >
-              {renderMarkdownText(trimmed)}
-            </p>
-          );
-        })}
-      </div>
-    );
-  };
+  // Convert HTML line breaks and block endings into readable Markdown
+  // before parsing. HTML is sanitized after parsing.
+  const content = hasHtml
+    ? descriptionText
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(p|div|h[1-6]|li|section)>/gi, "\n\n")
+    : descriptionText;
 
   return (
-    <div
-      className="
-        lg:col-span-2
-        bg-slate-900/70
-        backdrop-blur-2xl
-        rounded-3xl
-        border border-slate-800/90
-        shadow-2xl
-        overflow-hidden
-      "
-    >
+    <section className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/70 shadow-xl shadow-black/10">
       {/* Header */}
-      <div className="p-6 sm:p-7 border-b border-slate-800/80">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div
-              className="
-                p-2.5
-                bg-emerald-500/10
-                border border-emerald-500/20
-                rounded-xl
-                text-emerald-400
-                shrink-0
-              "
-            >
-              <FileText size={18} />
-            </div>
-
-            <div>
-              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                Job Description
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Role overview, responsibilities & requirements
-              </p>
-            </div>
-          </div>
-
-          <span
-            className="
-              hidden sm:inline-flex
-              shrink-0
-              px-3 py-1.5
-              bg-slate-800/80
-              border border-slate-700/70
-              rounded-xl
-              text-[10px]
-              font-black
-              uppercase
-              tracking-widest
-              text-slate-400
-            "
-          >
-            Full Overview
-          </span>
+      <header className="flex items-center gap-3 border-b border-slate-800/80 px-5 py-5 sm:px-7">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/10 text-emerald-400">
+          <FileText size={19} />
         </div>
-      </div>
 
-      {/* Description */}
-      <article
-        className="
-          p-6 sm:p-7
-          prose prose-invert max-w-none
-        "
-      >
-        {hasHtml ? (
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+            Job description
+          </h2>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            Responsibilities, qualifications and role details
+          </p>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div className="px-5 py-6 sm:px-7 sm:py-8">
+        {descriptionText ? (
           <div
             className="
-              text-slate-300
-              text-[14px]
-              sm:text-[15px]
-              leading-7
+              job-description
+              max-w-3xl
+              text-[15px] leading-7 text-slate-300
 
-              prose-p:text-slate-300
-              prose-p:leading-7
-              prose-p:my-4
+              [&_h1]:mb-4 [&_h1]:mt-8 [&_h1]:text-xl
+              [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:text-white
+              [&_h1:first-child]:mt-0
 
-              prose-headings:text-white
-              prose-headings:font-black
+              [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:border-b
+              [&_h2]:border-slate-800 [&_h2]:pb-2
+              [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-white
+              [&_h2:first-child]:mt-0
 
-              prose-h2:text-lg
-              prose-h3:text-sm
-              prose-h3:uppercase
-              prose-h3:tracking-wide
+              [&_h3]:mb-3 [&_h3]:mt-7 [&_h3]:text-base
+              [&_h3]:font-semibold [&_h3]:text-emerald-300
+              [&_h3:first-child]:mt-0
 
-              prose-strong:text-white
-              prose-strong:font-bold
+              [&_p]:mb-4 [&_p]:leading-7
+              [&_p:last-child]:mb-0
 
-              prose-ul:list-disc
-              prose-ul:pl-6
+              [&_strong]:font-semibold [&_strong]:text-slate-100
 
-              prose-ol:list-decimal
-              prose-ol:pl-6
+              [&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-2
+              [&_ul]:pl-6
 
-              prose-li:text-slate-300
-              prose-li:my-1.5
+              [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-2
+              [&_ol]:pl-6
 
-              prose-a:text-emerald-400
-              prose-a:no-underline
-              hover:prose-a:text-emerald-300
+              [&_li]:pl-1 [&_li]:leading-7
+              [&_li::marker]:text-emerald-400
+
+              [&_a]:text-emerald-400 [&_a]:underline
+              [&_a]:underline-offset-4
+              [&_a:hover]:text-emerald-300
+
+              [&_blockquote]:my-5 [&_blockquote]:border-l-2
+              [&_blockquote]:border-emerald-500/50
+              [&_blockquote]:pl-4 [&_blockquote]:text-slate-400
+
+              [&_hr]:my-7 [&_hr]:border-slate-800
+
+              [&_code]:rounded [&_code]:bg-slate-800
+              [&_code]:px-1.5 [&_code]:py-0.5
+              [&_code]:text-emerald-300 [&_code]:text-sm
+
+              [&_table]:my-5 [&_table]:w-full
+              [&_table]:border-collapse [&_table]:text-sm
+              [&_th]:border [&_th]:border-slate-700
+              [&_th]:bg-slate-800 [&_th]:p-3 [&_th]:text-left
+              [&_th]:font-semibold [&_th]:text-slate-100
+              [&_td]:border [&_td]:border-slate-800
+              [&_td]:p-3
             "
-            dangerouslySetInnerHTML={{
-              __html: descriptionText,
-            }}
-          />
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={
+                hasHtml
+                  ? [rehypeRaw, rehypeSanitize]
+                  : []
+              }
+              components={{
+                a: ({ href, children, ...props }) => {
+                  const safeHref =
+                    href &&
+                    /^(https?:|mailto:|\/|#)/i.test(href) &&
+                    !/^\/\//.test(href)
+                      ? href
+                      : undefined;
+
+                  return (
+                    <a
+                      {...props}
+                      href={safeHref}
+                      target={
+                        safeHref?.startsWith("http")
+                          ? "_blank"
+                          : undefined
+                      }
+                      rel={
+                        safeHref?.startsWith("http")
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                    >
+                      {children}
+                    </a>
+                  );
+                },
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
         ) : (
-          renderPlainText()
+          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950/30 px-5 py-10 text-center">
+            <FileText
+              size={24}
+              className="mx-auto text-slate-600"
+            />
+            <p className="mt-3 text-sm font-medium text-slate-300">
+              No job description available
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Check the original listing for more information.
+            </p>
+          </div>
         )}
-      </article>
-    </div>
+      </div>
+    </section>
   );
 }

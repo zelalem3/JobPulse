@@ -1,12 +1,13 @@
 import React from "react";
 import {
-  Calendar,
+  CalendarDays,
   MapPin,
   ExternalLink,
   Trash2,
   Building2,
   Loader2,
   ArrowUpRight,
+  BookmarkCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SavedJob } from "../../types/savedJobs";
@@ -22,137 +23,197 @@ export default function SavedJobCard({
   onRemove,
   isRemoving = false,
 }: SavedJobCardProps) {
+  const companyName = job.company?.trim() || "Company not specified";
+  const jobTitle = job.title?.trim() || "Untitled position";
+  const location = job.location?.trim() || "Location not specified";
+  const source = job.source?.trim() || "JobPulse";
+
   const companyInitials =
-    (job.company || "C")
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
-      .join("") || "C";
+    companyName === "Company not specified"
+      ? "CO"
+      : companyName
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((word) => word[0]?.toUpperCase() ?? "")
+          .join("");
 
   const detailsPath = job.job_listing_id
     ? `/jobs/${job.job_listing_id}`
     : null;
 
+  const applyUrl =
+    job.url && job.url !== "#" ? job.url : null;
+
   return (
     <article
+      aria-busy={isRemoving}
       className={`
-        group relative overflow-hidden
-        bg-slate-900/60
-        backdrop-blur-xl
-        rounded-2xl
-        border border-slate-800/80
-        hover:border-indigo-500/30
-        hover:bg-slate-900/80
-        hover:shadow-xl hover:shadow-indigo-950/10
-        transition-all duration-300
-        ${isRemoving ? "opacity-50 pointer-events-none" : ""}
+        group relative overflow-hidden rounded-2xl
+        border border-slate-800/90
+        bg-slate-900/70
+        transition-all duration-200
+        hover:border-slate-700
+        hover:bg-slate-900
+        hover:shadow-lg hover:shadow-black/10
+        ${isRemoving ? "pointer-events-none opacity-60" : ""}
       `}
     >
-      {/* Subtle hover accent */}
-      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Subtle top accent */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
-      <div className="p-5 sm:p-6">
+      <div className="p-4 sm:p-5 lg:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
 
-        <div className="flex flex-col lg:flex-row lg:items-center gap-5">
-
-          {/* Main information */}
-          <div className="flex items-start gap-4 min-w-0 flex-1">
-
-            {/* Company avatar */}
+          {/* Company identity */}
+          <div className="flex min-w-0 flex-1 items-start gap-3.5 sm:gap-4">
             <div className="relative shrink-0">
-
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-slate-900 border border-indigo-500/15 flex items-center justify-center text-sm font-black text-indigo-300 shadow-inner">
+              <div
+                className="
+                  flex h-12 w-12 items-center justify-center
+                  rounded-xl border border-indigo-400/15
+                  bg-indigo-500/[0.08]
+                  text-sm font-bold tracking-wide text-indigo-300
+                  sm:h-14 sm:w-14 sm:rounded-2xl
+                "
+                aria-label={`Company initials: ${companyInitials}`}
+              >
                 {companyInitials}
               </div>
 
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-slate-900 flex items-center justify-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
-              </div>
-
+              <span
+                className="
+                  absolute -bottom-1 -right-1
+                  flex h-5 w-5 items-center justify-center
+                  rounded-full border-[3px] border-slate-900
+                  bg-emerald-500 text-white
+                "
+                title="Saved job"
+              >
+                <BookmarkCheck size={10} strokeWidth={2.5} />
+              </span>
             </div>
 
-            {/* Information */}
             <div className="min-w-0 flex-1">
-
-              {/* Meta */}
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-800/80 border border-slate-700/70 text-slate-400 px-2.5 py-1 rounded-lg">
-                  {job.source || "JobPulse"}
+              {/* Metadata */}
+              <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                <span
+                  className="
+                    inline-flex max-w-full items-center truncate
+                    rounded-md border border-slate-700/80
+                    bg-slate-800/70 px-2 py-1
+                    text-[10px] font-semibold uppercase
+                    tracking-wider text-slate-400
+                  "
+                  title={source}
+                >
+                  {source}
                 </span>
 
-                <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 font-medium">
-                  <Calendar size={10} />
-                  Saved {job.saved_at || "recently"}
-                </span>
-
+                {job.saved_at && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                    <CalendarDays size={13} className="shrink-0" />
+                    <span>Saved {job.saved_at}</span>
+                  </span>
+                )}
               </div>
 
-              {/* Title */}
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
+              {/* Job title */}
+              <h2 className="text-base font-bold leading-snug tracking-tight text-slate-100 sm:text-lg">
                 {detailsPath ? (
                   <Link
                     to={detailsPath}
-                    className="hover:text-indigo-300 transition-colors line-clamp-2"
+                    className="
+                      rounded-sm transition-colors
+                      hover:text-indigo-300
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-indigo-500
+                    "
                   >
-                    {job.title}
+                    {jobTitle}
                   </Link>
                 ) : (
-                  <span className="line-clamp-2">
-                    {job.title}
-                  </span>
+                  jobTitle
                 )}
               </h2>
 
-              {/* Company / location */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
-
-                <span className="inline-flex items-center gap-1.5 text-sm text-slate-300 font-medium truncate max-w-[240px]">
+              {/* Company and location */}
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+                <span
+                  className="inline-flex min-w-0 items-center gap-2 text-sm text-slate-300"
+                  title={companyName}
+                >
                   <Building2
-                    size={14}
-                    className="text-indigo-400/80 shrink-0"
+                    size={15}
+                    className="shrink-0 text-indigo-400"
                   />
-                  <span className="truncate">
-                    {job.company}
-                  </span>
+                  <span className="truncate">{companyName}</span>
                 </span>
 
-                <span className="inline-flex items-center gap-1.5 text-sm text-slate-500 truncate max-w-[220px]">
+                <span
+                  className="inline-flex min-w-0 items-center gap-2 text-sm text-slate-500"
+                  title={location}
+                >
                   <MapPin
-                    size={14}
-                    className="text-slate-600 shrink-0"
+                    size={15}
+                    className="shrink-0 text-slate-500"
                   />
-                  <span className="truncate">
-                    {job.location}
-                  </span>
+                  <span className="truncate">{location}</span>
                 </span>
-
               </div>
-
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 lg:border-l lg:border-slate-800/80 lg:pl-5">
-
+          <div
+            className="
+              flex shrink-0 items-center gap-2
+              border-t border-slate-800/80 pt-4
+              sm:border-t-0 sm:pt-0
+            "
+          >
             {detailsPath && (
               <Link
                 to={detailsPath}
-                className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-300 bg-slate-950/60 border border-slate-800 hover:border-slate-600 hover:text-white hover:bg-slate-800 transition-all"
+                className="
+                  inline-flex min-h-10 flex-1 items-center
+                  justify-center gap-1.5 rounded-xl
+                  border border-slate-700/80 bg-slate-800/50
+                  px-3.5 py-2 text-xs font-semibold text-slate-300
+                  transition-colors
+                  hover:border-slate-600 hover:bg-slate-800
+                  hover:text-white
+                  focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-indigo-500
+                  sm:flex-none
+                "
               >
                 Details
-                <ArrowUpRight size={13} />
+                <ArrowUpRight size={14} />
               </Link>
             )}
 
-            {job.url && job.url !== "#" && (
+            {applyUrl && (
               <a
-                href={job.url}
+                href={applyUrl}
                 target="_blank"
-                rel="noreferrer"
-                className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/30 shadow-lg shadow-indigo-950/30 transition-all"
-                title="Open original listing"
+                rel="noopener noreferrer"
+                className="
+                  inline-flex min-h-10 flex-1 items-center
+                  justify-center gap-2 rounded-xl
+                  border border-indigo-400/20
+                  bg-indigo-600 px-4 py-2
+                  text-xs font-bold text-white
+                  shadow-sm shadow-indigo-950/20
+                  transition-colors
+                  hover:bg-indigo-500
+                  focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-indigo-400
+                  focus-visible:ring-offset-2
+                  focus-visible:ring-offset-slate-900
+                  sm:flex-none
+                "
               >
                 Apply
                 <ExternalLink size={13} />
@@ -163,26 +224,29 @@ export default function SavedJobCard({
               type="button"
               onClick={() => onRemove(job.id)}
               disabled={isRemoving}
-              className="shrink-0 p-2.5 rounded-xl border border-slate-800 text-slate-500 bg-slate-950/40 hover:text-rose-400 hover:bg-rose-950/30 hover:border-rose-900/40 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 disabled:opacity-50"
-              title="Remove from saved"
-              aria-label={`Remove ${job.title}`}
+              className="
+                inline-flex h-10 w-10 shrink-0 items-center
+                justify-center rounded-xl
+                border border-slate-800 bg-transparent
+                text-slate-500 transition-colors
+                hover:border-rose-500/30
+                hover:bg-rose-500/10 hover:text-rose-400
+                focus-visible:outline-none
+                focus-visible:ring-2 focus-visible:ring-rose-500
+                disabled:cursor-not-allowed disabled:opacity-50
+              "
+              title="Remove from saved jobs"
+              aria-label={`Remove ${jobTitle} from saved jobs`}
             >
               {isRemoving ? (
-                <Loader2
-                  size={16}
-                  className="animate-spin"
-                />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
                 <Trash2 size={16} />
               )}
             </button>
-
           </div>
-
         </div>
-
       </div>
     </article>
   );
 }
-
