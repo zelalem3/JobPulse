@@ -16,6 +16,15 @@ import {
   DollarSign,
 } from 'lucide-react';
 
+import {
+  Send,
+  Bell,
+  Target,
+  Smartphone,
+  Link2,
+  ArrowUpRight,
+  CheckCircle2,
+} from "lucide-react";
 import api from '../services/axios';
 import Spinner from '../components/Spinner';
 
@@ -67,6 +76,8 @@ const emptyProfile: ProfileData = {
 };
 
 export default function Profile() {
+
+  
   const [activeTab, setActiveTab] = useState<'info' | 'security' | 'telegram'>('info');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -96,6 +107,21 @@ export default function Profile() {
   const [passLoading, setPassLoading] = useState(false);
   const [passMessage, setPassMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+
+  const [user, setUser] = useState<any>(null);
+
+useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get("api/profile");
+      setUser(response.data);
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
+
+  fetchProfile();
+}, []);
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -636,14 +662,177 @@ export default function Profile() {
           </div>
         )}
 
+        
+                
         {/* ===================== TELEGRAM TAB ===================== */}
-        {activeTab === 'telegram' && (
-          <div className="max-w-xl bg-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border border-slate-800/80">
-            <p className="text-slate-400 text-sm">
-              Telegram integration UI goes here. (You already have the backend fields ready.)
-            </p>
-          </div>
-        )}
+        {activeTab === "telegram" && (() => {
+          const isTelegramConnected = Boolean(
+            user?.telegram_username || user?.telegram_chat_id
+          );
+
+          const botUsername = "JobPulse1bot";
+
+          const telegramUrl = user?.id
+            ? `https://t.me/${botUsername}?start=${encodeURIComponent(String(user.id))}`
+            : `https://t.me/${botUsername}`;
+
+          return (
+            <div className="max-w-3xl space-y-6">
+              <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950">
+                <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl" />
+
+                <div className="relative p-6 sm:p-8">
+                  {/* Header */}
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-500/10 text-sky-400">
+                        <Send size={30} />
+                      </div>
+
+                      <div>
+                        <h2 className="text-xl font-bold text-white">
+                          Telegram Notifications
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Receive matching job opportunities on Telegram.
+                        </p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        isTelegramConnected
+                          ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                          : "border-amber-400/20 bg-amber-400/10 text-amber-300"
+                      }`}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          isTelegramConnected ? "bg-emerald-400" : "bg-amber-400"
+                        }`}
+                      />
+                      {isTelegramConnected ? "Connected" : "Not connected"}
+                    </span>
+                  </div>
+
+                  {/* Feature highlights */}
+                  <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                      <Bell size={19} className="text-emerald-400" />
+                      <p className="mt-3 text-sm font-semibold text-slate-200">
+                        Job alerts
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Get notified about matching opportunities.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                      <Target size={19} className="text-violet-400" />
+                      <p className="mt-3 text-sm font-semibold text-slate-200">
+                        Relevant jobs
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Focus on opportunities matching your interests.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                      <Smartphone size={19} className="text-sky-400" />
+                      <p className="mt-3 text-sm font-semibold text-slate-200">
+                        Stay updated
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Access notifications from your phone or desktop.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Connection status */}
+                  <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
+                      <Link2 size={17} className="text-sky-400" />
+                      {isTelegramConnected
+                        ? "Your Telegram account"
+                        : "Connect your Telegram account"}
+                    </h3>
+
+                    {isTelegramConnected ? (
+                      <div className="mt-4 flex items-start gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[0.06] p-4">
+                        <CheckCircle2
+                          size={20}
+                          className="mt-0.5 shrink-0 text-emerald-400"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-emerald-200">
+                            Telegram connection detected
+                          </p>
+                          {user?.telegram_username && (
+                            <p className="mt-1 text-sm text-slate-400">
+                              @{String(user.telegram_username).replace(/^@/, "")}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            Your profile contains Telegram connection information.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="mt-2 text-sm leading-6 text-slate-400">
+                          Open the JobPulse bot and press Start to begin linking your
+                          account. Follow the bot's instructions to finish setup.
+                        </p>
+
+                        <ol className="mt-4 space-y-3">
+                          {[
+                            "Open the JobPulse Telegram bot.",
+                            "Press Start to initialize the conversation.",
+                            "Follow the bot's instructions to link your account.",
+                          ].map((step, index) => (
+                            <li key={step} className="flex items-center gap-3">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-xs font-bold text-sky-300">
+                                {index + 1}
+                              </span>
+                              <span className="text-sm text-slate-300">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <a
+                      href={telegramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-950/20 transition hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+                    >
+                      <Send size={17} />
+                      {isTelegramConnected ? "Open Telegram Bot" : "Connect Telegram"}
+                      <ArrowUpRight size={16} />
+                    </a>
+
+                    {isTelegramConnected && (
+                      <div className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-3 text-sm font-semibold text-emerald-300">
+                        <CheckCircle2 size={17} />
+                        Account linked
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-center text-xs leading-5 text-slate-500">
+                    Connection status is based on the Telegram fields returned by your
+                    profile API.
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
 
         {/* ===================== SECURITY TAB ===================== */}
         {activeTab === 'security' && (
