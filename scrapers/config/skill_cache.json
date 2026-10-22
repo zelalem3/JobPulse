@@ -1330,5 +1330,25 @@
     "Ticketing system usage",
     "VPN and firewall configuration",
     "Virtualization technologies (VMware, Hyper-V)"
+  ],
+  "33e9dd70f948ad9598ded25dd28ad1efa9ee3f6e52a71cf76d2f0132c93bc2ac": [
+    "Collaboration",
+    "Data Analysis",
+    "Data Visualization",
+    "Database Management",
+    "Ethical Research Practices",
+    "GIS Mapping",
+    "Impact Assessment",
+    "Microsoft Office Suite",
+    "Monitoring & Evaluation Frameworks",
+    "Power BI",
+    "Project Management",
+    "Qualitative Research Methods",
+    "Quantitative Research Methods",
+    "Report Writing",
+    "Stakeholder Engagement",
+    "Statistical Software (e.g., SPSS, Stata, R)",
+    "Survey Design",
+    "Tableau"
   ]
 }
