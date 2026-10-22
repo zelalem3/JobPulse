@@ -258,12 +258,13 @@ export default function SavedJobsPage() {
 
         {/* Search + summary */}
         {savedJobs.length > 0 && (
-          <div className="mb-6 space-y-3">
-
-            <SavedJobsSearch
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-            />
+          <div  className="mb-6 space-y-4">
+              <div className="w-full max-w-2xl">
+                <SavedJobsSearch
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                />
+              </div>
 
             <div className="flex items-center justify-between px-1">
 
