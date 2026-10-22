@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Bookmark,
   Compass,
+  Sparkles
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
@@ -89,6 +90,13 @@ export default function Navbar() {
                     className="text-emerald-400"
                   />
                   Dashboard
+                </Link>
+                <Link
+                    to="/recommendations"
+                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
+                  >
+                    <Sparkles size={16} className="text-indigo-400" />
+                    Recommendations
                 </Link>
               </>
             )}
