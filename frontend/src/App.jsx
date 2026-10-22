@@ -15,8 +15,8 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import AboutUs from './pages/AboutUsPage';
 import ContactUs from './pages/ContactUsPage';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-const queryClient = new QueryClient();
+import Recommendation from './pages/Recommendation';
+
 
 
 function App() {
@@ -37,6 +37,7 @@ function App() {
         
       
         <Route path="/jobs/:id" element={<JobDetails />} />
+        <Route path="/recommendations" element={<Recommendation />} />
 
   
         <Route 
