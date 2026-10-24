@@ -1158,13 +1158,27 @@ const updateCachedJobSaveState = (
                           )}
                     </div>
 
-                  {isFetching &&
-                    !loading && (
-                      <div className="absolute top-2 right-2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 shadow-lg backdrop-blur-xl">
-                        <div className="w-3 h-3 border border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                        Updating...
+                               
+                  
+                    {isFetching && !loading && (
+                      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 rounded-2xl bg-slate-900/95 text-slate-100 border border-indigo-400/20 shadow-xl shadow-black/20 backdrop-blur-xl animate-in fade-in slide-in-from-top-3 duration-200">
+                        <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
+                          <div className="absolute inset-0 rounded-full bg-indigo-400/10 animate-ping" />
+                          <div className="w-5 h-5 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
+                        </div>
+
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium tracking-wide text-slate-100">
+                            Updating jobs
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Fetching the latest results
+                          </span>
+                        </div>
                       </div>
                     )}
+
+                    
 
                 </div>
 
