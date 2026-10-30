@@ -23,10 +23,11 @@ class JobListingController extends Controller
         $category = $request->input('category');
         $sort = $request->input('sort', 'newest');
 
+        // Start query with active filter
         $query = JobListing::with([
             'skills',
             'company',
-        ]);
+        ])->where('is_active', true);
 
         /*
         |--------------------------------------------------------------------------
@@ -171,6 +172,7 @@ class JobListingController extends Controller
     {
         return response()->json([
             'sources' => JobListing::query()
+                ->where('is_active', true)
                 ->whereNotNull('source')
                 ->where('source', '!=', '')
                 ->distinct()
@@ -179,6 +181,7 @@ class JobListingController extends Controller
                 ->values(),
 
             'locations' => JobListing::query()
+                ->where('is_active', true)
                 ->whereNotNull('location')
                 ->where('location', '!=', '')
                 ->distinct()
@@ -187,6 +190,7 @@ class JobListingController extends Controller
                 ->values(),
 
             'employment_types' => JobListing::query()
+                ->where('is_active', true)
                 ->whereNotNull('employment_type')
                 ->where('employment_type', '!=', '')
                 ->distinct()
@@ -195,6 +199,7 @@ class JobListingController extends Controller
                 ->values(),
 
             'experience_levels' => JobListing::query()
+                ->where('is_active', true)
                 ->whereNotNull('experience_level')
                 ->where('experience_level', '!=', '')
                 ->distinct()
@@ -203,6 +208,7 @@ class JobListingController extends Controller
                 ->values(),
 
             'categories' => JobListing::query()
+                ->where('is_active', true)
                 ->whereNotNull('category')
                 ->where('category', '!=', '')
                 ->distinct()
@@ -220,7 +226,7 @@ class JobListingController extends Controller
         $job = JobListing::with([
             'skills',
             'company',
-        ])->find($id);
+        ])->where('is_active', true)->find($id);
 
         if (!$job) {
             return response()->json([
