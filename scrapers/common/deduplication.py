@@ -466,8 +466,6 @@ def is_probable_duplicate(job1: Any, job2: Any) -> bool:
     Returns True when the two jobs almost certainly represent
     the same vacancy.
     """
-    has_company = bool(data1.company and data2.company)
-    company_score = (...)
     data1 = job1 if isinstance(job1, DedupData) else prepare_dedup_data(job1)
     data2 = job2 if isinstance(job2, DedupData) else prepare_dedup_data(job2)
 
@@ -568,34 +566,33 @@ def is_probable_duplicate(job1: Any, job2: Any) -> bool:
         if resp >= 0.85 or tok >= 0.80:
             return True
 
-        if not has_company:
-            if title_score < 0.93:
-                return False
+    # ---------- FALLBACK: company missing on one or both sides ----------
+    if not has_company:
+        if title_score < 0.93:
+            return False
 
-            # Try to recover company from description
-            c1 = data1.company or extract_company_from_text(data1.description)
-            c2 = data2.company or extract_company_from_text(data2.description)
-            if c1 and c2 and text_similarity(c1, c2) >= 0.90:
+        # Try to recover company from description
+        c1 = data1.company or extract_company_from_text(data1.description)
+        c2 = data2.company or extract_company_from_text(data2.description)
+        if c1 and c2 and text_similarity(c1, c2) >= 0.90:
+            return True
+
+        # Prefer description overlap
+        if data1.description and data2.description:
+            desc = text_similarity(data1.description[:4000], data2.description[:4000])
+            tok = token_similarity(data1.description[:4000], data2.description[:4000])
+            if desc >= 0.88 or tok >= 0.82:
                 return True
 
-            # Prefer description overlap
-            if data1.description and data2.description:
-                desc = text_similarity(data1.description[:4000], data2.description[:4000])
-                tok = token_similarity(data1.description[:4000], data2.description[:4000])
-                if desc >= 0.88 or tok >= 0.82:
-                    return True
-
-            if data1.requirements and data2.requirements:
-                req = text_similarity(data1.requirements[:3000], data2.requirements[:3000])
-                if req >= 0.85:
-                    return True
-
-            if posted_close is True and title_score >= 0.96:
+        if data1.requirements and data2.requirements:
+            req = text_similarity(data1.requirements[:3000], data2.requirements[:3000])
+            if req >= 0.85:
                 return True
 
-    
+        if posted_close is True and title_score >= 0.96:
+            return True
+
     return False
-
 
 # ============================================================
 # Human-readable reason

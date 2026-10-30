@@ -1,7 +1,13 @@
 import json
 from common.company import resolve_company
 from common.db_connection import get_connection
-from common.deduplication import normalize_url,generate_dedup_hash
+from common.deduplication import (
+    normalize_url,
+    generate_dedup_hash,
+    prepare_dedup_data,
+    is_probable_duplicate,
+    normalized_title,
+)
 import psycopg2
 
 def save_job(job_data):
@@ -171,58 +177,125 @@ def save_job_skills(conn, job_id, skills_list):
         conn.rollback()
 
 
+
+
+
+
+
 def job_exists(job) -> bool:
     """
-    Debug version of database existence check.
-    """
+    Return True if this job is already in the DB.
 
-    url = normalize_url(job.url)
+    Checks:
+      1. Exact URL
+      2. Exact dedup_hash
+      3. Fuzzy match against recent active jobs with a similar title
+    """
+    # Support both objects and dicts
+    def _get(obj, field, default=None):
+        if isinstance(obj, dict):
+            return obj.get(field, default)
+        return getattr(obj, field, default)
+
+    url = normalize_url(_get(job, "url"))
     dedup_hash = generate_dedup_hash(job)
+    title = normalized_title(job)
 
     conn = get_connection()
-
     try:
         with conn.cursor() as cur:
+            # 1) Exact URL
+            if url:
+                cur.execute(
+                    """
+                    SELECT id
+                    FROM job_listings
+                    WHERE url = %s
+                    LIMIT 1
+                    """,
+                    (url,),
+                )
+                if cur.fetchone():
+                    return True
 
+            # 2) Exact content hash
             cur.execute(
                 """
-                SELECT id, title, url, dedup_hash
-                FROM job_listings
-                WHERE url = %s
-                """,
-                (url,),
-            )
-
-            url_match = cur.fetchone()
-
-            cur.execute(
-                """
-                SELECT id, title, url, dedup_hash
+                SELECT id
                 FROM job_listings
                 WHERE dedup_hash = %s
+                LIMIT 1
                 """,
                 (dedup_hash,),
             )
+            if cur.fetchone():
+                return True
 
-            hash_match = cur.fetchone()
+            # 3) Fuzzy: similar title among recent active jobs
+            if not title or len(title) < 3:
+                return False
 
-            print(
-                f"\n🔎 DUP CHECK: {job.title}"
-            )
-            print(
-                f"   URL:  {url}"
-            )
-            print(
-                f"   HASH: {dedup_hash}"
-            )
-            print(
-                f"   URL MATCH:  {url_match}"
-            )
-            print(
-                f"   HASH MATCH: {hash_match}"
-            )
+            # Use a short prefix so "Graduate Trainee" matches variants
+            title_prefix = title[:50]
 
-            return bool(url_match or hash_match)
+            cur.execute(
+                """
+                SELECT
+                    jl.id,
+                    jl.title,
+                    jl.location,
+                    jl.description,
+                    jl.requirements,
+                    jl.responsibilities,
+                    jl.deadline,
+                    jl.posted_at,
+                    jl.source,
+                    jl.url,
+                    jl.company_id,
+                    c.name AS company_name
+                FROM job_listings jl
+                LEFT JOIN companies c ON c.id = jl.company_id
+                WHERE jl.is_active = true
+                  AND (
+                        lower(jl.title) LIKE %s
+                     OR lower(jl.title) LIKE %s
+                  )
+                ORDER BY jl.created_at DESC
+                LIMIT 40
+                """,
+                (f"%{title_prefix}%", f"%{title[:30]}%"),
+            )
+            rows = cur.fetchall()
+            if not rows:
+                return False
 
+            cols = [d[0] for d in cur.description]
+            candidates = [dict(zip(cols, r)) for r in rows]
+
+            new_data = prepare_dedup_data(job)
+
+            for c in candidates:
+                existing = {
+                    "title": c["title"],
+                    "company": c.get("company_name") or "",
+                    "location": c["location"],
+                    "description": c["description"],
+                    "requirements": c["requirements"],
+                    "responsibilities": c["responsibilities"],
+                    "deadline": c["deadline"],
+                    "posted_at": c["posted_at"],
+                    "url": c["url"],
+                }
+                if is_probable_duplicate(new_data, existing):
+                    print(
+                        f"⏭️ Fuzzy DB duplicate of #{c['id']}: "
+                        f"{_get(job, 'title')}"
+                    )
+                    return True
+
+            return False
     finally:
-        conn.close()
+        try:
+            conn.close()
+        except Exception:
+            pass
