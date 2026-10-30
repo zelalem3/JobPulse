@@ -177,11 +177,6 @@ def save_job_skills(conn, job_id, skills_list):
         conn.rollback()
 
 
-
-
-
-
-
 def job_exists(job) -> bool:
     """
     Return True if this job is already in the DB.
@@ -189,9 +184,8 @@ def job_exists(job) -> bool:
     Checks:
       1. Exact URL
       2. Exact dedup_hash
-      3. Fuzzy match against recent active jobs with a similar title
+      3. Fuzzy match against recent jobs (active OR inactive within 30 days)
     """
-    # Support both objects and dicts
     def _get(obj, field, default=None):
         if isinstance(obj, dict):
             return obj.get(field, default)
@@ -231,11 +225,10 @@ def job_exists(job) -> bool:
             if cur.fetchone():
                 return True
 
-            # 3) Fuzzy: similar title among recent active jobs
+            # 3) Fuzzy: similar title among recent jobs (active + recent inactive)
             if not title or len(title) < 3:
                 return False
 
-            # Use a short prefix so "Graduate Trainee" matches variants
             title_prefix = title[:50]
 
             cur.execute(
@@ -255,13 +248,17 @@ def job_exists(job) -> bool:
                     c.name AS company_name
                 FROM job_listings jl
                 LEFT JOIN companies c ON c.id = jl.company_id
-                WHERE jl.is_active = true
+                WHERE (
+                        jl.is_active = true
+                     OR jl.updated_at > NOW() - INTERVAL '30 days'
+                     OR jl.created_at > NOW() - INTERVAL '30 days'
+                  )
                   AND (
                         lower(jl.title) LIKE %s
                      OR lower(jl.title) LIKE %s
                   )
-                ORDER BY jl.created_at DESC
-                LIMIT 40
+                ORDER BY jl.is_active DESC, jl.created_at DESC
+                LIMIT 50
                 """,
                 (f"%{title_prefix}%", f"%{title[:30]}%"),
             )

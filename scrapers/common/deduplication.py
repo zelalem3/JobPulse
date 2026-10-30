@@ -460,7 +460,6 @@ def extract_company_from_text(text: str) -> str:
 # ============================================================
 # Core matcher
 # ============================================================
-
 def is_probable_duplicate(job1: Any, job2: Any) -> bool:
     """
     Returns True when the two jobs almost certainly represent
@@ -523,6 +522,14 @@ def is_probable_duplicate(job1: Any, job2: Any) -> bool:
     ):
         return True
 
+    # ---------- LEVEL 2d: near-identical title + same company is enough ----------
+    if (
+        has_company
+        and title_score >= 0.98
+        and company_score >= 0.95
+    ):
+        return True
+
     # ---------- LEVEL 3: title + company + description ----------
     if (
         has_company
@@ -577,11 +584,11 @@ def is_probable_duplicate(job1: Any, job2: Any) -> bool:
         if c1 and c2 and text_similarity(c1, c2) >= 0.90:
             return True
 
-        # Prefer description overlap
+        # Prefer description overlap (thresholds relaxed for noisy boards)
         if data1.description and data2.description:
             desc = text_similarity(data1.description[:4000], data2.description[:4000])
             tok = token_similarity(data1.description[:4000], data2.description[:4000])
-            if desc >= 0.88 or tok >= 0.82:
+            if desc >= 0.80 or tok >= 0.75:
                 return True
 
         if data1.requirements and data2.requirements:
@@ -593,7 +600,6 @@ def is_probable_duplicate(job1: Any, job2: Any) -> bool:
             return True
 
     return False
-
 # ============================================================
 # Human-readable reason
 # ============================================================

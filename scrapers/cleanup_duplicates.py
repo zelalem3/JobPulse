@@ -146,29 +146,21 @@ def main():
             return
 
         if not args.apply:
-            print("\nDry-run only. Re-run with --apply to delete.")
+            print("\nDry-run only. Re-run with --apply to deactivate.")
             return
 
         with conn.cursor() as cur:
             for loser_id, winner_id, _ in unique_actions:
-                # Remove related rows that reference job_listings
                 cur.execute(
-                    "DELETE FROM job_skill WHERE job_listing_id = %s",
-                    (loser_id,),
-                )
-                cur.execute(
-                    "DELETE FROM saved_jobs WHERE job_listing_id = %s",
-                    (loser_id,),
-                )
-                # Add any other pivot tables you have (e.g. job_alert_deliveries)
-                # cur.execute("DELETE FROM job_alert_deliveries WHERE job_listing_id = %s", (loser_id,))
-
-                cur.execute(
-                    "DELETE FROM job_listings WHERE id = %s",
+                    """
+                    UPDATE job_listings
+                    SET is_active = false, updated_at = NOW()
+                    WHERE id = %s AND is_active = true
+                    """,
                     (loser_id,),
                 )
             conn.commit()
-        print(f"\nDeleted {len(unique_actions)} listings.")
+        print(f"\nDeactivated {len(unique_actions)} listings.")
     finally:
         conn.close()
 
