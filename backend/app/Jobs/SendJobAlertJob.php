@@ -44,8 +44,9 @@ class SendJobAlertJob implements ShouldQueue
             return;
         }
 
-        $already = JobAlertDelivery::where('job_alert_id', $alert->id)
-            ->where('job_listing_id', $job->id)
+        // 🔑 KEY FIX: already notified THIS USER about THIS JOB?
+        $already = JobAlertDelivery::where('job_listing_id', $job->id)
+            ->whereHas('alert', fn ($q) => $q->where('user_id', $user->id))
             ->exists();
 
         if ($already) {

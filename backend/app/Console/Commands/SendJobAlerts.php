@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\SendJobAlertJob;
 use App\Models\JobAlert;
+use App\Models\JobAlertDelivery;
 use App\Models\JobListing;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -41,7 +42,15 @@ class SendJobAlerts extends Command
             $jobs = $this->getMatchingJobs($alert, $since);
 
             foreach ($jobs as $job) {
-                // Dispatch to Redis – does not send yet
+                // Optional but recommended: skip if this user already received this job
+                $already = JobAlertDelivery::where('job_listing_id', $job->id)
+                    ->whereHas('alert', fn ($q) => $q->where('user_id', $user->id))
+                    ->exists();
+
+                if ($already) {
+                    continue;
+                }
+
                 SendJobAlertJob::dispatch($alert->id, $job->id);
                 $dispatched++;
             }
