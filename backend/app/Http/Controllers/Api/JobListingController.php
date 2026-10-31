@@ -13,7 +13,7 @@ class JobListingController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = min((int) $request->input('per_page', 30), 100);
+        $perPage = min((int) $request->input('per_page', 60), 100);
 
         $search = trim((string) $request->input('search', ''));
         $source = $request->input('source');
