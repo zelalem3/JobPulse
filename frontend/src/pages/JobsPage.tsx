@@ -30,7 +30,7 @@ import JobCard from "../components/home/JobCard";
 import PaginationControls from "../components/home/PaginationControls";
 import ScrollToTopOnPageChange from "../components/ScrollToTopOnPageChange";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 60;
 
 /*
 |--------------------------------------------------------------------------
