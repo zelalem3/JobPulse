@@ -18,12 +18,17 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user); // ← add this
   const isLoggedIn = !!token;
   const logoutAction = useAuthStore((state) => state.logout);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] =
     useState<boolean>(false);
+
+  // Derived values from the real user
+  const userEmail = user?.email ?? 'User';
+  const userInitial = (user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase();
 
   const handleSignOut = () => {
     logoutAction();
@@ -37,13 +42,8 @@ export default function Navbar() {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-18 items-center py-3">
 
-          {/* =========================
-              LEFT: LOGO
-          ========================== */}
-          <Link
-            to="/"
-            className="flex items-center group shrink-0"
-          >
+          {/* LEFT: LOGO */}
+          <Link to="/" className="flex items-center group shrink-0">
             <img
               src="/logo.png"
               alt="JobPulse"
@@ -51,20 +51,13 @@ export default function Navbar() {
             />
           </Link>
 
-
-          {/* =========================
-              CENTER: PRIMARY NAVIGATION
-          ========================== */}
+          {/* CENTER: PRIMARY NAVIGATION */}
           <div className="hidden md:flex items-center gap-1 bg-slate-800/40 border border-slate-800/80 p-1.5 rounded-2xl shadow-inner">
-
             <Link
               to="/jobs"
               className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
             >
-              <Compass
-                size={16}
-                className="text-indigo-400"
-              />
+              <Compass size={16} className="text-indigo-400" />
               Explore Jobs
             </Link>
 
@@ -74,10 +67,7 @@ export default function Navbar() {
                   to="/saved"
                   className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
                 >
-                  <Bookmark
-                    size={16}
-                    className="text-blue-400"
-                  />
+                  <Bookmark size={16} className="text-blue-400" />
                   Saved Jobs
                 </Link>
 
@@ -85,32 +75,25 @@ export default function Navbar() {
                   to="/dashboard"
                   className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
                 >
-                  <LayoutDashboard
-                    size={16}
-                    className="text-emerald-400"
-                  />
+                  <LayoutDashboard size={16} className="text-emerald-400" />
                   Dashboard
                 </Link>
+
                 <Link
-                    to="/recommendations"
-                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
-                  >
-                    <Sparkles size={16} className="text-indigo-400" />
-                    Recommendations
+                  to="/recommendations"
+                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
+                >
+                  <Sparkles size={16} className="text-indigo-400" />
+                  Recommendations
                 </Link>
               </>
             )}
           </div>
 
-
-          {/* =========================
-              RIGHT: USER / AUTH
-          ========================== */}
+          {/* RIGHT: USER / AUTH */}
           <div className="hidden md:flex items-center gap-3">
-
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
-
                 {/* Notifications */}
                 <Link
                   to="/alerts"
@@ -118,20 +101,13 @@ export default function Navbar() {
                   title="Notifications"
                 >
                   <Bell size={18} />
-
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 </Link>
 
-
                 {/* Profile Dropdown */}
                 <div className="relative">
-
                   <button
-                    onClick={() =>
-                      setIsProfileDropdownOpen(
-                        !isProfileDropdownOpen
-                      )
-                    }
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl hover:bg-slate-800/80 transition-all border border-slate-800 hover:border-slate-700 group cursor-pointer"
                   >
                     <span className="text-xs font-semibold text-slate-300 group-hover:text-white">
@@ -139,40 +115,27 @@ export default function Navbar() {
                     </span>
 
                     <div className="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-500/30">
-                      Z
+                      {userInitial}
                     </div>
                   </button>
 
-
-                  {/* Dropdown */}
                   {isProfileDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 text-slate-200 backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
-
                       <div className="px-4 py-2 border-b border-slate-800/80 mb-1">
-                        <p className="text-xs text-slate-400">
-                          Signed in as
-                        </p>
-
+                        <p className="text-xs text-slate-400">Signed in as</p>
                         <p className="text-sm font-medium text-white truncate">
-                          jobseeker@jobpulse.io
+                          {userEmail}
                         </p>
                       </div>
 
-
                       <Link
                         to="/profile"
-                        onClick={() =>
-                          setIsProfileDropdownOpen(false)
-                        }
+                        onClick={() => setIsProfileDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium hover:bg-slate-800/80 transition-colors"
                       >
-                        <User
-                          size={16}
-                          className="text-slate-400"
-                        />
+                        <User size={16} className="text-slate-400" />
                         View Profile
                       </Link>
-
 
                       <button
                         onClick={handleSignOut}
@@ -181,17 +144,12 @@ export default function Navbar() {
                         <LogOut size={16} />
                         Sign Out
                       </button>
-
                     </div>
                   )}
-
                 </div>
               </div>
             ) : (
-
-              /* Logged Out */
               <div className="flex items-center gap-2.5">
-
                 <Link
                   to="/login"
                   className="px-4 py-2.5 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
@@ -206,122 +164,76 @@ export default function Navbar() {
                   <LogIn size={15} />
                   Get Started
                 </Link>
-
               </div>
             )}
-
           </div>
 
-
-          {/* =========================
-              MOBILE MENU BUTTON
-          ========================== */}
+          {/* MOBILE MENU BUTTON */}
           <div className="md:hidden flex items-center">
-
             <button
-              onClick={() =>
-                setIsMobileMenuOpen(!isMobileMenuOpen)
-              }
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors border border-slate-800 cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
-              {isMobileMenuOpen ? (
-                <X size={22} />
-              ) : (
-                <Menu size={22} />
-              )}
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
-
           </div>
-
         </div>
       </div>
 
-
-      {/* =========================
-          MOBILE NAVIGATION DRAWER
-      ========================== */}
+      {/* MOBILE NAVIGATION DRAWER */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-slate-800 bg-slate-900/98 backdrop-blur-2xl px-4 pt-4 pb-6 space-y-2.5 shadow-2xl w-full">
-
-          {/* Explore Jobs */}
           <Link
             to="/jobs"
             onClick={() => setIsMobileMenuOpen(false)}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
           >
-            <Compass
-              size={18}
-              className="text-indigo-400"
-            />
+            <Compass size={18} className="text-indigo-400" />
             Explore Jobs
           </Link>
 
-
           {isLoggedIn ? (
             <>
-
-              {/* Saved Jobs */}
               <Link
                 to="/saved"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
               >
-                <Bookmark
-                  size={18}
-                  className="text-blue-400"
-                />
+                <Bookmark size={18} className="text-blue-400" />
                 Saved Jobs
               </Link>
 
-
-              {/* Dashboard */}
               <Link
                 to="/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
               >
-                <LayoutDashboard
-                  size={18}
-                  className="text-emerald-400"
-                />
+                <LayoutDashboard size={18} className="text-emerald-400" />
                 Dashboard
               </Link>
 
-
-              {/* Notifications */}
               <Link
                 to="/alerts"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <Bell
-                    size={18}
-                    className="text-red-400"
-                  />
+                  <Bell size={18} className="text-red-400" />
                   Notifications
                 </div>
-
                 <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
               </Link>
 
-
-              {/* Profile */}
               <Link
                 to="/profile"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
               >
-                <User
-                  size={18}
-                  className="text-slate-400"
-                />
+                <User size={18} className="text-slate-400" />
                 My Profile
               </Link>
 
-
-              {/* Sign Out */}
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800 mt-3 cursor-pointer"
@@ -329,13 +241,9 @@ export default function Navbar() {
                 <LogOut size={18} />
                 Sign Out
               </button>
-
             </>
           ) : (
-
-            /* Logged Out Mobile */
             <div className="pt-4 border-t border-slate-800 space-y-3">
-
               <Link
                 to="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -351,13 +259,10 @@ export default function Navbar() {
               >
                 Get Started
               </Link>
-
             </div>
           )}
-
         </div>
       )}
-
     </nav>
   );
 }
