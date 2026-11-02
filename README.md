@@ -4,11 +4,8 @@
 
 ### 🚀 Intelligent Job Discovery & Recommendation Platform
 
-**One platform. Multiple sources. Smarter job discovery.**
-
-Discover opportunities. Match your skills. Stay ahead of the job market.
-
-JobPulse is a full-stack job intelligence platform that aggregates opportunities from Ethiopian and regional job boards, company career pages, and Telegram channels. It transforms fragmented job listings into a centralized, searchable, and personalized job discovery experience.
+**One platform. Multiple 
+a full-stack job intelligence platform that aggregates opportunities from Ethiopian and regional job boards, company career pages, and Telegram channels. It transforms fragmented job listings into a centralized, searchable, and personalized job discovery experience.
 
 <br/>
 
@@ -197,7 +194,7 @@ Explore job statistics, popular skills, companies, and posting trends.
 
 </div>
 
-> 📸 **Screenshot tip:** Add your actual application screenshots to `docs/screenshots/` using the filenames shown above. Until those files exist in the repository, GitHub will display broken image placeholders.
+
 
 ---
 
