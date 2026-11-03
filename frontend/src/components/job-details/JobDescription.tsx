@@ -1,4 +1,3 @@
-
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -10,9 +9,7 @@ interface JobDescriptionProps {
   description: string;
 }
 
-export default function JobDescription({
-  description,
-}: JobDescriptionProps) {
+export default function JobDescription({ description }: JobDescriptionProps) {
   const descriptionText = description?.trim() || "";
 
   // Detect HTML tags without confusing ordinary text for HTML.
@@ -27,18 +24,18 @@ export default function JobDescription({
     : descriptionText;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/70 shadow-xl shadow-black/10">
+    <section className="overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/70 shadow-xl shadow-black/10 backdrop-blur-xl">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-slate-800/80 px-5 py-5 sm:px-7">
+      <header className="flex items-center gap-3.5 border-b border-slate-800/80 px-5 py-5 sm:px-7 sm:py-5.5">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/10 text-emerald-400">
-          <FileText size={19} />
+          <FileText size={18} />
         </div>
 
         <div className="min-w-0">
-          <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-white">
             Job description
           </h2>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          <p className="mt-0.5 text-xs text-slate-500">
             Responsibilities, qualifications and role details
           </p>
         </div>
@@ -50,7 +47,7 @@ export default function JobDescription({
           <div
             className="
               job-description
-              max-w-3xl
+              max-w-none
               text-[15px] leading-7 text-slate-300
 
               [&_h1]:mb-4 [&_h1]:mt-8 [&_h1]:text-xl
@@ -105,11 +102,7 @@ export default function JobDescription({
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={
-                hasHtml
-                  ? [rehypeRaw, rehypeSanitize]
-                  : []
-              }
+              rehypePlugins={hasHtml ? [rehypeRaw, rehypeSanitize] : []}
               components={{
                 a: ({ href, children, ...props }) => {
                   const safeHref =
@@ -124,9 +117,7 @@ export default function JobDescription({
                       {...props}
                       href={safeHref}
                       target={
-                        safeHref?.startsWith("http")
-                          ? "_blank"
-                          : undefined
+                        safeHref?.startsWith("http") ? "_blank" : undefined
                       }
                       rel={
                         safeHref?.startsWith("http")
@@ -144,11 +135,8 @@ export default function JobDescription({
             </ReactMarkdown>
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950/30 px-5 py-10 text-center">
-            <FileText
-              size={24}
-              className="mx-auto text-slate-600"
-            />
+          <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 px-5 py-12 text-center">
+            <FileText size={28} className="mx-auto text-slate-600" />
             <p className="mt-3 text-sm font-medium text-slate-300">
               No job description available
             </p>
