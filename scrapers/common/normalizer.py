@@ -129,6 +129,12 @@ def normalize_title(title):
         title,
         flags=re.IGNORECASE,
     )
+    title = re.sub(
+            r"\bJob Vacancies At\b",
+            "",
+            title,
+            flags=re.IGNORECASE,
+    )
 
     # --------------------------------------------------------
     # Remove leading decorative punctuation
