@@ -129,6 +129,10 @@ def normalize_title(title):
         title,
         flags=re.IGNORECASE,
     )
+    # --------------------------------------------------------
+    # Remove Job Vacancies At
+    # --------------------------------------------------------
+
     title = re.sub(
             r"\bJob Vacancies At\b",
             "",
