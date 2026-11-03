@@ -1,7 +1,6 @@
 import re
 import asyncio
 from datetime import datetime
-from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 from curl_cffi import requests
 from common.models import JobListing
@@ -121,6 +120,44 @@ class EthioJobsScraper(BaseScraper):
         text = text.replace("\xa0", " ")
         return re.sub(r"\s+", " ", text).strip()
 
+    def _strip_noise(self, text: str) -> str:
+        """Remove common EthioJobs boilerplate from description text."""
+        if not text:
+            return ""
+
+        text = text.replace("\xa0", " ")
+        text = re.sub(r"[ \t]+", " ", text)
+        text = re.sub(r"\n{3,}", "\n\n", text).strip()
+
+        noise_patterns = [
+            r"^←?\s*Back to all jobs\s*",
+            r"^Back to all jobs\s*",
+            r"(?i)^Advertisement\s*",
+            r"(?i)Advertisement\s+Advertisement\s*",
+            r"(?i)Deadline:\s*[A-Za-z]+\s+\d{1,2},\s*\d{4}\s*",
+            r"(?i)^Job Description\s*",
+            r"(?i)^Job Summary\s*",
+            r"(?i)^About the (?:Role|Job|Position)\s*",
+            r"(?i)^Apply (?:Now|Online)\s*",
+            r"(?i)^Share this job\s*",
+        ]
+        for pat in noise_patterns:
+            text = re.sub(pat, "", text, count=1).strip()
+
+        cut_markers = [
+            r"(?i)\bHOW TO APPLY\b",
+            r"(?i)\bAPPLICATION PROCEDURE\b",
+            r"(?i)\bTO APPLY\b",
+            r"(?i)\bSUBMIT YOUR APPLICATION\b",
+        ]
+        for marker in cut_markers:
+            m = re.search(marker, text)
+            if m and m.start() > 200:
+                text = text[: m.start()].strip()
+                break
+
+        return text.strip()
+
     def _is_cs_related(self, text: str) -> bool:
         if not text:
             return False
@@ -140,7 +177,6 @@ class EthioJobsScraper(BaseScraper):
 
         clean = href.split("?")[0].split("#")[0].rstrip("/")
 
-        # Drop non-detail paths
         bad = (
             "/jobs?",
             "/category",
@@ -156,11 +192,9 @@ class EthioJobsScraper(BaseScraper):
         if clean.endswith("/jobs"):
             return None
 
-        # Prefer real detail URLs
         if self.job_url_re.match(clean + "/") or self.job_url_re.match(clean):
             return clean
 
-        # Allow /jobs/{id}-slug even if regex is strict
         parts = clean.split("/")
         if len(parts) >= 5 and parts[-2] == "jobs" and "-" in parts[-1]:
             return clean
@@ -176,7 +210,6 @@ class EthioJobsScraper(BaseScraper):
             if not url:
                 continue
 
-            # Prefer cards that mention the IT/CS category nearby
             parent_text = ""
             parent = a.find_parent(["article", "li", "div", "tr"])
             if parent:
@@ -185,12 +218,10 @@ class EthioJobsScraper(BaseScraper):
             anchor_text = self._clean(a.get_text()) or ""
             blob = f"{anchor_text} {parent_text}".lower()
 
-            # Strong accept: category label on the card
             if "computer science" in blob or "software engineering" in blob:
                 links.add(url)
                 continue
 
-            # Otherwise keep only if title/card looks CS-related
             if self._is_cs_related(blob):
                 links.add(url)
 
@@ -199,9 +230,7 @@ class EthioJobsScraper(BaseScraper):
     def fetch(self) -> list:
         job_links: set[str] = set()
 
-        # 1) Category-focused listing(s)
         urls_to_fetch = list(self.category_paths)
-        # 2) A few general pages as backup (still filtered)
         for page in range(1, self.list_pages + 1):
             urls_to_fetch.append(f"/jobs?page={page}")
 
@@ -239,6 +268,7 @@ class EthioJobsScraper(BaseScraper):
 
             soup = BeautifulSoup(response.text, "lxml")
 
+            # ---------- Title ----------
             title = "Untitled Position"
             for selector in ["h1", ".job-title", ".entry-title", "h2.title"]:
                 tag = soup.select_one(selector)
@@ -248,6 +278,7 @@ class EthioJobsScraper(BaseScraper):
                         title = text
                         break
 
+            # ---------- Company ----------
             company = "Not Specified"
             for selector in [".company-name", ".employer-name", ".h4", ".sub-title"]:
                 tag = soup.select_one(selector)
@@ -257,47 +288,90 @@ class EthioJobsScraper(BaseScraper):
                         company = text
                         break
 
+            # ---------- Description container ----------
             container = (
-                soup.find("div", class_="job-description")
-                or soup.find("main")
+                soup.select_one("div.job-description")
+                or soup.select_one("[itemprop='description']")
+                or soup.select_one("div.job-details")
+                or soup.select_one("div.description")
+                or soup.select_one("main article")
+                or soup.select_one("main")
                 or soup.find("article")
                 or soup
             )
-            for tag in container(["script", "style", "nav", "header", "footer", "aside"]):
+
+            # Remove non-content tags
+            for tag in container(
+                ["script", "style", "nav", "header", "footer", "aside", "form", "button"]
+            ):
                 tag.decompose()
 
-            description = self._clean(container.get_text("\n", strip=True)) or ""
+            # Remove common ad / share / breadcrumb blocks
+            for sel in [
+                ".advertisement",
+                ".ad-container",
+                ".ads",
+                ".code-block",
+                ".share",
+                ".social-share",
+                ".breadcrumb",
+                ".back-link",
+                "[class*='ad-']",
+                "[id*='ad-']",
+            ]:
+                for tag in container.select(sel):
+                    tag.decompose()
 
-            # Second filter on the detail page (title + body)
+            raw_description = container.get_text("\n", strip=True) or ""
+            description = self._strip_noise(self._clean(raw_description) or "")
+
+            # Second filter on the detail page
             if not self._is_cs_related(f"{title}\n{description[:1500]}"):
                 print(f"[EthioJobs] Skipped non-CS role: {title}")
                 return None
 
+            # ---------- Location ----------
             location = "Addis Ababa"
             for tag in container.find_all(["span", "p", "div", "li"]):
                 text = self._clean(tag.get_text())
-                if text and (
-                    "location" in text.lower()
-                    or "address" in text.lower()
-                    or "duty station" in text.lower()
+                if not text:
+                    continue
+                lower = text.lower()
+                if any(
+                    k in lower
+                    for k in ("location", "address", "duty station", "duty post")
                 ):
                     if ":" in text:
                         location = text.split(":", 1)[1].strip()
+                    elif len(text) < 80:
+                        location = text
                     break
 
+            # ---------- Requirements ----------
             requirements = ""
             upper = description.upper()
-            for kw in ["REQUIREMENT", "QUALIFICATION", "JOB SPECIFICATION", "RESPONSIBILITY"]:
+            for kw in [
+                "REQUIREMENT",
+                "QUALIFICATION",
+                "JOB SPECIFICATION",
+                "RESPONSIBILITY",
+                "DUTIES AND RESPONSIBILITIES",
+                "KEY RESPONSIBILITIES",
+            ]:
                 if kw in upper:
                     idx = upper.index(kw)
                     req_chunk = description[idx:]
                     if "HOW TO APPLY" in req_chunk.upper():
-                        req_chunk = req_chunk[: req_chunk.upper().index("HOW TO APPLY")]
+                        req_chunk = req_chunk[
+                            : req_chunk.upper().index("HOW TO APPLY")
+                        ]
                     requirements = req_chunk[:4000].strip()
                     break
 
             extracted_skills = extract_skills(
-                job_description_text=safe_str(f"{description}\n{requirements}", 2500),
+                job_description_text=safe_str(
+                    f"{description}\n{requirements}", 2500
+                ),
                 job_title=safe_str(title, 250),
             )
 
