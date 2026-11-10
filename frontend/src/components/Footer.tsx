@@ -142,18 +142,6 @@ const Footer: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-xs font-medium">
-            <Link
-              to="/privacy"
-              className="text-slate-500 transition-colors hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              Privacy
-            </Link>
-            <Link
-              to="/terms"
-              className="text-slate-500 transition-colors hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              Terms
-            </Link>
             <a
               href="https://github.com/zelalem3/JobPulse"
               target="_blank"

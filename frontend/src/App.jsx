@@ -22,61 +22,57 @@ import Recommendation from './pages/Recommendation';
 function App() {
   return (
     <BrowserRouter>
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <NavBar />
       <ScrollToTop />
 
-      <Routes>
-      
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/contact" element={<ContactUs />} />
-      
-        <Route path="/jobs" element={<Jobs />} />
-        
-      
-        <Route path="/jobs/:id" element={<JobDetails />} />
-        <Route path="/recommendations" element={<Recommendation />} />
-
-  
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/saved" 
-          element={
-            <ProtectedRoute>
-              <SavedJobs />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/alerts" 
-          element={
-            <ProtectedRoute>
-              <Alerts />
-            </ProtectedRoute>
-          } 
-        />
-
-       
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
-
+      <div id="main-content" className="flex-1" tabIndex={-1}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/:id" element={<JobDetails />} />
+          <Route path="/recommendations" element={<Recommendation />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved"
+            element={
+              <ProtectedRoute>
+                <SavedJobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/alerts"
+            element={
+              <ProtectedRoute>
+                <Alerts />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<PageNotFound />} />
+        </Routes>
+      </div>
 
       <Footer />
     </BrowserRouter>

@@ -1,34 +1,61 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-  User,
-  LogOut,
-  LogIn,
-  Menu,
-  X,
   Bell,
-  LayoutDashboard,
   Bookmark,
   Compass,
-  Sparkles
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  Sparkles,
+  User,
+  X,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
+const desktopLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+    isActive
+      ? 'bg-emerald-400/10 text-emerald-200'
+      : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+  }`;
+
+const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
+    isActive
+      ? 'bg-emerald-400/10 text-emerald-200'
+      : 'text-slate-200 hover:bg-white/[0.06]'
+  }`;
+
 export default function Navbar() {
   const navigate = useNavigate();
-
+  const { pathname } = useLocation();
   const token = useAuthStore((state) => state.token);
-  const user = useAuthStore((state) => state.user); // ← add this
-  const isLoggedIn = !!token;
+  const user = useAuthStore((state) => state.user);
   const logoutAction = useAuthStore((state) => state.logout);
+  const isLoggedIn = Boolean(token);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] =
-    useState<boolean>(false);
-
-  // Derived values from the real user
-  const userEmail = user?.email ?? 'User';
+  const userEmail = user?.email ?? 'Your account';
   const userInitial = (user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase();
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsProfileDropdownOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isProfileDropdownOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsProfileDropdownOpen(false);
+    };
+
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isProfileDropdownOpen]);
 
   const handleSignOut = () => {
     logoutAction();
@@ -38,231 +65,204 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-slate-900/90 backdrop-blur-2xl border-b border-slate-800/80 sticky top-0 z-50 font-sans text-slate-100 shadow-xl shadow-slate-950/20">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-18 items-center py-3">
-
-          {/* LEFT: LOGO */}
-          <Link to="/" className="flex items-center group shrink-0">
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#080d16]/95 text-slate-100 shadow-lg shadow-black/10 backdrop-blur-xl">
+      <nav aria-label="Main navigation" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-[4.5rem] items-center justify-between gap-4">
+          <Link
+            to="/"
+            aria-label="JobPulse home"
+            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
             <img
               src="/logo.png"
               alt="JobPulse"
-              className="h-11 sm:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+              className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
 
-          {/* CENTER: PRIMARY NAVIGATION */}
-          <div className="hidden md:flex items-center gap-1 bg-slate-800/40 border border-slate-800/80 p-1.5 rounded-2xl shadow-inner">
-            <Link
-              to="/jobs"
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
-            >
-              <Compass size={16} className="text-indigo-400" />
-              Explore Jobs
-            </Link>
-
+          <div className="hidden items-center gap-1 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-1 lg:flex">
+            <NavLink to="/jobs" className={desktopLinkClass}>
+              <Compass size={16} aria-hidden="true" />
+              Find jobs
+            </NavLink>
             {isLoggedIn && (
               <>
-                <Link
-                  to="/saved"
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
-                >
-                  <Bookmark size={16} className="text-blue-400" />
-                  Saved Jobs
-                </Link>
-
-                <Link
-                  to="/dashboard"
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
-                >
-                  <LayoutDashboard size={16} className="text-emerald-400" />
+                <NavLink to="/saved" className={desktopLinkClass}>
+                  <Bookmark size={16} aria-hidden="true" />
+                  Saved
+                </NavLink>
+                <NavLink to="/dashboard" className={desktopLinkClass}>
+                  <LayoutDashboard size={16} aria-hidden="true" />
                   Dashboard
-                </Link>
+                </NavLink>
+                <NavLink to="/recommendations" className={desktopLinkClass}>
+                  <Sparkles size={16} aria-hidden="true" />
+                  For you
+                </NavLink>
+              </>
+            )}
+          </div>
 
-                <Link
-                  to="/recommendations"
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all flex items-center gap-2"
+          <div className="hidden items-center gap-3 lg:flex">
+            {isLoggedIn ? (
+              <>
+                <NavLink
+                  to="/alerts"
+                  aria-label="Job alerts"
+                  title="Job alerts"
+                  className={({ isActive }) =>
+                    `relative rounded-xl border p-2.5 transition-colors ${
+                      isActive
+                        ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+                        : 'border-white/[0.08] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                    }`
+                  }
                 >
-                  <Sparkles size={16} className="text-indigo-400" />
-                  Recommendations
+                  <Bell size={18} aria-hidden="true" />
+                </NavLink>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileDropdownOpen((open) => !open)}
+                    aria-expanded={isProfileDropdownOpen}
+                    aria-controls="account-menu"
+                    className="flex items-center gap-2 rounded-xl border border-white/[0.08] p-1.5 pl-3 transition-colors hover:border-white/[0.14] hover:bg-white/[0.05]"
+                  >
+                    <span className="max-w-28 truncate text-xs font-medium text-slate-300">
+                      Account
+                    </span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-300/20 bg-emerald-400/10 text-xs font-bold text-emerald-200">
+                      {userInitial}
+                    </span>
+                  </button>
+
+                  {isProfileDropdownOpen && (
+                    <div
+                      id="account-menu"
+                      className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-white/[0.1] bg-[#101827] py-2 text-slate-200 shadow-2xl shadow-black/40"
+                    >
+                      <div className="border-b border-white/[0.08] px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Signed in as
+                        </p>
+                        <p className="mt-1 truncate text-sm font-medium text-white">
+                          {userEmail}
+                        </p>
+                      </div>
+                      <NavLink
+                        to="/profile"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-3 text-sm transition-colors hover:bg-white/[0.05]"
+                      >
+                        <User size={16} className="text-slate-400" />
+                        Your profile
+                      </NavLink>
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="flex w-full items-center gap-2.5 border-t border-white/[0.08] px-4 py-3 text-left text-sm text-rose-300 transition-colors hover:bg-rose-400/[0.08]"
+                      >
+                        <LogOut size={16} />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 transition-colors hover:text-white"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-950/25 transition-colors hover:bg-emerald-300"
+                >
+                  <LogIn size={15} aria-hidden="true" />
+                  Create account
                 </Link>
               </>
             )}
           </div>
 
-          {/* RIGHT: USER / AUTH */}
-          <div className="hidden md:flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.1] text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white lg:hidden"
+          >
+            {isMobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
+      </nav>
+
+      {isMobileMenuOpen && (
+        <div
+          id="mobile-navigation"
+          className="border-t border-white/[0.08] bg-[#0b111d] px-4 pb-5 pt-3 shadow-xl lg:hidden sm:px-6"
+        >
+          <div className="mx-auto max-w-7xl space-y-1">
+            <NavLink to="/jobs" className={mobileLinkClass}>
+              <Compass size={18} aria-hidden="true" />
+              Find jobs
+            </NavLink>
+
             {isLoggedIn ? (
-              <div className="flex items-center gap-3">
-                {/* Notifications */}
-                <Link
-                  to="/alerts"
-                  className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all relative border border-slate-800 hover:border-slate-700"
-                  title="Notifications"
+              <>
+                <NavLink to="/saved" className={mobileLinkClass}>
+                  <Bookmark size={18} aria-hidden="true" />
+                  Saved jobs
+                </NavLink>
+                <NavLink to="/dashboard" className={mobileLinkClass}>
+                  <LayoutDashboard size={18} aria-hidden="true" />
+                  Dashboard
+                </NavLink>
+                <NavLink to="/recommendations" className={mobileLinkClass}>
+                  <Sparkles size={18} aria-hidden="true" />
+                  Recommendations
+                </NavLink>
+                <NavLink to="/alerts" className={mobileLinkClass}>
+                  <Bell size={18} aria-hidden="true" />
+                  Job alerts
+                </NavLink>
+                <NavLink to="/profile" className={mobileLinkClass}>
+                  <User size={18} aria-hidden="true" />
+                  Your profile
+                </NavLink>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-semibold text-rose-300 transition-colors hover:bg-rose-400/[0.08]"
                 >
-                  <Bell size={18} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                </Link>
-
-                {/* Profile Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                    className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl hover:bg-slate-800/80 transition-all border border-slate-800 hover:border-slate-700 group cursor-pointer"
-                  >
-                    <span className="text-xs font-semibold text-slate-300 group-hover:text-white">
-                      Account
-                    </span>
-
-                    <div className="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-500/30">
-                      {userInitial}
-                    </div>
-                  </button>
-
-                  {isProfileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 text-slate-200 backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
-                      <div className="px-4 py-2 border-b border-slate-800/80 mb-1">
-                        <p className="text-xs text-slate-400">Signed in as</p>
-                        <p className="text-sm font-medium text-white truncate">
-                          {userEmail}
-                        </p>
-                      </div>
-
-                      <Link
-                        to="/profile"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium hover:bg-slate-800/80 transition-colors"
-                      >
-                        <User size={16} className="text-slate-400" />
-                        View Profile
-                      </Link>
-
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800/80 mt-1 cursor-pointer"
-                      >
-                        <LogOut size={16} />
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+                  <LogOut size={18} aria-hidden="true" />
+                  Sign out
+                </button>
+              </>
             ) : (
-              <div className="flex items-center gap-2.5">
+              <div className="grid gap-2 border-t border-white/[0.08] pt-4 sm:grid-cols-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2.5 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                  className="rounded-xl border border-white/[0.1] px-4 py-3 text-center text-sm font-semibold text-slate-200 transition-colors hover:bg-white/[0.05]"
                 >
-                  Sign In
+                  Sign in
                 </Link>
-
                 <Link
                   to="/register"
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 border border-indigo-500 transition-all flex items-center gap-1.5"
+                  className="rounded-xl bg-emerald-400 px-4 py-3 text-center text-sm font-bold text-slate-950 transition-colors hover:bg-emerald-300"
                 >
-                  <LogIn size={15} />
-                  Get Started
+                  Create account
                 </Link>
               </div>
             )}
           </div>
-
-          {/* MOBILE MENU BUTTON */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors border border-slate-800 cursor-pointer"
-              aria-label="Toggle Navigation Menu"
-            >
-              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* MOBILE NAVIGATION DRAWER */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-900/98 backdrop-blur-2xl px-4 pt-4 pb-6 space-y-2.5 shadow-2xl w-full">
-          <Link
-            to="/jobs"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
-          >
-            <Compass size={18} className="text-indigo-400" />
-            Explore Jobs
-          </Link>
-
-          {isLoggedIn ? (
-            <>
-              <Link
-                to="/saved"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
-              >
-                <Bookmark size={18} className="text-blue-400" />
-                Saved Jobs
-              </Link>
-
-              <Link
-                to="/dashboard"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
-              >
-                <LayoutDashboard size={18} className="text-emerald-400" />
-                Dashboard
-              </Link>
-
-              <Link
-                to="/alerts"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Bell size={18} className="text-red-400" />
-                  Notifications
-                </div>
-                <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-              </Link>
-
-              <Link
-                to="/profile"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-200 hover:bg-slate-800/80 transition-colors"
-              >
-                <User size={18} className="text-slate-400" />
-                My Profile
-              </Link>
-
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-slate-800 mt-3 cursor-pointer"
-              >
-                <LogOut size={18} />
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <div className="pt-4 border-t border-slate-800 space-y-3">
-              <Link
-                to="/login"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full px-4 py-3 text-center text-slate-200 font-semibold border border-slate-700 bg-slate-900 rounded-xl text-sm hover:bg-slate-800 transition-colors"
-              >
-                Sign In
-              </Link>
-
-              <Link
-                to="/register"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full px-4 py-3 text-center bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm shadow-lg shadow-indigo-600/20 border border-indigo-500 transition-all"
-              >
-                Get Started
-              </Link>
-            </div>
-          )}
         </div>
       )}
-    </nav>
+    </header>
   );
 }

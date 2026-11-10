@@ -878,12 +878,12 @@ const updateCachedJobSaveState = (
   */
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white py-10 relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-[#080d16] py-10 text-slate-100 selection:bg-emerald-400/30 selection:text-white sm:py-12">
 
       {/* Background glow */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="pointer-events-none absolute right-1/4 top-0 h-[500px] w-[500px] rounded-full bg-emerald-500/[0.07] blur-[110px]" />
 
-      <div className="absolute top-1/4 left-10 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="pointer-events-none absolute left-10 top-1/4 h-[400px] w-[400px] rounded-full bg-teal-500/[0.05] blur-[110px]" />
 
       <ScrollToTopOnPageChange
         dependencies={
@@ -894,14 +894,27 @@ const updateCachedJobSaveState = (
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
 
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/[0.06] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            Find your next step
+          </p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+            Find work that moves you forward.
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+            Search opportunities by role, skill, company, or location, then narrow the results to what matters to you.
+          </p>
+        </div>
+
         {/* Search */}
         <div className="max-w-3xl mx-auto w-full px-2">
 
           <div className="relative group w-full">
 
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-md opacity-50 group-hover:opacity-80 transition duration-500" />
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-400/50 via-teal-400/30 to-cyan-400/40 opacity-40 blur-md transition duration-500 group-hover:opacity-70" />
 
-            <div className="relative bg-[#0b0f19] border border-indigo-500/40 rounded-full shadow-2xl w-full">
+            <div className="relative w-full rounded-full border border-emerald-300/20 bg-[#101827] shadow-xl shadow-black/20">
 
               <SearchBar
                 onSearch={
@@ -928,8 +941,8 @@ const updateCachedJobSaveState = (
               }
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 selectedCategories.length === 0
-                  ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-200"
-                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                  ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200"
+                  : "border-white/[0.08] bg-[#101827] text-slate-400 hover:border-white/[0.14] hover:text-slate-200"
               }`}
             >
               All
@@ -948,8 +961,8 @@ const updateCachedJobSaveState = (
                   }
                   className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                     active
-                      ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-200"
-                      : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                      ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200"
+                      : "border-white/[0.08] bg-[#101827] text-slate-400 hover:border-white/[0.14] hover:text-slate-200"
                   }`}
                 >
                   {cat}
@@ -969,11 +982,11 @@ const updateCachedJobSaveState = (
                 !isFilterOpen
               )
             }
-            className="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-slate-200 rounded-2xl flex items-center justify-center gap-2 text-xs font-semibold shadow-lg"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.09] bg-[#101827] px-4 py-3 text-xs font-semibold text-slate-200 shadow-lg"
           >
             <SlidersHorizontal
               size={14}
-              className="text-indigo-400"
+              className="text-emerald-300"
             />
 
             {isFilterOpen
@@ -1050,27 +1063,27 @@ const updateCachedJobSaveState = (
 
             {/* Result count */}
             {!loading && (
-              <div className="flex items-center justify-between px-1">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
 
-                <p className="text-xs text-slate-500">
-                  {filteredTotalItems}{" "}
+                <p className="text-sm font-medium text-slate-200">
+                  <span className="font-semibold text-white">{filteredTotalItems}</span>{" "}
                   {filteredTotalItems ===
                   1
-                    ? "job"
-                    : "jobs"}{" "}
+                    ? "opportunity"
+                    : "opportunities"}{" "}
                   found
                   {totalDatabaseCount > 0 && (
-                    <span className="text-slate-600">
+                    <span className="ml-1 text-xs font-normal text-slate-500">
                       {" "}
-                      · {totalDatabaseCount} total
+                      · {totalDatabaseCount.toLocaleString()} total
                     </span>
                   )}
                 </p>
 
                 {searchTerm && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-400">
                     Results for{" "}
-                    <span className="text-slate-300 font-medium">
+                    <span className="font-medium text-emerald-200">
                       &quot;{searchTerm}&quot;
                     </span>
                   </p>
@@ -1112,7 +1125,7 @@ const updateCachedJobSaveState = (
                       }
                     )
                   }
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-xs font-bold text-slate-950 transition-colors hover:bg-emerald-300"
                 >
                   Try again
                 </button>
@@ -1123,7 +1136,7 @@ const updateCachedJobSaveState = (
 
               <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-16 text-center space-y-3 shadow-xl">
 
-                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
 
                 <p className="text-sm font-medium text-slate-400">
                   Searching job opportunities...
@@ -1161,10 +1174,10 @@ const updateCachedJobSaveState = (
                                
                   
                     {isFetching && !loading && (
-                      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 rounded-2xl bg-slate-900/95 text-slate-100 border border-indigo-400/20 shadow-xl shadow-black/20 backdrop-blur-xl animate-in fade-in slide-in-from-top-3 duration-200">
+                      <div className="fixed left-1/2 top-20 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-emerald-400/20 bg-slate-900/95 px-5 py-3 text-slate-100 shadow-xl shadow-black/20 backdrop-blur-xl animate-in fade-in slide-in-from-top-3 duration-200">
                         <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
-                          <div className="absolute inset-0 rounded-full bg-indigo-400/10 animate-ping" />
-                          <div className="w-5 h-5 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
+                          <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400/10" />
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-emerald-300" />
                         </div>
 
                         <div className="flex flex-col gap-0.5">
@@ -1207,7 +1220,7 @@ const updateCachedJobSaveState = (
 
                   <Briefcase
                     size={24}
-                    className="text-indigo-400"
+                    className="text-emerald-300"
                   />
 
                 </div>
