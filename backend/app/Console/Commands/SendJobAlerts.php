@@ -29,7 +29,6 @@ class SendJobAlerts extends Command
         $since = now()->subHours(48);
         $dispatched = 0;
 
-        // ✅ Fetch ALL matching jobs ONCE
         $allJobs = JobListing::query()
             ->where('created_at', '>=', $since)
             ->where('is_active', true)
@@ -44,11 +43,10 @@ class SendJobAlerts extends Command
 
         $this->info("Found {$allJobs->count()} matching jobs.");
 
-        // ✅ Load ALL existing deliveries ONCE
+        // ✅ 4. Load existing deliveries by user_id
         $existingDeliveries = JobAlertDelivery::query()
-            ->with('alert')
-            ->get()
-            ->map(fn ($d) => $d->job_listing_id . '_' . ($d->alert->user_id ?? 0))
+            ->get(['job_listing_id', 'user_id'])
+            ->map(fn ($d) => $d->job_listing_id . '_' . $d->user_id)
             ->toBase();
 
         // 1. Users WITH JobAlert
@@ -95,7 +93,8 @@ class SendJobAlerts extends Command
                     continue;
                 }
 
-                SendJobAlertJob::dispatch($alert->id, $job->id);
+                // ✅ 3. Pass user_id as 4th argument
+                SendJobAlertJob::dispatch($alert->id, $job->id, null, $userId);
                 $existingDeliveries->push($key);
                 $dispatched++;
             }
@@ -115,13 +114,14 @@ class SendJobAlerts extends Command
                     continue;
                 }
 
-                SendJobAlertJob::dispatch(null, $job->id, $user->telegram_chat_id);
+                // ✅ 3. Pass user_id as 4th argument
+                SendJobAlertJob::dispatch(null, $job->id, $user->telegram_chat_id, $userId);
                 $existingDeliveries->push($key);
                 $dispatched++;
             }
         }
 
-        $this->info("Dispatched {$dispatched} alert jobs to Redis queue.");
+        $this->info("Dispatched {$dispatched} alert jobs to queue.");
         return self::SUCCESS;
     }
 }   
