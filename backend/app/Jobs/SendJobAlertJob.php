@@ -26,13 +26,12 @@ class SendJobAlertJob implements ShouldQueue
 
     public function handle(TelegramService $telegramService): void
     {
-        $job = JobListing::find($this->jobId);
+        $job = JobListing::with('company')->find($this->jobId);
 
         if (!$job) {
             return;
         }
 
-        // Determine chat_id and keyword
         if ($this->chatIdOverride) {
             $chatId  = $this->chatIdOverride;
             $keyword = 'Software Engineering';
@@ -47,14 +46,12 @@ class SendJobAlertJob implements ShouldQueue
             $keyword = $alert->keyword ?? 'Software Engineering';
         }
 
-        // Send the alert
         $telegramService->sendJobAlert($chatId, $job, $keyword);
 
-        // Record delivery only when an alert exists
         if ($this->alertId) {
             JobAlertDelivery::create([
                 'job_listing_id' => $this->jobId,
-                'alert_id'       => $this->alertId,
+                'job_alert_id'   => $this->alertId,
             ]);
         }
     }
