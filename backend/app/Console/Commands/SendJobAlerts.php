@@ -14,6 +14,13 @@ class SendJobAlerts extends Command
     protected $signature = 'job-alerts:send';
     protected $description = 'Dispatch matching job alerts to the Redis queue';
 
+    protected array $defaultSkills = [
+        'Python', 'JavaScript', 'Java', 'PHP', 'C++',
+        'Django', 'Node', 'Backend', 'REST API', 'Flask',
+        'Software Engineering', 'Computer Science', 'python',
+        'Laravel', 'Node js', 'TypeScript', 'React',
+    ];
+
     public function handle(): int
     {
         $this->info('Dispatching job alerts to queue...');
@@ -42,7 +49,6 @@ class SendJobAlerts extends Command
             $jobs = $this->getMatchingJobs($alert, $since);
 
             foreach ($jobs as $job) {
-                // Optional but recommended: skip if this user already received this job
                 $already = JobAlertDelivery::where('job_listing_id', $job->id)
                     ->whereHas('alert', fn ($q) => $q->where('user_id', $user->id))
                     ->exists();
@@ -66,12 +72,22 @@ class SendJobAlerts extends Command
             ->where('created_at', '>=', $since)
             ->where('is_active', true);
 
-        if (!empty($alert->keyword)) {
-            $keyword = trim($alert->keyword);
+        $keyword = trim($alert->keyword ?? '');
+
+        if (!empty($keyword)) {
             $query->where(function ($q) use ($keyword) {
                 $q->where('title', 'like', "%{$keyword}%")
                   ->orWhere('description', 'like', "%{$keyword}%")
                   ->orWhere('requirements', 'like', "%{$keyword}%");
+            });
+        } else {
+            // ✅ FALLBACK: match against default skills when no keyword set
+            $query->where(function ($q) {
+                foreach ($this->defaultSkills as $skill) {
+                    $q->orWhere('title', 'like', "%{$skill}%")
+                      ->orWhere('description', 'like', "%{$skill}%")
+                      ->orWhere('requirements', 'like', "%{$skill}%");
+                }
             });
         }
 
@@ -85,4 +101,4 @@ class SendJobAlerts extends Command
 
         return $query->orderByDesc('created_at')->get();
     }
-}
+}   
