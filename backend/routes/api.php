@@ -121,18 +121,20 @@ Route::get('/prugejobs', function (Request $request) {
         'output' => Artisan::output(),
     ]);
 });
+
+
 Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
     $secretToken = config('services.cron.token', env('CRON_SECRET_TOKEN'));
-    
+
     if ($secretToken && $request->query('token') !== $secretToken) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
     Artisan::call('job-alerts:send');
+    Artisan::call('queue:work', ['--stop-when-empty' => true, '--max-time' => 50]);
 
     return response()->json([
-        'status' => 'success',
-        'message' => 'Job alerts processed successfully.',
-        'output' => Artisan::output()
+        'status'  => 'success',
+        'message' => 'Done.',
     ]);
-});
+});   
