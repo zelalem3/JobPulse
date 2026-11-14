@@ -29,95 +29,8 @@ class SendJobAlerts extends Command
         $since = now()->subHours(48);
         $dispatched = 0;
 
-        // 1. Process users who HAVE JobAlert records
-        $alerts = JobAlert::query()->with('user')->get();
-
-        if ($alerts->isNotEmpty()) {
-            foreach ($alerts as $alert) {
-                $user = $alert->user;
-
-                if (!$user || empty($user->telegram_chat_id)) {
-                    continue;
-                }
-
-                $jobs = $this->getMatchingJobs($alert, $since);
-
-                foreach ($jobs as $job) {
-                    $already = JobAlertDelivery::where('job_listing_id', $job->id)
-                        ->whereHas('alert', fn ($q) => $q->where('user_id', $user->id))
-                        ->exists();
-
-                    if ($already) {
-                        continue;
-                    }
-
-                    SendJobAlertJob::dispatch($alert->id, $job->id);
-                    $dispatched++;
-                }
-            }
-        }
-
-        // 2. Process users who have NO JobAlert but have telegram_chat_id
-        $usersWithoutAlerts = User::whereNotNull('telegram_chat_id')
-            ->whereDoesntHave('jobAlerts')
-            ->get();
-
-        foreach ($usersWithoutAlerts as $user) {
-            $jobs = $this->getDefaultSkillJobs($since);
-
-            foreach ($jobs as $job) {
-                $already = JobAlertDelivery::where('job_listing_id', $job->id)
-                    ->whereHas('alert', fn ($q) => $q->where('user_id', $user->id))
-                    ->exists();
-
-                if ($already) {
-                    continue;
-                }
-
-                SendJobAlertJob::dispatch(null, $job->id, $user->telegram_chat_id);
-                $dispatched++;
-            }
-        }
-
-        $this->info("Dispatched {$dispatched} alert jobs to Redis queue.");
-        return self::SUCCESS;
-    }
-
-    protected function getMatchingJobs(JobAlert $alert, Carbon $since)
-    {
-        $query = JobListing::query()
-            ->where('created_at', '>=', $since)
-            ->where('is_active', true)
-            ->where(function ($q) use ($alert) {
-                $keyword = trim($alert->keyword ?? '');
-
-                foreach ($this->defaultSkills as $skill) {
-                    $q->orWhere('title', 'like', "%{$skill}%")
-                      ->orWhere('description', 'like', "%{$skill}%")
-                      ->orWhere('requirements', 'like', "%{$skill}%");
-                }
-
-                if (!empty($keyword)) {
-                    $q->orWhere('title', 'like', "%{$keyword}%")
-                      ->orWhere('description', 'like', "%{$keyword}%")
-                      ->orWhere('requirements', 'like', "%{$keyword}%");
-                }
-            });
-
-        if (!empty($alert->location)) {
-            $query->where('location', 'like', "%{$alert->location}%");
-        }
-
-        if (!empty($alert->category)) {
-            $query->where('category', $alert->category);
-        }
-
-        return $query->orderByDesc('created_at')->get();
-    }
-
-    protected function getDefaultSkillJobs(Carbon $since)
-    {
-        return JobListing::query()
+        // ✅ Fetch ALL matching jobs ONCE
+        $allJobs = JobListing::query()
             ->where('created_at', '>=', $since)
             ->where('is_active', true)
             ->where(function ($q) {
@@ -127,7 +40,88 @@ class SendJobAlerts extends Command
                       ->orWhere('requirements', 'like', "%{$skill}%");
                 }
             })
-            ->orderByDesc('created_at')
             ->get();
+
+        $this->info("Found {$allJobs->count()} matching jobs.");
+
+        // ✅ Load ALL existing deliveries ONCE
+        $existingDeliveries = JobAlertDelivery::query()
+            ->with('alert')
+            ->get()
+            ->map(fn ($d) => $d->job_listing_id . '_' . ($d->alert->user_id ?? 0))
+            ->toBase();
+
+        // 1. Users WITH JobAlert
+        $alerts = JobAlert::query()->with('user')->get();
+
+        foreach ($alerts as $alert) {
+            $user = $alert->user;
+
+            if (!$user || empty($user->telegram_chat_id)) {
+                continue;
+            }
+
+            $keyword = trim($alert->keyword ?? '');
+            $userId  = $user->id;
+
+            foreach ($allJobs as $job) {
+                $key = $job->id . '_' . $userId;
+                if ($existingDeliveries->contains($key)) {
+                    continue;
+                }
+
+                $haystack = strtolower(
+                    ($job->title ?? '') . ' ' .
+                    ($job->description ?? '') . ' ' .
+                    ($job->requirements ?? '')
+                );
+
+                $matches = false;
+
+                if (!empty($keyword) && str_contains($haystack, strtolower($keyword))) {
+                    $matches = true;
+                }
+
+                if (!$matches) {
+                    foreach ($this->defaultSkills as $skill) {
+                        if (str_contains($haystack, strtolower($skill))) {
+                            $matches = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$matches) {
+                    continue;
+                }
+
+                SendJobAlertJob::dispatch($alert->id, $job->id);
+                $existingDeliveries->push($key);
+                $dispatched++;
+            }
+        }
+
+        // 2. Users WITHOUT JobAlert but have telegram_chat_id
+        $usersWithoutAlerts = User::whereNotNull('telegram_chat_id')
+            ->whereDoesntHave('jobAlerts')
+            ->get();
+
+        foreach ($usersWithoutAlerts as $user) {
+            $userId = $user->id;
+
+            foreach ($allJobs as $job) {
+                $key = $job->id . '_' . $userId;
+                if ($existingDeliveries->contains($key)) {
+                    continue;
+                }
+
+                SendJobAlertJob::dispatch(null, $job->id, $user->telegram_chat_id);
+                $existingDeliveries->push($key);
+                $dispatched++;
+            }
+        }
+
+        $this->info("Dispatched {$dispatched} alert jobs to Redis queue.");
+        return self::SUCCESS;
     }
 }   

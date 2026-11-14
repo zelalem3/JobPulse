@@ -32,29 +32,25 @@ class SendJobAlertJob implements ShouldQueue
             return;
         }
 
-        // Determine chat_id and alert keyword
+        // Determine chat_id and keyword
         if ($this->chatIdOverride) {
-            $chatId = $this->chatIdOverride;
+            $chatId  = $this->chatIdOverride;
             $keyword = 'Software Engineering';
         } else {
             $alert = JobAlert::find($this->alertId);
 
-            if (!$alert) {
+            if (!$alert || !$alert->user || empty($alert->user->telegram_chat_id)) {
                 return;
             }
 
-            $chatId = $alert->user->telegram_chat_id;
+            $chatId  = $alert->user->telegram_chat_id;
             $keyword = $alert->keyword ?? 'Software Engineering';
-
-            if (empty($chatId)) {
-                return;
-            }
         }
 
         // Send the alert
         $telegramService->sendJobAlert($chatId, $job, $keyword);
 
-        // Record delivery (only if alert exists)
+        // Record delivery only when an alert exists
         if ($this->alertId) {
             JobAlertDelivery::create([
                 'job_listing_id' => $this->jobId,
