@@ -86,7 +86,7 @@ class TelegramService
                    "📍 <b>Location:</b> {$location}\n" .
                    "💼 <b>Type:</b> {$employmentType}\n\n" .
                    "━━━━━━━━━━━━━━━━━━\n" .
-                   "🎯 <b>Matched Alert:</b> {$keyword}\n\n" .
+                   
                    "<a href=\"{$jobUrl}\">🔗 View Job Details</a>";
 
         return $this->sendMessage($chatId, $message, 'HTML');
