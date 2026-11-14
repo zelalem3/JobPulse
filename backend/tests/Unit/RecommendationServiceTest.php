@@ -23,13 +23,29 @@ class RecommendationServiceTest extends TestCase
         Cache::flush(); // avoid cache pollution
     }
 
-    public function test_returns_empty_when_user_has_no_skills(): void
+    public function test_returns_fallback_jobs_when_user_has_no_skills(): void
     {
         $user = User::factory()->create();
 
+        // Recent active job that should appear in fallback recommendations
+        $recentJob = JobListing::factory()->create([
+            'is_active' => true,
+            'posted_at' => now()->subDay(),
+            'deadline'  => now()->addDays(10),
+        ]);
+
+        // Old job outside the 2-day window — should be excluded
+        JobListing::factory()->create([
+            'is_active' => true,
+            'posted_at' => now()->subDays(5),
+        ]);
+
         $result = $this->service->getRecommendations($user);
 
-        $this->assertTrue($result->isEmpty());
+        $this->assertFalse($result->isEmpty());
+        $this->assertTrue($result->contains('id', $recentJob->id));
+        $this->assertEquals(0, $result->first()->matching_skills_count);
+        $this->assertTrue($result->first()->matched_skills->isEmpty());
     }
 
     public function test_returns_jobs_with_matching_skills(): void

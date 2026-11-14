@@ -40,11 +40,13 @@ class RecommendationService
 
     /*
     |--------------------------------------------------------------------------
-    | Do not recommend unrelated jobs when the user has no skills
+    | When the user has no skills registered, still return recent quality jobs
+    | (fallback). This allows email/Telegram recommendation flows to deliver
+    | useful matches instead of an empty list.
     |--------------------------------------------------------------------------
     */
     if ($userSkillIds->isEmpty()) {
-        return collect();
+        return $this->getFallbackRecommendations($user, $limit);
     }
 
     /*
