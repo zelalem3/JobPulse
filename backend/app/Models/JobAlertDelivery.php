@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +13,7 @@ class JobAlertDelivery extends Model
     protected $fillable = [
         'job_alert_id',
         'job_listing_id',
+        'user_id',          // ← was missing
         'delivered_at',
     ];
 
@@ -29,5 +29,10 @@ class JobAlertDelivery extends Model
     public function job()
     {
         return $this->belongsTo(JobListing::class, 'job_listing_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
