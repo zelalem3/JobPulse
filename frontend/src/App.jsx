@@ -16,6 +16,7 @@ import ScrollToTop from './components/ScrollToTop';
 import AboutUs from './pages/AboutUsPage';
 import ContactUs from './pages/ContactUsPage';
 import Recommendation from './pages/Recommendation';
+import { Analytics } from "@vercel/analytics/react";
 
 
 
@@ -27,7 +28,8 @@ function App() {
       </a>
       <NavBar />
       <ScrollToTop />
-
+      <Analytics />
+      
       <div id="main-content" className="flex-1" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<HomePage />} />
